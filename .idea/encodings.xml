@@ -27,6 +27,10 @@
     <file url="file://$PROJECT_DIR$/Enemy/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Health/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Health/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Particles/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Particles/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Physics/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Physics/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Player/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Player/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Renderer/src/main/java" charset="UTF-8" />

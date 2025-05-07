@@ -23,6 +23,8 @@
         <module>Enemy</module>
         <module>Player</module>
         <module>Renderer</module>
+        <module>Particles</module>
+        <module>Physics</module>
     </modules>
 
     <properties>
