@@ -1,9 +1,12 @@
 module Bullet {
-    requires java.logging;
+    requires Core;
     requires Common;
     requires CommonBullet;
     requires CommonCollision;
-    requires Core;
+    requires CommonWeapon;
+
+    requires java.logging;
+    requires javafx.graphics;
 
     exports dk.sdu.mmmi.cbse.bullet;
 

@@ -14,5 +14,5 @@ public interface IBulletSPI {
      * @param gameData Current game state
      * @return New bullet entity
      */
-    Entity createBullet(Entity shooter, GameData gameData);
+    Entity createBullet(Entity shooter, GameData gameData, String bulletType);
 }

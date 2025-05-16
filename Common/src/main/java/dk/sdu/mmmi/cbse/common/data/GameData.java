@@ -1,6 +1,5 @@
 package dk.sdu.mmmi.cbse.common.data;
 
-
 // Needed anymore?
 public class GameData {
 

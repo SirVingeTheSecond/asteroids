@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.bullet;
 
+import dk.sdu.mmmi.cbse.common.services.IProcessingService;
 import dk.sdu.mmmi.cbse.core.Time;
 import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
@@ -8,7 +9,6 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.services.IProcessingService;
 import dk.sdu.mmmi.cbse.commonbullet.BulletComponent;
 
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System for processing bullet movement and lifecycle.
+ * System for processing bullet movement.
  */
 public class BulletSystem implements IProcessingService {
     private static final Logger LOGGER = Logger.getLogger(BulletSystem.class.getName());
@@ -27,13 +27,13 @@ public class BulletSystem implements IProcessingService {
         float deltaTime = (float) Time.getDeltaTime();
         List<Entity> bulletsToRemove = new ArrayList<>();
 
-        // Process all bullet entities
         for (Entity entity : world.getEntities()) {
             TagComponent tagComponent = entity.getComponent(TagComponent.class);
             if (tagComponent == null || !tagComponent.hasType(EntityType.BULLET)) {
                 continue;
             }
 
+            // Get required components
             BulletComponent bulletComponent = entity.getComponent(BulletComponent.class);
             TransformComponent transform = entity.getComponent(TransformComponent.class);
 
@@ -42,11 +42,12 @@ public class BulletSystem implements IProcessingService {
                 continue;
             }
 
-            // Update position
+            // Basic movement - apply velocity based on forward direction and speed
             Vector2D forward = transform.getForward();
             Vector2D velocity = forward.scale(bulletComponent.getSpeed() * deltaTime);
             transform.translate(velocity);
 
+            // Check if bullet has expired or is out of bounds
             if (isOutOfBounds(transform, gameData)) {
                 bulletsToRemove.add(entity);
             }
