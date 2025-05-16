@@ -3,35 +3,40 @@ package dk.sdu.mmmi.cbse.player;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.services.IGameEventService;
-import dk.sdu.mmmi.cbse.common.services.IGamePluginService;
+import dk.sdu.mmmi.cbse.common.services.IPluginService;
 
-import java.util.ServiceLoader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class PlayerPlugin implements IGamePluginService, IPluginLifecycle {
+/**
+ * Plugin for player system.
+ */
+public class PlayerPlugin implements IPluginService {
+    private static final Logger LOGGER = Logger.getLogger(PlayerPlugin.class.getName());
     private Entity player;
     private final PlayerFactory playerFactory;
 
+    /**
+     * Create a new player plugin
+     */
     public PlayerPlugin() {
-        IGameEventService eventService = ServiceLoader.load(IGameEventService.class)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No IGameEventService implementation found"));
+        this.playerFactory = new PlayerFactory();
 
-        this.playerFactory = new PlayerFactory(eventService);
+        LOGGER.log(Level.INFO, "PlayerPlugin initialized");
     }
 
     @Override
     public void start(GameData gameData, World world) {
-        // Create a player entity
-        player = playerFactory.createEntity(gameData);
+        player = playerFactory.createPlayer(gameData);
         world.addEntity(player);
 
-        System.out.println("Player created with ID: " + player.getID());
+        LOGGER.log(Level.INFO, "Player added to world: {0}", player.getID());
     }
 
     @Override
     public void stop(GameData gameData, World world) {
-        // Remove the player
         world.removeEntity(player);
+
+        LOGGER.log(Level.INFO, "Player removed from world: {0}", player.getID());
     }
 }

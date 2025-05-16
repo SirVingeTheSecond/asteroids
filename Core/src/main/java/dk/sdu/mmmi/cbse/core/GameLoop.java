@@ -1,165 +1,128 @@
 package dk.sdu.mmmi.cbse.core;
 
-import dk.sdu.sem.commonsystem.Scene;
-import dk.sdu.sem.gamesystem.scenes.SceneManager;
-import dk.sdu.sem.gamesystem.services.*;
+import dk.sdu.mmmi.cbse.common.data.GameData;
+import dk.sdu.mmmi.cbse.common.data.World;
+import dk.sdu.mmmi.cbse.common.services.IPostProcessingService;
+import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
+import dk.sdu.mmmi.cbse.core.input.Input;
+import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.GraphicsContext;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.ServiceLoader;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class GameLoop {
-	// Scheduler for fixed update loop (FixedUpdate)
-	private final ScheduledExecutorService fixedUpdateScheduler;
+/**
+ * Game loop implementation using JavaFX AnimationTimer.
+ * Handles the main processing cycle of the game.
+ */
+public class GameLoop extends AnimationTimer {
+	private static final Logger LOGGER = Logger.getLogger(GameLoop.class.getName());
 
-	// Services loaded via ServiceLoader
-	private final List<IFixedUpdate> fixedUpdateListeners = new ArrayList<>();
-	private final List<IUpdate> updateListeners = new ArrayList<>();
-	private final List<ILateUpdate> lateUpdateListeners = new ArrayList<>();
-	private final List<IGUIUpdate> guiUpdateListeners = new ArrayList<>();
-	private final List<IStart> startListeners = new ArrayList<>();
+	private final GameData gameData;
+	private final World world;
+	private final GraphicsContext context;
 
-	public GameLoop() {
-		// Load update listeners
-		ServiceLoader.load(IFixedUpdate.class).forEach(fixedUpdateListeners::add);
-		ServiceLoader.load(IUpdate.class).forEach(updateListeners::add);
-		ServiceLoader.load(ILateUpdate.class).forEach(lateUpdateListeners::add);
-		ServiceLoader.load(IGUIUpdate.class).forEach(guiUpdateListeners::add);
-		ServiceLoader.load(IStart.class).forEach(startListeners::add);
+	private long lastTime = 0;
 
-		fixedUpdateScheduler = Executors.newScheduledThreadPool(1, r -> {
-			Thread t = Executors.defaultThreadFactory().newThread(r);
-			t.setDaemon(true);
-			return t;
-		});
+	/**
+	 * Create a new game loop.
+	 *
+	 * @param gameData Game state data
+	 * @param world Game world with entities
+	 * @param context Graphics context for rendering
+	 */
+	public GameLoop(GameData gameData, World world, GraphicsContext context) {
+		this.gameData = gameData;
+		this.world = world;
+		this.context = context;
+	}
+
+	@Override
+	public void handle(long now) {
+		// Calculate delta time in seconds
+		double deltaTime = calculateDeltaTime(now);
+
+		// Update global time
+		Time.update(deltaTime);
+
+		// Process all entities
+		processEntities(deltaTime);
+
+		// Process post-entity systems
+		processPostEntitySystems();
+
+		// Clear screen and render
+		render();
+
+		// Update input for next frame
+		Input.update();
 	}
 
 	/**
-	 * Starts the fixed update loop at 60Hz.
+	 * Calculate time elapsed since last frame.
+	 *
+	 * @param now Current time in nanoseconds
+	 * @return Delta time in seconds
 	 */
-	public void start() {
-		fixedUpdateScheduler.scheduleAtFixedRate(() -> {
-			try {
-				fixedUpdate();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}, 0, 16, TimeUnit.MILLISECONDS);
-
-		startListeners.forEach(IStart::start);
-	}
-
-	/**
-	 * FixedUpdate: Processes collisions, physics, and deterministic logic.
-	 */
-	private void fixedUpdate() {
-		if (Time.getTimeScale() == 0)
-			return;
-
-		// Get active scene
-		Scene activeScene = SceneManager.getInstance().getActiveScene();
-
-		// Call fixedUpdate on all listeners
-		for (IFixedUpdate listener : fixedUpdateListeners) {
-			listener.fixedUpdate();
+	private double calculateDeltaTime(long now) {
+		if (lastTime == 0) {
+			lastTime = now;
+			return 0;
 		}
+
+		double deltaTime = (now - lastTime) / 1_000_000_000.0;
+		lastTime = now;
+
+		// Cap delta time to prevent huge jumps
+		return Math.min(deltaTime, 0.1);
 	}
 
 	/**
-	 * Update: Runs once per frame on the UI thread.
-	 * @param dt Delta time (in seconds) since the last frame.
+	 * Process all entity systems.
+	 *
+	 * @param deltaTime Time since last frame
 	 */
-	public void update(double dt) {
-		Time.update(dt);
+	private void processEntities(double deltaTime) {
+		gameData.setDeltaTime((float) deltaTime);
 
-		Scene activeScene = SceneManager.getInstance().getActiveScene();
-
-		// Call update on all listeners
-		for (IUpdate listener : updateListeners) {
-			listener.update();
-		}
-	}
-
-	/**
-	 * LateUpdate: Runs after Update
-	 */
-	public void lateUpdate() {
-		Scene activeScene = SceneManager.getInstance().getActiveScene();
-
-		// Call lateUpdate on all listeners
-		for (ILateUpdate listener : lateUpdateListeners) {
-			listener.lateUpdate();
-		}
-	}
-
-	public void guiUpdate(GraphicsContext gc) {
-		// Get active scene
-		Scene activeScene = SceneManager.getInstance().getActiveScene();
-
-		// Call onGUI on all listeners
-		for (IGUIUpdate listener : guiUpdateListeners) {
-			listener.onGUI(gc);
-		}
-	}
-
-	/*
-	public void lateUpdate() {
-		getLateUpdates().forEachRemaining(ILateUpdate::lateUpdate);
-	}
-
-	private static Iterator<? extends Node> getNodes() {
-		return ServiceLoader.load(Node.class).iterator();
-	}
-
-	private static Iterator<? extends IFixedUpdate> getFixedUpdates() {
-		return ServiceLoader.load(IFixedUpdate.class).iterator();
-	}
-
-	private static Iterator<? extends IUpdate> getUpdates() {
-		return ServiceLoader.load(IUpdate.class).iterator();
-	}
-
-	private static Iterator<? extends ILateUpdate> getLateUpdates() {
-		return ServiceLoader.load(ILateUpdate.class).iterator();
-	}
-	*/
-
-	/*
-	// How we could manually refresh ServiceLoader list
-	// We would need a reference to the loader
-	private static final ServiceLoader<IFixedUpdate> FIXED_UPDATE_LOADER = ServiceLoader.load(IFixedUpdate.class);
-
-	private final List<IFixedUpdate> fixedUpdateListeners = new ArrayList<>();
-
-	// We load as usual
-	FIXED_UPDATE_LOADER.forEach(fixedUpdateListeners::add);
-
-	public void refreshFixedUpdates() {
-		// Clear the loader cache
-		FIXED_UPDATE_LOADER.reload();
-
-		// Clear and re‐add
-		fixedUpdateListeners.clear();
-		FIXED_UPDATE_LOADER.forEach(fixedUpdateListeners::add);
-	}
-	 */
-
-	/**
-	 * Stops the fixed update loop.
-	 */
-	public void stop() {
 		try {
-			fixedUpdateScheduler.shutdown();
-			if (!fixedUpdateScheduler.awaitTermination(500, TimeUnit.MILLISECONDS)) {
-				fixedUpdateScheduler.shutdownNow();
+			List<IProcessingService> processors = ServiceLocator.locateAll(IProcessingService.class);
+
+			for (IProcessingService processor : processors) {
+				processor.process(gameData, world);
 			}
-		} catch (InterruptedException e) {
-			fixedUpdateScheduler.shutdownNow();
-			Thread.currentThread().interrupt();
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Error processing entities", e);
 		}
+	}
+
+	/**
+	 * Process all post-entity systems.
+	 * These run after the main entity processing.
+	 */
+	private void processPostEntitySystems() {
+		try {
+			List<IPostProcessingService> postProcessors = ServiceLocator.locateAll(IPostProcessingService.class);
+
+			for (IPostProcessingService postProcessor : postProcessors) {
+				postProcessor.process(gameData, world);
+			}
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Error processing post-entity systems", e);
+		}
+	}
+
+	/**
+	 * Render the game state.
+	 * Clears the screen and coordinates rendering.
+	 */
+	private void render() {
+		// Clear screen
+		context.clearRect(0, 0, gameData.getDisplayWidth(), gameData.getDisplayHeight());
+
+		// Rendering would be handled by a separate RenderSystem registered as a service
+		// The RenderSystem would be responsible for rendering all entities
 	}
 }

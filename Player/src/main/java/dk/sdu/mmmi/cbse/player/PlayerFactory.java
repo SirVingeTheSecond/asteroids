@@ -1,112 +1,85 @@
 package dk.sdu.mmmi.cbse.player;
 
-import dk.sdu.mmmi.cbse.common.collision.CollisionComponent;
-import dk.sdu.mmmi.cbse.common.collision.CollisionGroup;
-import dk.sdu.mmmi.cbse.common.collision.CollisionLayer;
-import dk.sdu.mmmi.cbse.common.collision.CollisionResponseComponent;
+import dk.sdu.mmmi.cbse.common.Vector2D;
+import dk.sdu.mmmi.cbse.common.components.MovementComponent;
+import dk.sdu.mmmi.cbse.common.components.RendererComponent;
+import dk.sdu.mmmi.cbse.common.components.TagComponent;
+import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
+import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
-import dk.sdu.mmmi.cbse.common.events.EntityDestroyedEvent;
-import dk.sdu.mmmi.cbse.common.services.IEntityFactory;
-import dk.sdu.mmmi.cbse.common.services.IGameEventService;
+import dk.sdu.mmmi.cbse.commoncollision.ColliderComponent;
+import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
+import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
+import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 import javafx.scene.paint.Color;
 
-public class PlayerFactory implements IEntityFactory<Entity> {
-    private final IGameEventService eventService;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-    public PlayerFactory(IGameEventService eventService) {
-        this.eventService = eventService;
-    }
+/**
+ * Factory for creating player entities.
+ */
+public class PlayerFactory {
+    private static final Logger LOGGER = Logger.getLogger(PlayerFactory.class.getName());
 
-    @Override
-    public Entity createEntity(GameData gameData) {
+    /**
+     * Create a new player entity
+     *
+     * @param gameData Game data
+     * @return New player entity
+     */
+    public Entity createPlayer(GameData gameData) {
+        LOGGER.log(Level.INFO, "Creating player entity");
+
         Entity player = new Entity();
 
-        // Add transform component with player shape
+        // Transform
         TransformComponent transform = new TransformComponent();
-        transform.setPolygonCoordinates(-5, -5, 10, 0, -5, 5);
-        transform.setX(gameData.getDisplayWidth() / 2);
-        transform.setY(gameData.getDisplayHeight() / 2);
-        transform.setRadius(8);
+        transform.setPolygonCoordinates(-5, -5, 10, 0, -5, 5); // Triangle shape
+        transform.setPosition(new Vector2D((float) gameData.getDisplayWidth() / 2, (float) gameData.getDisplayHeight() / 2));
+        transform.setRadius(8); // Collision radius
         player.addComponent(transform);
 
-        // Add renderer component
+        // renderer
         RendererComponent renderer = new RendererComponent();
         renderer.setStrokeColor(Color.GREEN);
+        renderer.setFillColor(Color.LIGHTGREEN);
         renderer.setStrokeWidth(2.0f);
         renderer.setRenderLayer(500); // Player on top layer
         player.addComponent(renderer);
 
-        // Add player component with player-specific data
+        // player component
         PlayerComponent playerComponent = new PlayerComponent();
         playerComponent.setLives(3);
         player.addComponent(playerComponent);
 
-        // Add movement component
+        // movement component
         MovementComponent movement = new MovementComponent();
         movement.setPattern(MovementComponent.MovementPattern.PLAYER);
-        movement.setSpeed(2.0f);
+        movement.setSpeed(150.0f);
         movement.setRotationSpeed(0.0f);
         player.addComponent(movement);
 
-        // Add shooting component
-        ShootingComponent shooting = new ShootingComponent();
-        shooting.setCooldownMax(20); // 20 frames between shots
-        shooting.setProjectileSpeed(2.0f);
-        player.addComponent(shooting);
+        // weapon component
+        WeaponComponent weapon = new WeaponComponent();
+        weapon.setBulletType("standard");
+        weapon.setDamage(10.0f);
+        weapon.setProjectileSpeed(300.0f);
+        weapon.setCooldownTime(15); // Frames between shots (4 shots per second at 60 FPS)
+        player.addComponent(weapon);
 
-        // Add health component
-        HealthComponent health = new HealthComponent(100f);
-        player.addComponent(health);
+        // collider component
+        ColliderComponent collider = new ColliderComponent();
+        collider.setLayer(CollisionLayer.PLAYER);
+        player.addComponent(collider);
 
-        // Add collision component
-        CollisionComponent collision = new CollisionComponent();
-        collision.setLayer(CollisionLayer.PLAYER);
-        collision.addGroup(CollisionGroup.FRIENDLY);
-        collision.addGroup(CollisionGroup.DESTRUCTIBLE);
-        player.addComponent(collision);
+        // tag component
+        TagComponent tag = new TagComponent();
+        tag.addType(EntityType.PLAYER);
+        player.addComponent(tag);
 
-        // Add collision response component
-        CollisionResponseComponent response = new CollisionResponseComponent();
-
-        // Handle collision with hostile entities
-        response.addGroupResponse(CollisionGroup.HOSTILE, (self, other, world) -> {
-            eventService.publish(new EntityDestroyedEvent(self, "Player destroyed by hostile entity"));
-            playerComponent.setLives(playerComponent.getLives() - 1);
-
-            // If lives > 0, don't destroy player but make temporarily invulnerable
-            if (playerComponent.getLives() > 0) {
-                playerComponent.setInvulnerable(true);
-                playerComponent.setInvulnerabilityTimer(180); // 3 seconds at 60 FPS
-                renderer.setStrokeColor(Color.BLUE); // Visual indicator
-                return false;
-            } else {
-                world.removeEntity(self);
-                return true;
-            }
-        });
-
-        // Handle collision with obstacles
-        response.addLayerResponse(CollisionLayer.OBSTACLE, (self, other, world) -> {
-            eventService.publish(new EntityDestroyedEvent(self, "Player destroyed by obstacle"));
-            playerComponent.setLives(playerComponent.getLives() - 1);
-
-            // If lives > 0, don't destroy player but make temporarily invulnerable
-            if (playerComponent.getLives() > 0) {
-                playerComponent.setInvulnerable(true);
-                playerComponent.setInvulnerabilityTimer(180); // 3 seconds at 60 FPS
-                renderer.setStrokeColor(Color.BLUE); // Visual indicator
-                return false;
-            } else {
-                world.removeEntity(self);
-                return true;
-            }
-        });
-        player.addComponent(response);
-
-        // Add tag component to identify as player
-        player.addComponent(new TagComponent(TagComponent.TAG_PLAYER));
-
+        LOGGER.log(Level.INFO, "Player entity created: {0}", player.getID());
         return player;
     }
 }

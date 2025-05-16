@@ -1,6 +1,5 @@
 package dk.sdu.mmmi.cbse.movementsystem;
 
-import dk.sdu.mmmi.cbse.common.Time;
 import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.MovementComponent;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
@@ -9,17 +8,21 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.services.IEntityProcessingService;
+import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.core.utils.Time;
 
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * System that handles movement for all entities.
- * Uses component filtering to process only relevant entities.
  */
-public class MovementSystem implements IEntityProcessingService {
+public class MovementSystem implements IProcessingService {
+    private static final Logger LOGGER = Logger.getLogger(MovementSystem.class.getName());
+
     private final Random random = new Random();
-    private static final long DIRECTION_CHANGE_DELAY = 120; // frames
+    private static final long DIRECTION_CHANGE_DELAY = 2000; // milliseconds
 
     @Override
     public void process(GameData gameData, World world) {
@@ -48,17 +51,11 @@ public class MovementSystem implements IEntityProcessingService {
                 case RANDOM:
                     processRandomMovement(transform, movement, deltaTime);
                     break;
-                case HOMING:
-                    // Homing movement is handled by AI systems that set rotation directly
-                    // Just apply linear movement based on current rotation
-                    processLinearMovement(transform, movement, deltaTime);
-                    break;
                 case PLAYER:
-                    // Player movement is handled by PlayerControlSystem
                     break;
             }
 
-            // Apply rotation - multiply by deltaTime for framerate independence
+            // Apply rotation - multiply by deltaTime to make sure we are independent of framerate
             if (Math.abs(movement.getRotationSpeed()) > 0.0001f) {
                 transform.rotate(movement.getRotationSpeed() * deltaTime);
             }
@@ -67,6 +64,9 @@ public class MovementSystem implements IEntityProcessingService {
 
     /**
      * Check if entity has required components for movement
+     *
+     * @param entity Entity to check
+     * @return true if has required components
      */
     private boolean hasRequiredComponents(Entity entity) {
         return entity.hasComponent(TransformComponent.class) &&
@@ -75,24 +75,29 @@ public class MovementSystem implements IEntityProcessingService {
 
     /**
      * Process linear movement pattern
+     *
+     * @param transform Transform component
+     * @param movement Movement component
+     * @param deltaTime Time since last update
      */
     private void processLinearMovement(TransformComponent transform, MovementComponent movement, float deltaTime) {
         if (movement.getSpeed() <= 0) {
-            return; // No movement
+            return;
         }
 
-        // Get forward direction from transform
         Vector2D forward = transform.getForward();
 
-        // Scale movement by speed and deltaTime
         Vector2D velocity = forward.scale(movement.getSpeed() * deltaTime);
 
-        // Update position
         transform.translate(velocity);
     }
 
     /**
      * Process random movement pattern
+     *
+     * @param transform Transform component
+     * @param movement Movement component
+     * @param deltaTime Time since last update
      */
     private void processRandomMovement(TransformComponent transform, MovementComponent movement, float deltaTime) {
         // Check if it's time to change direction
@@ -101,11 +106,14 @@ public class MovementSystem implements IEntityProcessingService {
 
         if (currentTime - lastChange > DIRECTION_CHANGE_DELAY) {
             // Randomly adjust rotation between fixed time intervals
-            if (random.nextFloat() < 0.1f) {
+            if (random.nextFloat() < 0.2f) {
                 float rotation = transform.getRotation();
-                rotation += (random.nextFloat() * 60 - 30) * deltaTime; // +/- 30 degrees
+                rotation += (random.nextFloat() * 60 - 30); // +/- 30 degrees
                 transform.setRotation(rotation);
                 movement.setLastDirectionChange(currentTime);
+
+                LOGGER.log(Level.FINE, "Entity {0} changed direction to {1}",
+                        new Object[]{transform.getPosition(), rotation});
             }
         }
 

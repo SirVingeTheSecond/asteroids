@@ -1,5 +1,7 @@
 module Movement {
     requires Common;
+    requires java.logging;
+    requires Core;
 
     exports dk.sdu.mmmi.cbse.movementsystem;
 

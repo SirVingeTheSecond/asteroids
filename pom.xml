@@ -28,6 +28,7 @@
         <module>Movement</module>
         <module>Bullet</module>
         <module>CommonBullet</module>
+        <module>CommonPlayer</module>
     </modules>
 
     <properties>
