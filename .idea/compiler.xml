@@ -6,6 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="Bullet" />
         <module name="Player" />
         <module name="CommonEnemy" />
         <module name="Movement" />
@@ -14,6 +15,7 @@
         <module name="Particles" />
         <module name="Physics" />
         <module name="Weapon" />
+        <module name="CommonBullet" />
         <module name="Common" />
         <module name="Asteroid" />
         <module name="CommonWeapon" />

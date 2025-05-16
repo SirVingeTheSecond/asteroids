@@ -26,6 +26,8 @@
         <module>Particles</module>
         <module>Physics</module>
         <module>Movement</module>
+        <module>Bullet</module>
+        <module>CommonBullet</module>
     </modules>
 
     <properties>

@@ -9,6 +9,7 @@ module Common {
     exports dk.sdu.mmmi.cbse.common.bullet;
     exports dk.sdu.mmmi.cbse.common.enemy;
     exports dk.sdu.mmmi.cbse.common.asteroids;
+    exports dk.sdu.mmmi.cbse.common;
 
     uses dk.sdu.mmmi.cbse.common.services.IPluginService;
     uses dk.sdu.mmmi.cbse.common.services.IProcessingService;

@@ -5,6 +5,8 @@
     <file url="file://$PROJECT_DIR$/Asteroid/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Asteroids/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Asteroids/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Bullet/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Bullet/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Collision/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Collision/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Common/src/main/java" charset="UTF-8" />
@@ -13,6 +15,8 @@
     <file url="file://$PROJECT_DIR$/CommonAsteroid/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/CommonAsteroids/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/CommonAsteroids/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/CommonBullet/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/CommonBullet/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/CommonCollision/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/CommonCollision/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/CommonEnemy/src/main/java" charset="UTF-8" />
