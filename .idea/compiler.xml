@@ -18,6 +18,7 @@
         <module name="CommonBullet" />
         <module name="Common" />
         <module name="CommonPlayer" />
+        <module name="Score" />
         <module name="Asteroid" />
         <module name="CommonWeapon" />
         <module name="CommonCollision" />

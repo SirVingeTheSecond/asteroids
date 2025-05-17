@@ -10,9 +10,12 @@ import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
 import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
+import dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 import dk.sdu.mmmi.cbse.core.input.Axis;
+import dk.sdu.mmmi.cbse.core.input.Button;
 import dk.sdu.mmmi.cbse.core.utils.Time;
 import dk.sdu.mmmi.cbse.core.input.InputController;
 import javafx.scene.paint.Color;
@@ -25,14 +28,20 @@ import java.util.logging.Logger;
  */
 public class PlayerSystem implements IProcessingService {
     private static final Logger LOGGER = Logger.getLogger(PlayerSystem.class.getName());
+    private IWeaponSPI weaponSPI;
 
     public PlayerSystem() {
-
+        this.weaponSPI = ServiceLocator.getServiceOrNull(IWeaponSPI.class);
+        LOGGER.log(Level.INFO, "PlayerSystem initialized with weaponSPI: {0}",
+                weaponSPI != null ? weaponSPI.getClass().getName() : "not available");
     }
 
     @Override
     public void process(GameData gameData, World world) {
-        // Find player entity
+        if (weaponSPI == null) {
+            weaponSPI = ServiceLocator.getServiceOrNull(IWeaponSPI.class);
+        }
+
         Entity player = findPlayer(world);
         if (player == null) {
             return;
@@ -51,15 +60,15 @@ public class PlayerSystem implements IProcessingService {
 
         float deltaTime = (float) Time.getDeltaTime();
 
-        // Process player movement
+        // player movement
         processMovement(transform, movement, deltaTime);
 
-        // Process player rotation (toward mouse)
+        // player rotation (toward mouse)
         processRotation(transform, gameData);
 
-        // Process player shooting
-        if (weapon != null) {
-            processShooting(player, weapon);
+        // player shooting
+        if (weapon != null && weaponSPI != null) {
+            processShooting(player, weapon, gameData, world);
         }
 
         // Update player invulnerability
@@ -102,13 +111,12 @@ public class PlayerSystem implements IProcessingService {
      * @param deltaTime Time since last update
      */
     private void processMovement(TransformComponent transform, MovementComponent movement, float deltaTime) {
-        // Get movement input
         Vector2D direction = new Vector2D(
                 InputController.getAxis(Axis.HORIZONTAL),
                 InputController.getAxis(Axis.VERTICAL)
         );
 
-        // Normalize if not zero
+        // Normalize
         if (direction.magnitudeSquared() > 0.001f) {
             direction = direction.normalize();
             movement.setAccelerating(true);
@@ -116,7 +124,6 @@ public class PlayerSystem implements IProcessingService {
             movement.setAccelerating(false);
         }
 
-        // Apply movement
         Vector2D velocity = direction.scale(movement.getSpeed() * deltaTime);
         transform.translate(velocity);
     }
@@ -128,20 +135,12 @@ public class PlayerSystem implements IProcessingService {
      * @param gameData Game data
      */
     private void processRotation(TransformComponent transform, GameData gameData) {
-        // Get mouse position
-        Vector2D mousePos = new Vector2D(
-                InputController.getAxis(Axis.MOUSE_X),
-                InputController.getAxis(Axis.MOUSE_Y)
-        );
+        Vector2D mousePos = InputController.getMousePosition();
 
-        // Calculate direction to mouse
         Vector2D playerPos = transform.getPosition();
         Vector2D direction = mousePos.subtract(playerPos);
 
-        // Calculate angle
         float angle = (float) Math.toDegrees(Math.atan2(direction.y(), direction.x()));
-
-        // Set player rotation
         transform.setRotation(angle);
     }
 
@@ -150,8 +149,19 @@ public class PlayerSystem implements IProcessingService {
      *
      * @param player Player entity
      * @param weapon Weapon component
+     * @param gameData Current game data
+     * @param world Game world
      */
-    private void processShooting(Entity player, WeaponComponent weapon) {
-        // ToDo
+    private void processShooting(Entity player, WeaponComponent weapon, GameData gameData, World world) {
+        boolean shootPressed = InputController.isButtonPressed(Button.SPACE) ||
+                InputController.isButtonPressed(Button.MOUSE1);
+
+        if (shootPressed != weapon.isFiring()) {
+            weapon.setFiring(shootPressed);
+        }
+
+        if (weapon.isFiring()) {
+            weaponSPI.processFiring(player, gameData, world);
+        }
     }
 }

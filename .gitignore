@@ -1,7 +1,8 @@
 /target/
 !.mvn/wrapper/maven-wrapper.jar
 
-.idea
+# ignore IntelliJ/IDE settings
+.idea/
 
 ### STS ###
 .apt_generated

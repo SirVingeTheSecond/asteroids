@@ -11,10 +11,10 @@ import java.util.logging.Logger;
 
 /**
  * Registry for different bullet types.
- * Manages bullet configurations and properties.
  */
 public class BulletRegistry {
     private static final Logger LOGGER = Logger.getLogger(BulletRegistry.class.getName());
+
     private static final BulletRegistry INSTANCE = new BulletRegistry();
 
     private final Map<String, BulletType> bulletTypes = new HashMap<>();
@@ -48,7 +48,6 @@ public class BulletRegistry {
                 .speed(5.0f)
                 .damage(10.0f)
                 .piercing(false)
-                .explosive(false)
                 .bouncing(false)
                 .color(Color.YELLOW)
                 .build());
@@ -59,20 +58,8 @@ public class BulletRegistry {
                 .damage(15.0f)
                 .piercing(true)
                 .pierceCount(2)
-                .explosive(false)
                 .bouncing(false)
                 .color(Color.BLUE)
-                .build());
-
-        // Explosive bullet - area damage
-        registerBulletType("explosive", new BulletType.Builder()
-                .speed(4.0f)
-                .damage(20.0f)
-                .piercing(false)
-                .explosive(true)
-                .explosionRadius(50.0f)
-                .bouncing(false)
-                .color(Color.RED)
                 .build());
 
         // Bouncing bullet - bounces off walls
@@ -80,7 +67,6 @@ public class BulletRegistry {
                 .speed(4.5f)
                 .damage(8.0f)
                 .piercing(false)
-                .explosive(false)
                 .bouncing(true)
                 .bounceCount(3)
                 .color(Color.GREEN)
@@ -91,7 +77,6 @@ public class BulletRegistry {
                 .speed(3.5f)
                 .damage(30.0f)
                 .piercing(false)
-                .explosive(false)
                 .bouncing(false)
                 .color(Color.ORANGE)
                 .build());

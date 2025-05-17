@@ -164,7 +164,7 @@ public class CollisionResolver {
                 EnemyDestroyedEvent.DestructionCause cause =
                         bulletComponent.getSource() == BulletComponent.BulletSource.PLAYER ?
                                 EnemyDestroyedEvent.DestructionCause.PLAYER_BULLET :
-                                EnemyDestroyedEvent.DestructionCause.OTHER;
+                                EnemyDestroyedEvent.DestructionCause.OTHER; // Should not be OTHER, too floaty.
 
                 // Publish enemy destroyed event
                 if (eventService != null) {

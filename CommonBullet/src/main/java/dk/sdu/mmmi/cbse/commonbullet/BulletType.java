@@ -10,8 +10,6 @@ public class BulletType {
     private final float damage;
     private final boolean piercing;
     private final int pierceCount;
-    private final boolean explosive;
-    private final float explosionRadius;
     private final boolean bouncing;
     private final int bounceCount;
     private final Color color;
@@ -24,8 +22,6 @@ public class BulletType {
         this.damage = builder.damage;
         this.piercing = builder.piercing;
         this.pierceCount = builder.pierceCount;
-        this.explosive = builder.explosive;
-        this.explosionRadius = builder.explosionRadius;
         this.bouncing = builder.bouncing;
         this.bounceCount = builder.bounceCount;
         this.color = builder.color;
