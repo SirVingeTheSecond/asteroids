@@ -6,8 +6,6 @@ import dk.sdu.mmmi.cbse.common.data.World;
 
 /**
  * Service Provider Interface for weapon functionality.
- * Handles bullet creation and weapon firing patterns.
- * Implemented by weapon systems to provide consistent weapon behavior.
  */
 public interface IWeaponSPI {
     /**

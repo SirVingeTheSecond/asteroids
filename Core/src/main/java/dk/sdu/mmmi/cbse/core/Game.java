@@ -111,11 +111,11 @@ public class Game extends Application {
 
         // Mouse movement
         scene.setOnMouseMoved(e -> {
-            Input.setMousePosition(e.getX(), e.getY());
+            Input.setMousePosition(e.x(), e.y());
         });
 
         scene.setOnMouseDragged(e -> {
-            Input.setMousePosition(e.getX(), e.getY());
+            Input.setMousePosition(e.x(), e.y());
         });
 
         // Mouse buttons

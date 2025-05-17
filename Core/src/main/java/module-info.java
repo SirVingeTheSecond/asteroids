@@ -4,4 +4,5 @@ module Core {
     requires javafx.graphics;
     exports dk.sdu.mmmi.cbse.core;
     exports dk.sdu.mmmi.cbse.core.input;
+    exports dk.sdu.mmmi.cbse.core.utils;
 }

@@ -1,4 +1,4 @@
-package dk.sdu.mmmi.cbse.core;
+package dk.sdu.mmmi.cbse.core.utils;
 
 /**
  * Global time management class.

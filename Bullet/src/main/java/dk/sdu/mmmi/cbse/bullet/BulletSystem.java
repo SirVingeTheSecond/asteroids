@@ -1,7 +1,7 @@
 package dk.sdu.mmmi.cbse.bullet;
 
 import dk.sdu.mmmi.cbse.common.services.IProcessingService;
-import dk.sdu.mmmi.cbse.core.Time;
+import dk.sdu.mmmi.cbse.core.utils.Time;
 import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;

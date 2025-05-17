@@ -1,26 +1,15 @@
 package dk.sdu.mmmi.cbse.core;
 
 import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.stage.Stage;
 
-public class Main extends Application {
-
-	@Override
-	public void start(Stage stage) throws Exception {
-		stage.setTitle("Astrostrike");
-		Game.getInstance().startGame(stage);
-	}
-
-	@Override
-	public void stop() {
-		Game.getInstance().stopGame();
-		Platform.exit();
-		System.exit(0); // Force exit if threads are still lingering
-	}
-
+/**
+ * Entry point for the game.
+ */
+public class Main {
 	public static void main(String[] args) {
 		ApplicationArguments.parse(args);
-		launch(Main.class);
+
+		// Launch the JavaFX application
+		Application.launch(Game.class, args);
 	}
 }

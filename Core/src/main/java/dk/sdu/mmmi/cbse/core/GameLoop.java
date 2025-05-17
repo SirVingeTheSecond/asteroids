@@ -6,6 +6,7 @@ import dk.sdu.mmmi.cbse.common.services.IPostProcessingService;
 import dk.sdu.mmmi.cbse.common.services.IProcessingService;
 import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
 import dk.sdu.mmmi.cbse.core.input.Input;
+import dk.sdu.mmmi.cbse.core.utils.Time;
 import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.GraphicsContext;
 
