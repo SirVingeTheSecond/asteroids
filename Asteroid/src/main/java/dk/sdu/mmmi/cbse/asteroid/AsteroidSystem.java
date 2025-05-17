@@ -1,52 +1,76 @@
 package dk.sdu.mmmi.cbse.asteroid;
 
-import dk.sdu.mmmi.cbse.common.asteroids.IAsteroidSplitter;
+import dk.sdu.mmmi.cbse.asteroid.events.AsteroidSplitEvent;
+import dk.sdu.mmmi.cbse.common.components.TagComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
+import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.events.AsteroidSplitEvent;
-import dk.sdu.mmmi.cbse.common.events.IGameEventListener;
-import dk.sdu.mmmi.cbse.common.services.IEntityProcessingService;
-import dk.sdu.mmmi.cbse.common.services.IGameEventService;
+import dk.sdu.mmmi.cbse.common.events.IEventListener;
+import dk.sdu.mmmi.cbse.common.services.IEventService;
+import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
+import dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI;
 
-import java.util.ServiceLoader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class AsteroidSystem implements IEntityProcessingService, IGameEventListener<AsteroidSplitEvent> {
-    private final IGameEventService eventService;
-    private final IAsteroidSplitter asteroidSplitter;
+/**
+ * System for processing asteroid behavior.
+ * Handles asteroid movement and responds to events for splitting.
+ */
+public class AsteroidSystem implements IProcessingService, IEventListener<AsteroidSplitEvent> {
+    private static final Logger LOGGER = Logger.getLogger(AsteroidSystem.class.getName());
+
+    private final IAsteroidSPI asteroidSplitter;
+    private final IEventService eventService;
     private World world;
 
     public AsteroidSystem() {
-        // Get the event service
-        this.eventService = ServiceLoader.load(IGameEventService.class)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No IGameEventService implementation found"));
+        this.asteroidSplitter = ServiceLocator.getService(IAsteroidSPI.class);
+        this.eventService = ServiceLocator.getService(IEventService.class);
 
-        this.asteroidSplitter = ServiceLoader.load(IAsteroidSplitter.class)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No IAsteroidSplitter implementation found"));
+        // Register event
+        eventService.subscribe(AsteroidSplitEvent.class, this);
 
-        // Register asteroid split events
-        eventService.addListener(AsteroidSplitEvent.class, this);
+        LOGGER.log(Level.INFO, "AsteroidSystem initialized with splitter: {0}",
+                asteroidSplitter.getClass().getName());
     }
 
     @Override
     public void process(GameData gameData, World world) {
-        // Store reference to world for event handling
         this.world = world;
 
-        // Asteroid-specific processing could be added here
-        // Basic movement is handled by MovementSystem
+        // Basic asteroid movement is handled by MovementSystem
         // Collision is handled by CollisionSystem
+
+        // ToDo: Add rotation patterns for Asteroids.
     }
 
+    /**
+     * Handle asteroid split events
+     *
+     * @param event The asteroid split event
+     */
     @Override
     public void onEvent(AsteroidSplitEvent event) {
         if (world == null) {
-            return; // Not initialized yet
+            LOGGER.log(Level.WARNING, "Cannot process asteroid split: world not initialized");
+            return;
         }
 
-        Entity asteroid = event.getSource();
+        Entity asteroid = event.source();
+
+        // Verify this is an asteroid
+        TagComponent tag = asteroid.getComponent(TagComponent.class);
+        if (tag == null || !tag.hasType(EntityType.ASTEROID)) {
+            LOGGER.log(Level.WARNING, "Received split event for non-asteroid entity");
+            return;
+        }
+
+        LOGGER.log(Level.FINE, "Processing asteroid split event for {0}", asteroid.getID());
+
+        // Delegate to asteroid splitter
         asteroidSplitter.createSplitAsteroid(asteroid, world);
     }
 }

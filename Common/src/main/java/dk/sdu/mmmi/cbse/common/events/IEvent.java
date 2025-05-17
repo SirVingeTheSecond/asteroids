@@ -12,5 +12,5 @@ public interface IEvent {
      *
      * @return The source entity or null if no specific entity triggered this event
      */
-    Entity getSource();
+    Entity source();
 }

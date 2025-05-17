@@ -3,70 +3,130 @@ package dk.sdu.mmmi.cbse.commonasteroid;
 import dk.sdu.mmmi.cbse.common.components.IComponent;
 
 /**
- * Component that contains asteroid-specific properties.
+ * Component for asteroid-specific properties.
+ * Stores data related to asteroid behavior and splitting.
  */
 public class AsteroidComponent implements IComponent {
-    private int splitCount;
+    private int splitCount = 0;
     private int maxSplits = 2;
     private float splitSizeRatio = 0.5f;
+    private int scoreValue = 100;
+    private AsteroidSize size = AsteroidSize.LARGE;
 
     public AsteroidComponent() {
-        this.splitCount = 0;
+
     }
 
     /**
-     * Get the number of times this asteroid has already split
+     * Create asteroid component with specific size
+     *
+     * @param size Asteroid size
+     */
+    public AsteroidComponent(AsteroidSize size) {
+        this.size = size;
+
+        switch (size) {
+            case LARGE:
+                scoreValue = 100;
+                break;
+            case MEDIUM:
+                scoreValue = 150;
+                splitCount = 1;
+                break;
+            case SMALL:
+                scoreValue = 200;
+                splitCount = 2;
+                break;
+        }
+    }
+
+    /**
+     * Get current split count
+     *
+     * @return Number of times asteroid has split
      */
     public int getSplitCount() {
         return splitCount;
     }
 
     /**
-     * Set the number of times this asteroid has already split
+     * Set current split count
+     *
+     * @param splitCount Number of times asteroid has split
      */
     public void setSplitCount(int splitCount) {
         this.splitCount = splitCount;
     }
 
     /**
-     * Get the maximum number of times an asteroid can split
+     * Get maximum number of splits
+     *
+     * @return Maximum split count
      */
     public int getMaxSplits() {
         return maxSplits;
     }
 
     /**
-     * Set the maximum number of times an asteroid can split
+     * Set maximum number of splits
+     *
+     * @param maxSplits Maximum split count
      */
     public void setMaxSplits(int maxSplits) {
         this.maxSplits = maxSplits;
     }
 
     /**
-     * Get the size ratio for split asteroids (child size relative to parent)
+     * Get size ratio for split asteroids
+     *
+     * @return Ratio of child asteroid size to parent
      */
     public float getSplitSizeRatio() {
         return splitSizeRatio;
     }
 
     /**
-     * Set the size ratio for split asteroids (child size relative to parent)
+     * Set size ratio for split asteroids
+     *
+     * @param splitSizeRatio Ratio of child asteroid size to parent
      */
     public void setSplitSizeRatio(float splitSizeRatio) {
         this.splitSizeRatio = splitSizeRatio;
     }
 
     /**
-     * Check if the asteroid can still be split
+     * Get score value when destroyed
+     *
+     * @return Score value
      */
-    public boolean canSplit() {
-        return splitCount < maxSplits;
+    public int getScoreValue() {
+        return scoreValue;
     }
 
     /**
-     * Increment the split count
+     * Set score value when destroyed
+     *
+     * @param scoreValue Score value
      */
-    public void incrementSplitCount() {
-        splitCount++;
+    public void setScoreValue(int scoreValue) {
+        this.scoreValue = scoreValue;
+    }
+
+    /**
+     * Get asteroid size
+     *
+     * @return Asteroid size
+     */
+    public AsteroidSize getSize() {
+        return size;
+    }
+
+    /**
+     * Set asteroid size
+     *
+     * @param size Asteroid size
+     */
+    public void setSize(AsteroidSize size) {
+        this.size = size;
     }
 }
