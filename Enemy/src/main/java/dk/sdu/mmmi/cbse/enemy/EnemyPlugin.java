@@ -1,91 +1,67 @@
-// EnemyPlugin.java (updated)
 package dk.sdu.mmmi.cbse.enemy;
 
+import dk.sdu.mmmi.cbse.common.components.TagComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
+import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.enemy.EnemyBehavior;
-import dk.sdu.mmmi.cbse.common.enemy.EnemyProperties;
-import dk.sdu.mmmi.cbse.common.enemy.IEnemyFactory;
-import dk.sdu.mmmi.cbse.common.services.IGameEventService;
-import dk.sdu.mmmi.cbse.common.services.IGamePluginService;
+import dk.sdu.mmmi.cbse.common.services.IPluginService;
+import dk.sdu.mmmi.cbse.commonenemy.EnemyType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ServiceLoader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class EnemyPlugin implements IEnemyFactory, IGamePluginService {
+/**
+ * Plugin for enemy system.
+ */
+public class EnemyPlugin implements IPluginService {
+    private static final Logger LOGGER = Logger.getLogger(EnemyPlugin.class.getName());
     private final List<Entity> enemies = new ArrayList<>();
-    private final IGameEventService eventService;
     private final EnemyFactory enemyFactory;
 
+    /**
+     * Create a new enemy plugin
+     */
     public EnemyPlugin() {
-        this.eventService = ServiceLoader.load(IGameEventService.class)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No IGameEventService implementation found"));
-
         this.enemyFactory = new EnemyFactory();
+        LOGGER.log(Level.INFO, "EnemyPlugin initialized");
     }
 
     @Override
     public void start(GameData gameData, World world) {
-        // Create different types of enemies
-        Entity patroller = createEnemy(gameData, EnemyBehavior.PATROL, createPatrollerProperties());
-        world.addEntity(patroller);
-        enemies.add(patroller);
+        LOGGER.log(Level.INFO, "EnemyPlugin starting");
 
-        Entity aggressor = createEnemy(gameData, EnemyBehavior.AGGRESSIVE, createAggressorProperties());
-        world.addEntity(aggressor);
-        enemies.add(aggressor);
+        // Create initial enemies
+        for (int i = 0; i < 3; i++) {
+            EnemyType type = EnemyType.values()[i % EnemyType.values().length];
+            Entity enemy = enemyFactory.createEnemy(type, gameData, world);
+            world.addEntity(enemy);
+            enemies.add(enemy);
+        }
 
-        Entity sniper = createEnemy(gameData, EnemyBehavior.SNIPER, createSniperProperties());
-        world.addEntity(sniper);
-        enemies.add(sniper);
+        LOGGER.log(Level.INFO, "Created {0} initial enemies", enemies.size());
     }
 
     @Override
     public void stop(GameData gameData, World world) {
+        LOGGER.log(Level.INFO, "EnemyPlugin stopping");
+
+        // Remove tracked enemies
         for (Entity enemy : enemies) {
             world.removeEntity(enemy);
         }
         enemies.clear();
-    }
 
-    @Override
-    public Entity createEnemy(GameData gameData, EnemyBehavior behavior, EnemyProperties properties) {
-        return enemyFactory.createEnemy(gameData, behavior, properties);
-    }
+        // Remove any other enemies
+        for (Entity entity : world.getEntities()) {
+            TagComponent tag = entity.getComponent(TagComponent.class);
+            if (tag != null && tag.hasType(EntityType.ENEMY)) {
+                world.removeEntity(entity);
+            }
+        }
 
-    private EnemyProperties createPatrollerProperties() {
-        EnemyProperties props = new EnemyProperties();
-        props.setHealth(50);
-        props.setDamage(10);
-        props.setSpeed(1.0f);
-        props.setShootingRange(150);
-        props.setScoreValue(100);
-        props.setDetectionRange(200);
-        return props;
-    }
-
-    private EnemyProperties createAggressorProperties() {
-        EnemyProperties props = new EnemyProperties();
-        props.setHealth(75);
-        props.setDamage(15);
-        props.setSpeed(2.0f);
-        props.setShootingRange(100);
-        props.setScoreValue(150);
-        props.setDetectionRange(300);
-        return props;
-    }
-
-    private EnemyProperties createSniperProperties() {
-        EnemyProperties props = new EnemyProperties();
-        props.setHealth(40);
-        props.setDamage(20);
-        props.setSpeed(0.5f);
-        props.setShootingRange(400);
-        props.setScoreValue(200);
-        props.setDetectionRange(500);
-        return props;
+        LOGGER.log(Level.INFO, "All enemies removed");
     }
 }
