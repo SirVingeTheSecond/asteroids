@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.core;
 
+import dk.sdu.mmmi.cbse.core.utils.ApplicationArguments;
 import javafx.application.Application;
 
 /**

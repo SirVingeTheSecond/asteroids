@@ -38,39 +38,30 @@ public class Game extends Application {
         try {
             LOGGER.log(Level.INFO, "Initializing game");
 
-            // Set up window dimensions
             int width = gameData.getDisplayWidth();
             int height = gameData.getDisplayHeight();
 
-            // Create game window
             Pane gamePane = new Pane();
             gamePane.setPrefSize(width, height);
             gamePane.setStyle("-fx-background-color: black;");
 
-            // Create canvas for rendering
             canvas = new Canvas(width, height);
             graphicsContext = canvas.getGraphicsContext2D();
             gamePane.getChildren().add(canvas);
 
-            // Create scene
             Scene scene = new Scene(gamePane);
             primaryStage.setScene(scene);
             primaryStage.setTitle("Astrostrike");
             primaryStage.setResizable(false);
 
-            // Set up input handling
             setupInput(scene);
 
-            // Create game loop
             gameLoop = new GameLoop(gameData, world, graphicsContext);
 
-            // Start all game plugins
             startPlugins();
 
-            // Show the window
             primaryStage.show();
 
-            // Start the game loop
             gameLoop.start();
 
             LOGGER.log(Level.INFO, "Game initialized and running");
@@ -84,12 +75,10 @@ public class Game extends Application {
     public void stop() {
         LOGGER.log(Level.INFO, "Stopping game");
 
-        // Stop the game loop
         if (gameLoop != null) {
             gameLoop.stop();
         }
 
-        // Stop all plugins
         stopPlugins();
     }
 
@@ -187,7 +176,7 @@ public class Game extends Application {
 
     /**
      * Stop all game plugins.
-     * Properly shuts down all registered plugin services.
+     * Shuts down all registered plugin services.
      */
     private void stopPlugins() {
         List<IPluginService> plugins = ServiceLocator.locateAll(IPluginService.class);
