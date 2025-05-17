@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.core;
 
+import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IPluginService;
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
 
 /**
  * Main game application class.
- * Handles game initialization, lifecycle, and platform integration.
+
  */
 public class Game extends Application {
     private static final Logger LOGGER = Logger.getLogger(Game.class.getName());
@@ -100,11 +101,11 @@ public class Game extends Application {
 
         // Mouse movement
         scene.setOnMouseMoved(e -> {
-            Input.setMousePosition(e.x(), e.y());
+            Input.setMousePosition(new Vector2D((float) e.getX(), (float) e.getY()));
         });
 
         scene.setOnMouseDragged(e -> {
-            Input.setMousePosition(e.x(), e.y());
+            Input.setMousePosition(new Vector2D((float) e.getX(), (float) e.getY()));
         });
 
         // Mouse buttons
