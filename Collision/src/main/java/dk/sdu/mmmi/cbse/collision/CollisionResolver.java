@@ -1,146 +1,238 @@
 package dk.sdu.mmmi.cbse.collision;
 
-import dk.sdu.mmmi.cbse.common.collision.CollisionComponent;
-import dk.sdu.mmmi.cbse.common.collision.CollisionGroup;
-import dk.sdu.mmmi.cbse.common.collision.CollisionPair;
-import dk.sdu.mmmi.cbse.common.collision.CollisionResponseComponent;
+import dk.sdu.mmmi.cbse.common.Pair;
+import dk.sdu.mmmi.cbse.common.components.TagComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
+import dk.sdu.mmmi.cbse.common.data.EntityType;
+import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.events.CollisionEvent;
-import dk.sdu.mmmi.cbse.common.services.IGameEventService;
+import dk.sdu.mmmi.cbse.common.services.IEventService;
+import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
+import dk.sdu.mmmi.cbse.commonasteroid.events.AsteroidSplitEvent;
+import dk.sdu.mmmi.cbse.commonbullet.BulletComponent;
+import dk.sdu.mmmi.cbse.commonenemy.EnemyComponent;
+import dk.sdu.mmmi.cbse.commonenemy.events.EnemyDestroyedEvent;
+import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
 
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Collision resolution system.
- * Handles what happens when entities collide.
  */
 public class CollisionResolver {
     private static final Logger LOGGER = Logger.getLogger(CollisionResolver.class.getName());
-    private final IGameEventService eventService;
 
-    /**
-     * Create a new collision resolver
-     * @param eventService Event service for publishing collision events
-     */
-    public CollisionResolver(IGameEventService eventService) {
-        this.eventService = eventService;
+    private final IEventService eventService;
+
+    public CollisionResolver() {
+        this.eventService = ServiceLocator.getService(IEventService.class);
+        LOGGER.log(Level.INFO, "CollisionResolver initialized with EventService: {0}",
+                eventService != null ? "available" : "not available");
     }
 
     /**
-     * Resolve all collisions detected by the system
-     *
-     * @param collisions Set of collision pairs to resolve
-     * @param world Game world containing entities
+     * Resolve all collisions in the current frame
      */
-    public void resolveCollisions(Set<CollisionPair> collisions, World world) {
-        for (CollisionPair pair : collisions) {
-            resolveCollision(pair, world);
+    public List<Entity> resolveCollisions(List<Pair<Entity, Entity>> collisions, GameData gameData, World world) {
+        List<Entity> entitiesToRemove = new ArrayList<>();
+
+        for (Pair<Entity, Entity> collision : collisions) {
+            Entity entity1 = collision.getFirst();
+            Entity entity2 = collision.getSecond();
+
+            // Process collision between specific entity types
+            if (resolveCollision(entity1, entity2, entitiesToRemove)) {
+                LOGGER.log(Level.FINE, "Resolved collision between {0} and {1}",
+                        new Object[]{entity1.getID(), entity2.getID()});
+            }
         }
+
+        return entitiesToRemove;
     }
 
     /**
      * Resolve a specific collision between two entities
-     *
-     * @param pair The collision pair to resolve
-     * @param world Game world containing entities
      */
-    private void resolveCollision(CollisionPair pair, World world) {
-        Entity entityA = pair.getEntityA();
-        Entity entityB = pair.getEntityB();
+    private boolean resolveCollision(Entity entity1, Entity entity2, List<Entity> entitiesToRemove) {
+        // Get entity types
+        TagComponent tag1 = entity1.getComponent(TagComponent.class);
+        TagComponent tag2 = entity2.getComponent(TagComponent.class);
 
-        // Check if either entity has been removed
-        if (!world.getEntities().contains(entityA) || !world.getEntities().contains(entityB)) {
-            return;
+        if (tag1 == null || tag2 == null) {
+            return false;
         }
 
-        // Check collision group compatibility
-        if (!areGroupsCompatible(entityA, entityB)) {
-            return;
+        // Handle bullet collisions first
+        if (tag1.hasType(EntityType.BULLET) || tag2.hasType(EntityType.BULLET)) {
+            return handleBulletCollision(
+                    tag1.hasType(EntityType.BULLET) ? entity1 : entity2,
+                    tag1.hasType(EntityType.BULLET) ? entity2 : entity1,
+                    entitiesToRemove);
         }
 
-        // Publish collision event
-        eventService.publish(new CollisionEvent(entityA, entityA, entityB));
-
-        // Apply collision responses if present
-        boolean handled = applyCollisionResponse(entityA, entityB, world);
-
-        if (!handled) {
-            applyCollisionResponse(entityB, entityA, world);
+        // Handle player-enemy collisions
+        if ((tag1.hasType(EntityType.PLAYER) && tag2.hasType(EntityType.ENEMY)) ||
+                (tag1.hasType(EntityType.ENEMY) && tag2.hasType(EntityType.PLAYER))) {
+            return handlePlayerEnemyCollision(
+                    tag1.hasType(EntityType.PLAYER) ? entity1 : entity2,
+                    tag1.hasType(EntityType.PLAYER) ? entity2 : entity1,
+                    entitiesToRemove);
         }
-    }
 
-    /**
-     * Apply collision response for an entity if it has a response component
-     *
-     * @param entity The entity to apply response for
-     * @param other The other entity in the collision
-     * @param world Game world containing entities
-     * @return true if the collision was handled
-     */
-    private boolean applyCollisionResponse(Entity entity, Entity other, World world) {
-        CollisionResponseComponent response = entity.getComponent(CollisionResponseComponent.class);
-        if (response != null) {
-            try {
-                return response.handleCollision(entity, other, world);
-            } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Error handling collision response: " + e.getMessage(), e);
-            }
+        // Handle player-asteroid collisions
+        if ((tag1.hasType(EntityType.PLAYER) && tag2.hasType(EntityType.ASTEROID)) ||
+                (tag1.hasType(EntityType.ASTEROID) && tag2.hasType(EntityType.PLAYER))) {
+            return handlePlayerAsteroidCollision(
+                    tag1.hasType(EntityType.PLAYER) ? entity1 : entity2,
+                    tag1.hasType(EntityType.PLAYER) ? entity2 : entity1,
+                    entitiesToRemove);
         }
+
         return false;
     }
 
     /**
-     * Check if the collision groups between entities are compatible
-     *
-     * @param entityA First entity
-     * @param entityB Second entity
-     * @return true if the entities can collide based on groups
+     * Handle collision between a bullet and another entity
      */
-    private boolean areGroupsCompatible(Entity entityA, Entity entityB) {
-        CollisionComponent ccA = entityA.getComponent(CollisionComponent.class);
-        CollisionComponent ccB = entityB.getComponent(CollisionComponent.class);
+    private boolean handleBulletCollision(Entity bullet, Entity target, List<Entity> entitiesToRemove) {
+        BulletComponent bulletComponent = bullet.getComponent(BulletComponent.class);
+        TagComponent targetTag = target.getComponent(TagComponent.class);
 
-        if (ccA == null || ccB == null) {
+        if (bulletComponent == null || targetTag == null) {
             return false;
         }
 
-        // Check if either entity is in the FRIENDLY group and the other in the HOSTILE group
-        boolean aIsFriendly = ccA.isInGroup(CollisionGroup.FRIENDLY);
-        boolean bIsFriendly = ccB.isInGroup(CollisionGroup.FRIENDLY);
-        boolean aIsHostile = ccA.isInGroup(CollisionGroup.HOSTILE);
-        boolean bIsHostile = ccB.isInGroup(CollisionGroup.HOSTILE);
+        BulletComponent.BulletSource source = bulletComponent.getSource();
+        boolean isPlayerBullet = source == BulletComponent.BulletSource.PLAYER;
 
-        // If both are friendly or both are hostile, they don't collide with each other
-        if ((aIsFriendly && bIsFriendly) || (aIsHostile && bIsHostile)) {
-            return false;
+        // Player bullets hit enemies and asteroids
+        if (isPlayerBullet) {
+            if (targetTag.hasType(EntityType.ENEMY)) {
+                handleBulletEnemyCollision(bullet, target, bulletComponent, entitiesToRemove);
+                return true;
+            } else if (targetTag.hasType(EntityType.ASTEROID)) {
+                entitiesToRemove.add(target);
+
+                // Fire asteroid split event
+                if (eventService != null) {
+                    eventService.publish(new AsteroidSplitEvent(target));
+                    LOGGER.log(Level.FINE, "Published AsteroidSplitEvent for asteroid {0}",
+                            target.getID());
+                } else {
+                    LOGGER.log(Level.WARNING, "EventService not available, cannot publish AsteroidSplitEvent");
+                }
+                return true;
+            }
         }
-
-        // If one is SOLID and the other is DESTRUCTIBLE, they collide
-        boolean aIsSolid = ccA.isInGroup(CollisionGroup.SOLID);
-        boolean bIsSolid = ccB.isInGroup(CollisionGroup.SOLID);
-        boolean aIsDestructible = ccA.isInGroup(CollisionGroup.DESTRUCTIBLE);
-        boolean bIsDestructible = ccB.isInGroup(CollisionGroup.DESTRUCTIBLE);
-
-        if ((aIsSolid && bIsDestructible) || (bIsSolid && aIsDestructible)) {
+        // Enemy bullets hit player
+        else if (targetTag.hasType(EntityType.PLAYER)) {
+            handleBulletPlayerCollision(bullet, target, bulletComponent, entitiesToRemove);
             return true;
         }
 
-        // POWERUP entities only collide with FRIENDLY entities
-        boolean aIsPowerup = ccA.isInGroup(CollisionGroup.POWERUP);
-        boolean bIsPowerup = ccB.isInGroup(CollisionGroup.POWERUP);
-
-        if (aIsPowerup && !bIsFriendly) {
-            return false;
+        // Check if bullet should be destroyed
+        if (bulletComponent.isPiercing()) {
+            bulletComponent.incrementPierceCount();
+            if (bulletComponent.isPierceCountExceeded()) {
+                entitiesToRemove.add(bullet);
+            }
+        } else {
+            // Non-piercing bullets are destroyed on impact
+            entitiesToRemove.add(bullet);
         }
 
-        if (bIsPowerup && !aIsFriendly) {
-            return false;
-        }
-
-        // Default to allowing collision
         return true;
+    }
+
+    /**
+     * Handle bullet hitting an enemy
+     */
+    private void handleBulletEnemyCollision(Entity bullet, Entity enemy,
+                                            BulletComponent bulletComponent,
+                                            List<Entity> entitiesToRemove) {
+        EnemyComponent enemyComponent = enemy.getComponent(EnemyComponent.class);
+        if (enemyComponent != null) {
+            boolean eliminated = enemyComponent.damage(bulletComponent.getDamage());
+            if (eliminated) {
+                entitiesToRemove.add(enemy);
+                LOGGER.log(Level.INFO, "Enemy destroyed, score: {0}", enemyComponent.getScoreValue());
+
+                // Determine cause of destruction, too janky?
+                EnemyDestroyedEvent.DestructionCause cause =
+                        bulletComponent.getSource() == BulletComponent.BulletSource.PLAYER ?
+                                EnemyDestroyedEvent.DestructionCause.PLAYER_BULLET :
+                                EnemyDestroyedEvent.DestructionCause.OTHER;
+
+                // Publish enemy destroyed event
+                if (eventService != null) {
+                    eventService.publish(new EnemyDestroyedEvent(
+                            enemy,
+                            cause,
+                            enemyComponent.getScoreValue()
+                    ));
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle bullet hitting the player
+     */
+    private void handleBulletPlayerCollision(Entity bullet, Entity player,
+                                             BulletComponent bulletComponent,
+                                             List<Entity> entitiesToRemove) {
+        PlayerComponent playerComponent = player.getComponent(PlayerComponent.class);
+        if (playerComponent != null && !playerComponent.isInvulnerable()) {
+            boolean eliminated = playerComponent.damage();
+            if (eliminated) {
+                LOGGER.log(Level.INFO, "Player lost a life, remaining: {0}", playerComponent.getLives());
+            }
+        }
+    }
+
+    /**
+     * Handle collision between player and enemy
+     */
+    private boolean handlePlayerEnemyCollision(Entity player, Entity enemy, List<Entity> entitiesToRemove) {
+        PlayerComponent playerComponent = player.getComponent(PlayerComponent.class);
+
+        if (playerComponent != null && !playerComponent.isInvulnerable()) {
+            boolean eliminated = playerComponent.damage();
+            if (eliminated) {
+                LOGGER.log(Level.INFO, "Player lost a life from enemy collision, remaining: {0}",
+                        playerComponent.getLives());
+            }
+
+            // Enemy is destroyed on collision
+            entitiesToRemove.add(enemy);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Handle collision between player and asteroid
+     */
+    private boolean handlePlayerAsteroidCollision(Entity player, Entity asteroid, List<Entity> entitiesToRemove) {
+        PlayerComponent playerComponent = player.getComponent(PlayerComponent.class);
+
+        if (playerComponent != null && !playerComponent.isInvulnerable()) {
+            // Player takes damage
+            boolean killed = playerComponent.damage();
+            if (killed) {
+                LOGGER.log(Level.INFO, "Player lost a life from asteroid collision, remaining: {0}",
+                        playerComponent.getLives());
+            }
+
+            // Asteroid is destroyed or split
+            entitiesToRemove.add(asteroid);
+            return true;
+        }
+
+        return false;
     }
 }

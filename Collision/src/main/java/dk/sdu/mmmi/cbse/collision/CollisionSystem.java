@@ -1,83 +1,68 @@
 package dk.sdu.mmmi.cbse.collision;
 
-import dk.sdu.mmmi.cbse.common.collision.CollisionComponent;
-import dk.sdu.mmmi.cbse.common.collision.CollisionPair;
+import dk.sdu.mmmi.cbse.common.Pair;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.services.ICollisionService;
-import dk.sdu.mmmi.cbse.common.services.IGameEventService;
-import dk.sdu.mmmi.cbse.common.services.IPostEntityProcessingService;
-import dk.sdu.mmmi.cbse.common.util.ServiceLocator;
+import dk.sdu.mmmi.cbse.common.services.IPostProcessingService;
+import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
+import dk.sdu.mmmi.cbse.commoncollision.CollisionLayerMatrix;
+import dk.sdu.mmmi.cbse.commoncollision.ICollisionSPI;
 
-import java.util.Set;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * System for collision detection and resolution.
- * Implements the ICollisionService interface.
  */
-public class CollisionSystem implements IPostEntityProcessingService, ICollisionService {
+public class CollisionSystem implements IPostProcessingService, ICollisionSPI {
     private static final Logger LOGGER = Logger.getLogger(CollisionSystem.class.getName());
 
     private final CollisionDetector detector;
     private final CollisionResolver resolver;
-    private boolean debugEnabled = false;
 
     /**
-     * Create a new collision system
+     * Create new collision system
      */
     public CollisionSystem() {
-        // Initialize collision components
         this.detector = new CollisionDetector();
+        this.resolver = new CollisionResolver();
 
-        // Load required services
-        IGameEventService eventService = ServiceLocator.getService(IGameEventService.class);
-        this.resolver = new CollisionResolver(eventService);
+        LOGGER.log(Level.INFO, "CollisionSystem initialized");
     }
 
     @Override
     public void process(GameData gameData, World world) {
-        long startTime = System.nanoTime();
+        // Detect collisions
+        List<Pair<Entity, Entity>> collisions = detector.detectCollisions(gameData, world);
 
-        // Clear the detector for this frame
-        detector.clear();
+        if (!collisions.isEmpty()) {
+            LOGGER.log(Level.FINE, "Detected {0} collisions", collisions.size());
 
-        // Add all entities with collision components to the detector
-        for (Entity entity : world.getEntities()) {
-            CollisionComponent cc = entity.getComponent(CollisionComponent.class);
-            if (cc != null && cc.isActive()) {
-                detector.addEntity(entity);
+            // Resolve collisions and get entities to remove
+            List<Entity> entitiesToRemove = resolver.resolveCollisions(collisions, gameData, world);
+
+            // Remove entities marked for removal
+            for (Entity entity : entitiesToRemove) {
+                world.removeEntity(entity);
+                LOGGER.log(Level.FINE, "Removed entity: {0}", entity.getID());
             }
         }
-
-        // Detect all collisions
-        Set<CollisionPair> collisions = detector.detectCollisions();
-
-        // Resolve the collisions
-        resolver.resolveCollisions(collisions, world);
-
-        long endTime = System.nanoTime();
-
-        if (debugEnabled) {
-            LOGGER.log(Level.INFO,
-                    "Collision processing: {0} entities, {1} collisions, {2}ms",
-                    new Object[]{
-                            world.getEntities().size(),
-                            collisions.size(),
-                            (endTime - startTime) / 1_000_000.0
-                    });
-        }
     }
 
     @Override
-    public void setDebugEnabled(boolean enabled) {
-        this.debugEnabled = enabled;
+    public List<Pair<Entity, Entity>> detectCollisions(GameData gameData, World world) {
+        return detector.detectCollisions(gameData, world);
     }
 
     @Override
-    public boolean isDebugEnabled() {
-        return debugEnabled;
+    public boolean isColliding(Entity entity1, Entity entity2) {
+        return detector.isColliding(entity1, entity2);
+    }
+
+    @Override
+    public boolean canLayersCollide(CollisionLayer layer1, CollisionLayer layer2) {
+        return CollisionLayerMatrix.getInstance().canLayersCollide(layer1, layer2);
     }
 }
