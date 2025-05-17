@@ -22,6 +22,7 @@ public class AsteroidPlugin implements IPluginService {
 
     private final IAsteroidSPI asteroidFactory;
     private final List<Entity> asteroids = new ArrayList<>();
+    private AsteroidSystem asteroidSystem;
 
     private static final int INITIAL_ASTEROID_COUNT = 4;
 
@@ -32,14 +33,18 @@ public class AsteroidPlugin implements IPluginService {
         this.asteroidFactory = ServiceLocator.getService(IAsteroidSPI.class);
         LOGGER.log(Level.INFO, "AsteroidPlugin initialized with factory: {0}",
                 asteroidFactory.getClass().getName());
+
+        try {
+            this.asteroidSystem = ServiceLocator.getService(AsteroidSystem.class);
+        } catch (Exception e) {
+            LOGGER.log(Level.INFO, "AsteroidSystem not loaded yet, will be managed elsewhere");
+        }
     }
 
     @Override
     public void start(GameData gameData, World world) {
-        LOGGER.log(Level.INFO, "AsteroidPlugin.start() called - spawning {0} asteroids",
-                INITIAL_ASTEROID_COUNT);
+        LOGGER.log(Level.INFO, "AsteroidPlugin.start() called - spawning {0} asteroids", INITIAL_ASTEROID_COUNT);
 
-        // Create initial asteroids
         for (int i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
             Entity asteroid = asteroidFactory.createAsteroid(gameData, world);
             world.addEntity(asteroid);
@@ -54,13 +59,15 @@ public class AsteroidPlugin implements IPluginService {
     public void stop(GameData gameData, World world) {
         LOGGER.log(Level.INFO, "AsteroidPlugin.stop() called - removing all asteroids");
 
-        // Remove tracked asteroids
+        if (asteroidSystem != null) {
+            asteroidSystem.cleanup();
+        }
+
         for (Entity asteroid : asteroids) {
             world.removeEntity(asteroid);
         }
         asteroids.clear();
 
-        // Force remove any remaining asteroids (those created from splits)
         for (Entity entity : world.getEntities()) {
             TagComponent tagComponent = entity.getComponent(TagComponent.class);
             if (tagComponent != null && tagComponent.hasType(EntityType.ASTEROID)) {

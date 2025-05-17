@@ -1,7 +1,7 @@
 package dk.sdu.mmmi.cbse.asteroid;
 
-import dk.sdu.mmmi.cbse.asteroid.events.AsteroidSplitEvent;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
+import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
@@ -10,14 +10,16 @@ import dk.sdu.mmmi.cbse.common.events.IEventListener;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
 import dk.sdu.mmmi.cbse.common.services.IProcessingService;
 import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
+import dk.sdu.mmmi.cbse.commonasteroid.AsteroidComponent;
+import dk.sdu.mmmi.cbse.commonasteroid.AsteroidSize;
 import dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI;
+import dk.sdu.mmmi.cbse.commonasteroid.events.AsteroidSplitEvent;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * System for processing asteroid behavior.
- * Handles asteroid movement and responds to events for splitting.
  */
 public class AsteroidSystem implements IProcessingService, IEventListener<AsteroidSplitEvent> {
     private static final Logger LOGGER = Logger.getLogger(AsteroidSystem.class.getName());
@@ -30,8 +32,13 @@ public class AsteroidSystem implements IProcessingService, IEventListener<Astero
         this.asteroidSplitter = ServiceLocator.getService(IAsteroidSPI.class);
         this.eventService = ServiceLocator.getService(IEventService.class);
 
-        // Register event
-        eventService.subscribe(AsteroidSplitEvent.class, this);
+        // Register for asteroid split events
+        if (eventService != null) {
+            eventService.subscribe(AsteroidSplitEvent.class, this);
+            LOGGER.log(Level.INFO, "AsteroidSystem subscribed to AsteroidSplitEvent");
+        } else {
+            LOGGER.log(Level.WARNING, "EventService not available, AsteroidSystem won't receive split events");
+        }
 
         LOGGER.log(Level.INFO, "AsteroidSystem initialized with splitter: {0}",
                 asteroidSplitter.getClass().getName());
@@ -41,10 +48,7 @@ public class AsteroidSystem implements IProcessingService, IEventListener<Astero
     public void process(GameData gameData, World world) {
         this.world = world;
 
-        // Basic asteroid movement is handled by MovementSystem
-        // Collision is handled by CollisionSystem
-
-        // ToDo: Add rotation patterns for Asteroids.
+        // ToDo: Add Asteroid rotation logic.
     }
 
     /**
@@ -61,16 +65,37 @@ public class AsteroidSystem implements IProcessingService, IEventListener<Astero
 
         Entity asteroid = event.source();
 
-        // Verify this is an asteroid
         TagComponent tag = asteroid.getComponent(TagComponent.class);
-        if (tag == null || !tag.hasType(EntityType.ASTEROID)) {
-            LOGGER.log(Level.WARNING, "Received split event for non-asteroid entity");
+        AsteroidComponent asteroidComponent = asteroid.getComponent(AsteroidComponent.class);
+        TransformComponent transform = asteroid.getComponent(TransformComponent.class);
+
+        if (tag == null || !tag.hasType(EntityType.ASTEROID) || asteroidComponent == null || transform == null) {
+            LOGGER.log(Level.WARNING, "Invalid asteroid entity for splitting");
             return;
         }
 
-        LOGGER.log(Level.FINE, "Processing asteroid split event for {0}", asteroid.getID());
+        // Check if asteroid can be split further
+        if (asteroidComponent.getSplitCount() >= asteroidComponent.getMaxSplits() ||
+                asteroidComponent.getSize() == AsteroidSize.SMALL) {
+            LOGGER.log(Level.FINE, "Asteroid {0} cannot be split further", asteroid.getID());
+            return;
+        }
 
-        // Delegate to asteroid splitter
+        LOGGER.log(Level.FINE, "Processing split for asteroid {0}, size: {1}, split count: {2}",
+                new Object[]{asteroid.getID(), asteroidComponent.getSize(),
+                        asteroidComponent.getSplitCount()});
+
         asteroidSplitter.createSplitAsteroid(asteroid, world);
+    }
+
+    /**
+     * Clean up resources when system is destroyed.
+     * Call when module is stopped.
+     */
+    public void cleanup() {
+        if (eventService != null) {
+            eventService.unsubscribe(AsteroidSplitEvent.class, this);
+            LOGGER.log(Level.INFO, "AsteroidSystem unsubscribed from events");
+        }
     }
 }

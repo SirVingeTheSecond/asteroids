@@ -1,4 +1,4 @@
-package dk.sdu.mmmi.cbse.asteroid.events;
+package dk.sdu.mmmi.cbse.commonasteroid.events;
 
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.events.IEvent;
@@ -13,6 +13,9 @@ public record AsteroidSplitEvent(Entity source) implements IEvent {
      * @param source The asteroid entity that was split
      */
     public AsteroidSplitEvent {
+        if (source == null) {
+            throw new IllegalArgumentException("Source entity cannot be null");
+        }
     }
 
     /**
