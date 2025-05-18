@@ -1,6 +1,6 @@
 package dk.sdu.mmmi.cbse.weapon;
 
-import dk.sdu.mmmi.cbse.commonweapon.WeaponType;
+import dk.sdu.mmmi.cbse.commonweapon.Weapon;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,24 +9,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Registry for different weapon types.
- * Manages weapon configurations and properties.
+ * Registry for different weapons.
  */
 public class WeaponRegistry {
     private static final Logger LOGGER = Logger.getLogger(WeaponRegistry.class.getName());
     private static final WeaponRegistry INSTANCE = new WeaponRegistry();
 
-    private final Map<String, WeaponType> weaponTypes = new HashMap<>();
+    private final Map<String, Weapon> weapon = new HashMap<>();
 
     /**
-     * Create a new weapon registry and register weapon types
+     * Create a new weapon registry and register weapons
      */
     private WeaponRegistry() {
-        // Register weapon types
-        registerWeaponTypes();
+        registerWeapons();
 
         LOGGER.log(Level.INFO, "WeaponRegistry initialized with {0} weapon types",
-                weaponTypes.size());
+                weapon.size());
     }
 
     /**
@@ -39,21 +37,21 @@ public class WeaponRegistry {
     }
 
     /**
-     * Register default weapon types
+     * Register default weapons
      */
-    private void registerWeaponTypes() {
-        // Automatic weapon
-        registerWeaponType("automatic", new WeaponType.Builder()
-                .type(WeaponType.FiringPattern.AUTOMATIC)
+    private void registerWeapons() {
+        // Automatic
+        registerWeapon("automatic", new Weapon.Builder()
+                .type(Weapon.FiringPattern.AUTOMATIC)
                 .damage(10.0f)
                 .projectileSpeed(8.0f)
                 .cooldownTime(10)
                 .defaultBulletType("standard")
                 .build());
 
-        // Burst weapon
-        registerWeaponType("burst", new WeaponType.Builder()
-                .type(WeaponType.FiringPattern.BURST)
+        // Burst
+        registerWeapon("burst", new Weapon.Builder()
+                .type(Weapon.FiringPattern.BURST)
                 .damage(15.0f)
                 .projectileSpeed(10.0f)
                 .cooldownTime(30)
@@ -62,9 +60,9 @@ public class WeaponRegistry {
                 .defaultBulletType("standard")
                 .build());
 
-        // Heavy weapon
-        registerWeaponType("heavy", new WeaponType.Builder()
-                .type(WeaponType.FiringPattern.HEAVY)
+        // Heavy
+        registerWeapon("heavy", new Weapon.Builder()
+                .type(Weapon.FiringPattern.HEAVY)
                 .damage(30.0f)
                 .projectileSpeed(6.0f)
                 .cooldownTime(60)
@@ -72,8 +70,8 @@ public class WeaponRegistry {
                 .build());
 
         // Shotgun
-        registerWeaponType("shotgun", new WeaponType.Builder()
-                .type(WeaponType.FiringPattern.SHOTGUN)
+        registerWeapon("shotgun", new Weapon.Builder()
+                .type(Weapon.FiringPattern.SHOTGUN)
                 .damage(7.0f)
                 .projectileSpeed(7.0f)
                 .cooldownTime(25)
@@ -84,24 +82,24 @@ public class WeaponRegistry {
     }
 
     /**
-     * Register a weapon type
+     * Register a weapon
      *
-     * @param name Weapon type name
-     * @param type Weapon type configuration
+     * @param name Weapon name
+     * @param type Weapon configuration
      */
-    public void registerWeaponType(String name, WeaponType type) {
-        weaponTypes.put(name.toLowerCase(), type);
+    public void registerWeapon(String name, Weapon type) {
+        weapon.put(name.toLowerCase(), type);
         LOGGER.log(Level.FINE, "Registered weapon type: {0}", name);
     }
 
     /**
-     * Get a weapon type by name
+     * Get a weapon by name
      *
-     * @param name Weapon type name
-     * @return Weapon type or null if not found
+     * @param name Weapon name
+     * @return Weapon or null if not found
      */
-    public WeaponType getWeaponType(String name) {
-        return weaponTypes.getOrDefault(name.toLowerCase(), weaponTypes.get("automatic"));
+    public Weapon getWeapon(String name) {
+        return weapon.getOrDefault(name.toLowerCase(), weapon.get("automatic"));
     }
 
     /**
@@ -109,17 +107,17 @@ public class WeaponRegistry {
      *
      * @return Set of weapon type names
      */
-    public Set<String> getAvailableWeaponTypes() {
-        return weaponTypes.keySet();
+    public Set<String> getAvailableWeapons() {
+        return weapon.keySet();
     }
 
     /**
-     * Check if a weapon type exists
+     * Check if a weapon exists
      *
-     * @param name Weapon type name
+     * @param name Weapon name
      * @return true if exists
      */
-    public boolean hasWeaponType(String name) {
-        return weaponTypes.containsKey(name.toLowerCase());
+    public boolean hasWeapon(String name) {
+        return weapon.containsKey(name.toLowerCase());
     }
 }

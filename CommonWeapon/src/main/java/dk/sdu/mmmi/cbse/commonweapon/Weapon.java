@@ -1,9 +1,9 @@
 package dk.sdu.mmmi.cbse.commonweapon;
 
 /**
- * Configuration class for weapon properties.
+ * Configuration class for weapon.
  */
-public class WeaponType {
+public class Weapon {
     public enum FiringPattern {
         AUTOMATIC,
         BURST,
@@ -29,7 +29,7 @@ public class WeaponType {
     /**
      * Private constructor - use Builder instead
      */
-    private WeaponType(Builder builder) {
+    private Weapon(Builder builder) {
         this.firingPattern = builder.firingPattern;
         this.damage = builder.damage;
         this.projectileSpeed = builder.projectileSpeed;
@@ -163,8 +163,8 @@ public class WeaponType {
             return this;
         }
 
-        public WeaponType build() {
-            return new WeaponType(this);
+        public Weapon build() {
+            return new Weapon(this);
         }
     }
 }

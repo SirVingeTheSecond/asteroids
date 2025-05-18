@@ -7,10 +7,10 @@ import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IPluginService;
 import dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI;
-import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,8 +21,8 @@ public class AsteroidPlugin implements IPluginService {
     private static final Logger LOGGER = Logger.getLogger(AsteroidPlugin.class.getName());
 
     private final IAsteroidSPI asteroidFactory;
+
     private final List<Entity> asteroids = new ArrayList<>();
-    private AsteroidSystem asteroidSystem;
 
     private static final int INITIAL_ASTEROID_COUNT = 4;
 
@@ -30,15 +30,7 @@ public class AsteroidPlugin implements IPluginService {
      * Create a new asteroid plugin, retrieving the IAsteroidSPI implementation
      */
     public AsteroidPlugin() {
-        this.asteroidFactory = ServiceLocator.getService(IAsteroidSPI.class);
-        LOGGER.log(Level.INFO, "AsteroidPlugin initialized with factory: {0}",
-                asteroidFactory.getClass().getName());
-
-        try {
-            this.asteroidSystem = ServiceLocator.getService(AsteroidSystem.class);
-        } catch (Exception e) {
-            LOGGER.log(Level.INFO, "AsteroidSystem not loaded yet, will be managed elsewhere");
-        }
+        this.asteroidFactory = ServiceLoader.load(IAsteroidSPI.class).findFirst().orElse(null);
     }
 
     @Override
@@ -59,9 +51,7 @@ public class AsteroidPlugin implements IPluginService {
     public void stop(GameData gameData, World world) {
         LOGGER.log(Level.INFO, "AsteroidPlugin.stop() called - removing all asteroids");
 
-        if (asteroidSystem != null) {
-            asteroidSystem.cleanup();
-        }
+        // ToDo: Clean up event subscriptions?
 
         for (Entity asteroid : asteroids) {
             world.removeEntity(asteroid);

@@ -4,8 +4,8 @@ import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IDebugRendererSPI;
 import dk.sdu.mmmi.cbse.common.services.IPluginService;
-import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
 
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,8 +19,11 @@ public class RenderPlugin implements IPluginService {
     public void start(GameData gameData, World world) {
         LOGGER.log(Level.INFO, "RenderPlugin starting");
 
-        IDebugRendererSPI debugRenderer = ServiceLocator.getService(IDebugRendererSPI.class);
-        debugRenderer.setEnabled(gameData.isDebugMode());
+        IDebugRendererSPI debugRenderer = ServiceLoader.load(IDebugRendererSPI.class).findFirst().orElse(null);
+
+        if (debugRenderer != null) {
+            debugRenderer.setEnabled(gameData.isDebugMode());
+        }
 
         LOGGER.log(Level.INFO, "RenderPlugin started");
     }

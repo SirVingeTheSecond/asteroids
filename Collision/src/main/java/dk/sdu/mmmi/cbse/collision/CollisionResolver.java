@@ -7,7 +7,6 @@ import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
-import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
 import dk.sdu.mmmi.cbse.commonasteroid.events.AsteroidSplitEvent;
 import dk.sdu.mmmi.cbse.commonbullet.BulletComponent;
 import dk.sdu.mmmi.cbse.commonenemy.EnemyComponent;
@@ -16,6 +15,7 @@ import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,7 +28,7 @@ public class CollisionResolver {
     private final IEventService eventService;
 
     public CollisionResolver() {
-        this.eventService = ServiceLocator.getService(IEventService.class);
+        this.eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
         LOGGER.log(Level.INFO, "CollisionResolver initialized with EventService: {0}",
                 eventService != null ? "available" : "not available");
     }

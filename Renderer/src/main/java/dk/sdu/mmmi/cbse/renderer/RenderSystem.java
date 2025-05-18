@@ -7,7 +7,6 @@ import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IDebugRendererSPI;
 import dk.sdu.mmmi.cbse.common.services.IProcessingService;
 import dk.sdu.mmmi.cbse.common.services.IRendererSPI;
-import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -15,6 +14,7 @@ import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,7 +34,7 @@ public class RenderSystem implements IProcessingService {
      */
     public RenderSystem() {
         this.renderer = new EntityRenderer();
-        this.debugRenderer = ServiceLocator.getService(IDebugRendererSPI.class);
+        this.debugRenderer = ServiceLoader.load(IDebugRendererSPI.class).findFirst().orElse(null);
         LOGGER.log(Level.INFO, "RenderSystem initialized");
     }
 

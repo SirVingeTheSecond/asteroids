@@ -1,4 +1,5 @@
 module Renderer {
+    uses dk.sdu.mmmi.cbse.common.services.IDebugRendererSPI;
     requires Common;
     requires java.logging;
     requires javafx.graphics;

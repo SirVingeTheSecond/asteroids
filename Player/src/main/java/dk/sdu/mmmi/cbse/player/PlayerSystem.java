@@ -10,7 +10,6 @@ import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IProcessingService;
-import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
 import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
 import dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
@@ -20,6 +19,7 @@ import dk.sdu.mmmi.cbse.core.utils.Time;
 import dk.sdu.mmmi.cbse.core.input.InputController;
 import javafx.scene.paint.Color;
 
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,7 +31,7 @@ public class PlayerSystem implements IProcessingService {
     private IWeaponSPI weaponSPI;
 
     public PlayerSystem() {
-        this.weaponSPI = ServiceLocator.getServiceOrNull(IWeaponSPI.class);
+        this.weaponSPI = ServiceLoader.load(IWeaponSPI.class).findFirst().orElse(null);
         LOGGER.log(Level.INFO, "PlayerSystem initialized with weaponSPI: {0}",
                 weaponSPI != null ? weaponSPI.getClass().getName() : "not available");
     }
@@ -39,7 +39,7 @@ public class PlayerSystem implements IProcessingService {
     @Override
     public void process(GameData gameData, World world) {
         if (weaponSPI == null) {
-            weaponSPI = ServiceLocator.getServiceOrNull(IWeaponSPI.class);
+            weaponSPI = ServiceLoader.load(IWeaponSPI.class).findFirst().orElse(null);
         }
 
         Entity player = findPlayer(world);
@@ -160,8 +160,9 @@ public class PlayerSystem implements IProcessingService {
             weapon.setFiring(shootPressed);
         }
 
-        if (weapon.isFiring()) {
-            weaponSPI.processFiring(player, gameData, world);
+        // If player is firing and weapon can fire, shoot
+        if (weapon.isFiring() && weapon.canFire() && weaponSPI != null) {
+            weaponSPI.shoot(player, gameData, weapon.getBulletType());
         }
     }
 }

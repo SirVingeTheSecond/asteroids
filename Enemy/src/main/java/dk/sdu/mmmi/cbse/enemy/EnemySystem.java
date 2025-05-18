@@ -8,13 +8,14 @@ import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IProcessingService;
-import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
 import dk.sdu.mmmi.cbse.commonenemy.EnemyComponent;
 import dk.sdu.mmmi.cbse.commonenemy.EnemyType;
 import dk.sdu.mmmi.cbse.commonenemy.IEnemySPI;
 import dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 
+import java.security.Provider;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,8 +29,8 @@ public class EnemySystem implements IProcessingService {
     private IWeaponSPI weaponSPI;
 
     public EnemySystem() {
-        this.enemySPI = ServiceLocator.getServiceOrNull(IEnemySPI.class);
-        this.weaponSPI = ServiceLocator.getServiceOrNull(IWeaponSPI.class);
+        this.enemySPI = ServiceLoader.load(IEnemySPI.class).findFirst().orElse(null);
+        this.weaponSPI = ServiceLoader.load(IWeaponSPI.class).findFirst().orElse(null);
 
         LOGGER.log(Level.INFO, "EnemySystem initialized");
     }
@@ -37,11 +38,11 @@ public class EnemySystem implements IProcessingService {
     @Override
     public void process(GameData gameData, World world) {
         if (enemySPI == null) {
-            enemySPI = ServiceLocator.getServiceOrNull(IEnemySPI.class);
+            enemySPI = ServiceLoader.load(IEnemySPI.class).findFirst().orElse(null);
         }
 
         if (weaponSPI == null) {
-            weaponSPI = ServiceLocator.getServiceOrNull(IWeaponSPI.class);
+            weaponSPI = ServiceLoader.load(IWeaponSPI.class).findFirst().orElse(null);
         }
 
         if (enemySPI != null) {
@@ -122,18 +123,12 @@ public class EnemySystem implements IProcessingService {
             boolean shouldFire = enemySPI != null &&
                     enemySPI.shouldFire(enemy, playerPosition);
 
-            // Set weapon firing state
             if (shouldFire != weapon.isFiring()) {
                 weapon.setFiring(shouldFire);
-
-                if (shouldFire) {
-                    LOGGER.log(Level.FINE, "Enemy {0} started firing", enemy.getID());
-                }
             }
-
-            // Process firing
-            if (weapon.isFiring()) {
-                weaponSPI.processFiring(enemy, gameData, world);
+            
+            if (weapon.isFiring() && weapon.canFire()) {
+                weaponSPI.shoot(enemy, gameData, weapon.getBulletType());
             }
         }
     }

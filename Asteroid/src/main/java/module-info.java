@@ -5,6 +5,9 @@ module Asteroid {
     requires CommonCollision;
     requires javafx.graphics;
 
+    uses dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI;
+    uses dk.sdu.mmmi.cbse.common.services.IEventService;
+
     exports dk.sdu.mmmi.cbse.asteroid;
 
     provides dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI

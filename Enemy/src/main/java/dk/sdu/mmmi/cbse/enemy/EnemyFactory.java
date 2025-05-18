@@ -15,7 +15,7 @@ import dk.sdu.mmmi.cbse.commonenemy.EnemyComponent;
 import dk.sdu.mmmi.cbse.commonenemy.EnemyType;
 import dk.sdu.mmmi.cbse.commonenemy.IEnemySPI;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
-import dk.sdu.mmmi.cbse.commonweapon.WeaponType;
+import dk.sdu.mmmi.cbse.commonweapon.Weapon;
 import javafx.scene.paint.Color;
 
 import java.util.Random;
@@ -228,20 +228,20 @@ public class EnemyFactory implements IEnemySPI {
         // Configure based on enemy type
         switch (config.getType()) {
             case HUNTER:
-                weapon.setFiringPattern(WeaponType.FiringPattern.BURST);
+                weapon.setFiringPattern(Weapon.FiringPattern.BURST);
                 weapon.setBurstCount(3);
                 weapon.setDamage(8.0f);
                 weapon.setCooldownTime(90); // Longer cooldown
                 break;
             case TURRET:
-                weapon.setFiringPattern(WeaponType.FiringPattern.SHOTGUN);
+                weapon.setFiringPattern(Weapon.FiringPattern.SHOTGUN);
                 weapon.setShotCount(3);
                 weapon.setSpreadAngle(30.0f);
                 weapon.setDamage(5.0f);
                 weapon.setCooldownTime(120); // Long cooldown
                 break;
             default: // BASIC
-                weapon.setFiringPattern(WeaponType.FiringPattern.AUTOMATIC);
+                weapon.setFiringPattern(Weapon.FiringPattern.AUTOMATIC);
                 weapon.setDamage(10.0f);
                 weapon.setCooldownTime(60);
                 break;

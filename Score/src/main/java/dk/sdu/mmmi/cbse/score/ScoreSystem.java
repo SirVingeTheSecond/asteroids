@@ -5,9 +5,9 @@ import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.events.IEventListener;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
 import dk.sdu.mmmi.cbse.common.services.IProcessingService;
-import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
 import dk.sdu.mmmi.cbse.commonenemy.events.EnemyDestroyedEvent;
 
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,7 +22,7 @@ public class ScoreSystem implements IProcessingService, IEventListener<EnemyDest
     private int score = 0;
 
     public ScoreSystem() {
-        this.eventService = ServiceLocator.getService(IEventService.class);
+        this.eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
 
         if (eventService != null) {
             eventService.subscribe(EnemyDestroyedEvent.class, this);

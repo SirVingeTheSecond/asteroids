@@ -4,13 +4,14 @@ import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IPostProcessingService;
 import dk.sdu.mmmi.cbse.common.services.IProcessingService;
-import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
 import dk.sdu.mmmi.cbse.core.input.Input;
 import dk.sdu.mmmi.cbse.core.utils.Time;
 import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.GraphicsContext;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -81,7 +82,7 @@ public class GameLoop extends AnimationTimer {
 	}
 
 	/**
-	 * Process all entity systems.
+	 * Process all systems.
 	 *
 	 * @param deltaTime Time since last frame
 	 */
@@ -89,35 +90,37 @@ public class GameLoop extends AnimationTimer {
 		gameData.setDeltaTime((float) deltaTime);
 
 		try {
-			List<IProcessingService> processors = ServiceLocator.locateAll(IProcessingService.class);
+			ServiceLoader<IProcessingService> loader = ServiceLoader.load(IProcessingService.class);
 
-			for (IProcessingService processor : processors) {
-				processor.process(gameData, world);
-			}
+			Iterator<IProcessingService> iterator = loader.iterator();
+			iterator.forEachRemaining(processor ->
+					processor.process(gameData, world)
+			);
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "Error processing entities", e);
 		}
 	}
 
 	/**
-	 * Process all post-entity systems.
-	 * These run after the main entity processing.
+	 * Process all post systems.
+	 * These run after the main processing.
 	 */
 	private void processPostEntitySystems() {
 		try {
-			List<IPostProcessingService> postProcessors = ServiceLocator.locateAll(IPostProcessingService.class);
+			ServiceLoader<IPostProcessingService> loader = ServiceLoader.load(IPostProcessingService.class);
 
-			for (IPostProcessingService postProcessor : postProcessors) {
-				postProcessor.process(gameData, world);
-			}
+			Iterator<IPostProcessingService> iterator = loader.iterator();
+			iterator.forEachRemaining(postProcessor ->
+					postProcessor.process(gameData, world)
+			);
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "Error processing post-entity systems", e);
 		}
 	}
 
+
 	/**
 	 * Render the game state.
-	 * Clears the screen and coordinates rendering.
 	 */
 	private void render() {
 		// Clear screen

@@ -7,7 +7,7 @@ import dk.sdu.mmmi.cbse.common.components.IComponent;
  * Stores the runtime state of a weapon.
  */
 public class WeaponComponent implements IComponent {
-    private WeaponType.FiringPattern firingPattern = WeaponType.FiringPattern.AUTOMATIC;
+    private Weapon.FiringPattern firingPattern = Weapon.FiringPattern.AUTOMATIC;
     private float damage = 10.0f;
     private float projectileSpeed = 8.0f;
     private int cooldownTime = 20; // Frames between shots
@@ -29,44 +29,41 @@ public class WeaponComponent implements IComponent {
     // Firing state
     private boolean firing = false;
 
-    /**
-     * Create a new weapon component with default values
-     */
     public WeaponComponent() {
-        // Default constructor uses default values
+
     }
 
     /**
      * Create a weapon component from weapon type
      *
-     * @param weaponType Weapon type
+     * @param weapon Weapon type
      */
-    public WeaponComponent(WeaponType weaponType) {
-        configureFromType(weaponType);
+    public WeaponComponent(Weapon weapon) {
+        configureFromType(weapon);
     }
 
     /**
      * Configure weapon properties based on type
      *
-     * @param weaponType Weapon type
+     * @param weapon Weapon type
      */
-    public void configureFromType(WeaponType weaponType) {
-        this.firingPattern = weaponType.getFiringPattern();
-        this.damage = weaponType.getDamage();
-        this.projectileSpeed = weaponType.getProjectileSpeed();
-        this.cooldownTime = weaponType.getCooldownTime();
-        this.burstCount = weaponType.getBurstCount();
-        this.burstDelay = weaponType.getBurstDelay();
-        this.shotCount = weaponType.getShotCount();
-        this.spreadAngle = weaponType.getSpreadAngle();
-        this.bulletType = weaponType.getDefaultBulletType();
+    public void configureFromType(Weapon weapon) {
+        this.firingPattern = weapon.getFiringPattern();
+        this.damage = weapon.getDamage();
+        this.projectileSpeed = weapon.getProjectileSpeed();
+        this.cooldownTime = weapon.getCooldownTime();
+        this.burstCount = weapon.getBurstCount();
+        this.burstDelay = weapon.getBurstDelay();
+        this.shotCount = weapon.getShotCount();
+        this.spreadAngle = weapon.getSpreadAngle();
+        this.bulletType = weapon.getDefaultBulletType();
     }
 
-    public WeaponType.FiringPattern getFiringPattern() {
+    public Weapon.FiringPattern getFiringPattern() {
         return firingPattern;
     }
 
-    public void setFiringPattern(WeaponType.FiringPattern firingPattern) {
+    public void setFiringPattern(Weapon.FiringPattern firingPattern) {
         this.firingPattern = firingPattern;
     }
 

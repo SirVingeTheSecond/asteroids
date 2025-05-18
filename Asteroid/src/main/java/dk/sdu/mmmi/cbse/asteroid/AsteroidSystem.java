@@ -9,12 +9,12 @@ import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.events.IEventListener;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
 import dk.sdu.mmmi.cbse.common.services.IProcessingService;
-import dk.sdu.mmmi.cbse.common.utils.ServiceLocator;
 import dk.sdu.mmmi.cbse.commonasteroid.AsteroidComponent;
 import dk.sdu.mmmi.cbse.commonasteroid.AsteroidSize;
 import dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI;
 import dk.sdu.mmmi.cbse.commonasteroid.events.AsteroidSplitEvent;
 
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,8 +29,8 @@ public class AsteroidSystem implements IProcessingService, IEventListener<Astero
     private World world;
 
     public AsteroidSystem() {
-        this.asteroidSplitter = ServiceLocator.getService(IAsteroidSPI.class);
-        this.eventService = ServiceLocator.getService(IEventService.class);
+        this.asteroidSplitter = ServiceLoader.load(IAsteroidSPI.class).findFirst().orElse(null);
+        this.eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
 
         // Register for asteroid split events
         if (eventService != null) {
