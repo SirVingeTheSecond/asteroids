@@ -5,7 +5,7 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IDebugRendererSPI;
-import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.common.services.IPostProcessingService;
 import dk.sdu.mmmi.cbse.common.services.IRendererSPI;
 
 import javafx.scene.canvas.GraphicsContext;
@@ -22,20 +22,40 @@ import java.util.logging.Logger;
  * System for rendering entities on screen.
  * Processes all entities with renderer components.
  */
-public class RenderSystem implements IProcessingService {
+public class RenderSystem implements IPostProcessingService {
     private static final Logger LOGGER = Logger.getLogger(RenderSystem.class.getName());
 
     private GraphicsContext context;
-    private final IRendererSPI renderer;
-    private final IDebugRendererSPI debugRenderer;
+    private IRendererSPI renderer;
+    private IDebugRendererSPI debugRenderer;
+
+    public RenderSystem() {
+        loadServices();
+        LOGGER.log(Level.INFO, "RenderSystem initialized");
+    }
 
     /**
-     * Create a new render system
+     * Load renderer services using ServiceLoader.
      */
-    public RenderSystem() {
-        this.renderer = new EntityRenderer();
-        this.debugRenderer = ServiceLoader.load(IDebugRendererSPI.class).findFirst().orElse(null);
-        LOGGER.log(Level.INFO, "RenderSystem initialized");
+    private void loadServices() {
+        try {
+            this.renderer = ServiceLoader.load(IRendererSPI.class).findFirst().orElse(null);
+            this.debugRenderer = ServiceLoader.load(IDebugRendererSPI.class).findFirst().orElse(null);
+
+            if (this.renderer == null) {
+                LOGGER.log(Level.WARNING, "No IRendererSPI implementation found");
+            } else {
+                LOGGER.log(Level.FINE, "Loaded renderer: {0}", renderer.getClass().getName());
+            }
+
+            if (this.debugRenderer == null) {
+                LOGGER.log(Level.FINE, "No IDebugRendererSPI implementation found");
+            } else {
+                LOGGER.log(Level.FINE, "Loaded debug renderer: {0}", debugRenderer.getClass().getName());
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error loading renderer services", e);
+        }
     }
 
     /**
@@ -45,8 +65,18 @@ public class RenderSystem implements IProcessingService {
      */
     public void setGraphicsContext(GraphicsContext context) {
         this.context = context;
-        this.renderer.setGraphicsContext(context);
-        LOGGER.log(Level.FINE, "Graphics context set");
+
+        if (renderer == null) {
+            // Try to load renderer again
+            loadServices();
+        }
+
+        if (renderer != null) {
+            renderer.setGraphicsContext(context);
+            LOGGER.log(Level.FINE, "Graphics context set for renderer");
+        } else {
+            LOGGER.log(Level.WARNING, "Cannot set graphics context: renderer not available");
+        }
     }
 
     @Override
@@ -54,6 +84,17 @@ public class RenderSystem implements IProcessingService {
         if (context == null) {
             LOGGER.log(Level.WARNING, "Cannot render: graphics context not set");
             return;
+        }
+
+        if (renderer == null) {
+            // Try to load renderer one more time
+            loadServices();
+            if (renderer == null) {
+                LOGGER.log(Level.WARNING, "Cannot render: renderer not available");
+                return;
+            } else {
+                renderer.setGraphicsContext(context);
+            }
         }
 
         // Clear canvas
@@ -75,7 +116,7 @@ public class RenderSystem implements IProcessingService {
         }
 
         // Render debug information if enabled
-        if (debugRenderer != null && debugRenderer.isEnabled() && gameData.isDebugMode()) {
+        if (debugRenderer != null && gameData.isDebugMode()) {
             debugRenderer.render(context, gameData, world);
         }
 

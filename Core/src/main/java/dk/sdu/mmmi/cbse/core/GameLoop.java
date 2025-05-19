@@ -196,13 +196,9 @@ public class GameLoop extends AnimationTimer {
 	 */
 	private void render() {
 		// ToDo: Implement a smart way to only process renderers (Entity and Debug Renderers) here.
+		// DO NOT DEPEND ON RENDERSYSTEM!
 		for (IPostProcessingService processor : postProcessors) {
-			if (processor instanceof IRendererSPI) {
-				if (context != null) {
-					((IRendererSPI) processor).setGraphicsContext(context);
-				}
-				break;
-			}
+			// ToDo: Rendering here
 		}
 	}
 }
