@@ -8,11 +8,10 @@ module Renderer {
 
     exports dk.sdu.mmmi.cbse.renderer;
 
+    provides dk.sdu.mmmi.cbse.common.services.IRenderingContext
+            with dk.sdu.mmmi.cbse.renderer.RenderingContext;
     provides dk.sdu.mmmi.cbse.common.services.IPostProcessingService
             with dk.sdu.mmmi.cbse.renderer.RenderSystem;
-    provides dk.sdu.mmmi.cbse.common.services.IPluginService
-            with dk.sdu.mmmi.cbse.renderer.RenderPlugin;
-
     provides dk.sdu.mmmi.cbse.common.services.IRendererSPI
             with dk.sdu.mmmi.cbse.renderer.EntityRenderer;
     provides dk.sdu.mmmi.cbse.common.services.IDebugRendererSPI

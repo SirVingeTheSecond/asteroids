@@ -5,7 +5,6 @@ import dk.sdu.mmmi.cbse.common.components.RendererComponent;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.services.IRendererSPI;
-
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.transform.Affine;
 
@@ -13,21 +12,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Main rendering implementation.
+ * Main entity rendering implementation.
  */
 public class EntityRenderer implements IRendererSPI {
     private static final Logger LOGGER = Logger.getLogger(EntityRenderer.class.getName());
-    private GraphicsContext context;
-
-    @Override
-    public void setGraphicsContext(GraphicsContext context) {
-        this.context = context;
-    }
 
     @Override
     public boolean render(Entity entity) {
+        GraphicsContext context = RenderingContext.getInstance().getGraphicsContext();
         if (context == null) {
-            LOGGER.log(Level.WARNING, "Cannot render: graphics context not set");
+            LOGGER.log(Level.WARNING, "Cannot render entity: graphics context not set");
             return false;
         }
 
@@ -75,6 +69,7 @@ public class EntityRenderer implements IRendererSPI {
 
     @Override
     public void clear(int width, int height) {
+        GraphicsContext context = RenderingContext.getInstance().getGraphicsContext();
         if (context != null) {
             context.clearRect(0, 0, width, height);
         }

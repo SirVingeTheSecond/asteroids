@@ -1,20 +1,12 @@
 package dk.sdu.mmmi.cbse.common.services;
 
 import dk.sdu.mmmi.cbse.common.data.Entity;
-import javafx.scene.canvas.GraphicsContext;
 
 /**
  * Service interface for entity rendering.
  * Provides functionality for drawing entities on the canvas.
  */
 public interface IRendererSPI {
-    /**
-     * Set the graphics context for rendering
-     *
-     * @param context JavaFX graphics context
-     */
-    void setGraphicsContext(GraphicsContext context);
-
     /**
      * Render an entity on the canvas
      *

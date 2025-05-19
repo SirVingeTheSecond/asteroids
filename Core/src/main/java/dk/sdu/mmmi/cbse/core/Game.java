@@ -121,14 +121,14 @@ public class Game extends Application {
 
         Scene scene = new Scene(gamePane);
         primaryStage.setScene(scene);
-        primaryStage.setTitle("AsteroidFX");
+        primaryStage.setTitle("Astrostrike");
         primaryStage.setResizable(false);
 
-        // Setup RenderSystem
-        ServiceLoader<IRendererSPI> serviceLoader = ServiceLoader.load(IRendererSPI.class);
-        serviceLoader.findFirst().ifPresent(
-                renderSystem -> renderSystem.setGraphicsContext(graphicsContext)
-        );
+        GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
+
+        RenderingContext.getInstance().setGraphicsContext(graphicsContext);
+
+        LOGGER.log(Level.INFO, "Rendering system initialized");
     }
 
     /**

@@ -5,7 +5,6 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IDebugRendererSPI;
-
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
@@ -31,8 +30,14 @@ public class DebugRenderer implements IDebugRendererSPI {
     }
 
     @Override
-    public void render(GraphicsContext gc, GameData gameData, World world) {
+    public void render(GameData gameData, World world) {
         if (!enabled) {
+            return;
+        }
+
+        GraphicsContext gc = RenderingContext.getInstance().getGraphicsContext();
+        if (gc == null) {
+            LOGGER.log(Level.WARNING, "Cannot render debug: graphics context not set");
             return;
         }
 

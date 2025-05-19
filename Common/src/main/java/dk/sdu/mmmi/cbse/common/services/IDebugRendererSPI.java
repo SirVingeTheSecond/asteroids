@@ -2,7 +2,6 @@ package dk.sdu.mmmi.cbse.common.services;
 
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import javafx.scene.canvas.GraphicsContext;
 
 /**
  * Service interface for debug visualization.
@@ -26,9 +25,8 @@ public interface IDebugRendererSPI {
     /**
      * Render debug visualization
      *
-     * @param gc Graphics context to draw on
      * @param gameData Current game state
      * @param world Game world with entities
      */
-    void render(GraphicsContext gc, GameData gameData, World world);
+    void render(GameData gameData, World world);
 }
