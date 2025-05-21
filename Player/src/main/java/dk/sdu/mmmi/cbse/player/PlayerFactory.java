@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.player;
 
+import dk.sdu.mmmi.cbse.common.RenderLayer;
 import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.MovementComponent;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
@@ -46,7 +47,7 @@ public class PlayerFactory {
         renderer.setStrokeColor(Color.GREEN);
         renderer.setFillColor(Color.LIGHTGREEN);
         renderer.setStrokeWidth(2.0f);
-        renderer.setRenderLayer(500); // Player on top layer
+        renderer.setRenderLayer(RenderLayer.PLAYER);
         player.addComponent(renderer);
 
         // player component

@@ -33,6 +33,11 @@ public class ScoreSystem implements IUpdate, IEventListener<EnemyDestroyedEvent>
     }
 
     @Override
+    public int getPriority() {
+        return 100;
+    }
+
+    @Override
     public void process(GameData gameData, World world) {
         // ToDo: Update UI
     }

@@ -45,6 +45,11 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
     }
 
     @Override
+    public int getPriority() {
+        return 100;
+    }
+
+    @Override
     public void process(GameData gameData, World world) {
         this.world = world;
 

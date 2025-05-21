@@ -23,6 +23,11 @@ public class BulletSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(BulletSystem.class.getName());
 
     @Override
+    public int getPriority() {
+        return 100;
+    }
+
+    @Override
     public void process(GameData gameData, World world) {
         float deltaTime = (float) Time.getDeltaTime();
         List<Entity> bulletsToRemove = new ArrayList<>();

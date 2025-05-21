@@ -18,6 +18,11 @@ public class ScreenWrapSystem implements ILateUpdate {
     private static final Logger LOGGER = Logger.getLogger(ScreenWrapSystem.class.getName());
 
     @Override
+    public int getPriority() {
+        return 100;
+    }
+
+    @Override
     public void process(GameData gameData, World world) {
         for (Entity entity : world.getEntities()) {
             // Skip entities without transform component

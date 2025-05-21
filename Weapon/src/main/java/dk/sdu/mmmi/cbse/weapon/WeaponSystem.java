@@ -15,11 +15,13 @@ import java.util.logging.Logger;
 public class WeaponSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(WeaponSystem.class.getName());
 
-    /**
-     * Create a new weapon system
-     */
     public WeaponSystem() {
         LOGGER.log(Level.INFO, "WeaponSystem initialized");
+    }
+
+    @Override
+    public int getPriority() {
+        return 100;
     }
 
     @Override
@@ -32,7 +34,7 @@ public class WeaponSystem implements IUpdate {
 
             weapon.updateCooldown();
 
-            // Anything missing in here?
+            // ToDo: Anything missing in here?
         }
     }
 }

@@ -35,6 +35,11 @@ public class EnemySystem implements IUpdate {
     }
 
     @Override
+    public int getPriority() {
+        return 100;
+    }
+
+    @Override
     public void process(GameData gameData, World world) {
         if (enemySPI == null) {
             enemySPI = ServiceLoader.load(IEnemySPI.class).findFirst().orElse(null);

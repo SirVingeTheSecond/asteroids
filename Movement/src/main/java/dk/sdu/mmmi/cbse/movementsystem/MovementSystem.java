@@ -20,9 +20,16 @@ import java.util.logging.Logger;
  */
 public class MovementSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(MovementSystem.class.getName());
+    // ToDo: This might not be the smartest approach.
+    private static final long DIRECTION_CHANGE_DELAY = 2000; // milliseconds
 
     private final Random random = new Random();
-    private static final long DIRECTION_CHANGE_DELAY = 2000; // milliseconds
+
+
+    @Override
+    public int getPriority() {
+        return 100;
+    }
 
     @Override
     public void process(GameData gameData, World world) {

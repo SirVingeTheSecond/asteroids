@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.enemy;
 
+import dk.sdu.mmmi.cbse.common.RenderLayer;
 import dk.sdu.mmmi.cbse.common.components.MovementComponent;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
@@ -188,7 +189,7 @@ public class EnemyFactory implements IEnemySPI {
      */
     private RendererComponent createRendererComponent(EnemyType type) {
         RendererComponent renderer = new RendererComponent();
-        renderer.setRenderLayer(300); // Enemies above bullets but below player
+        renderer.setRenderLayer(RenderLayer.ENEMY);
 
         // Configure visuals based on type
         switch (type) {

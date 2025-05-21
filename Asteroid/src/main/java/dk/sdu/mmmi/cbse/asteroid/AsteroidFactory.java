@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.asteroid;
 
+import dk.sdu.mmmi.cbse.common.RenderLayer;
 import dk.sdu.mmmi.cbse.common.components.MovementComponent;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;
@@ -197,7 +198,7 @@ public class AsteroidFactory implements IAsteroidSPI {
      */
     private RendererComponent createRendererComponent(AsteroidSize size) {
         RendererComponent renderer = new RendererComponent();
-        renderer.setRenderLayer(200); // Asteroids in middle layer
+        renderer.setRenderLayer(RenderLayer.OBSTACLE);
 
         // Configure visuals based on size
         switch (size) {

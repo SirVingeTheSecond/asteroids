@@ -5,6 +5,7 @@ import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
 import dk.sdu.mmmi.cbse.common.services.IPluginService;
+import dk.sdu.mmmi.cbse.common.services.IRenderingContext;
 import dk.sdu.mmmi.cbse.core.events.EventService;
 import dk.sdu.mmmi.cbse.core.input.Button;
 import dk.sdu.mmmi.cbse.core.input.Input;
@@ -123,8 +124,11 @@ public class Game extends Application {
         primaryStage.setTitle("Astrostrike");
         primaryStage.setResizable(false);
 
-        GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
-
+        ServiceLoader.load(IRenderingContext.class).forEach(context -> {
+            context.setGraphicsContext(graphicsContext);
+            LOGGER.log(Level.INFO, "GraphicsContext set on {0}",
+                    context.getClass().getName());
+        });
         LOGGER.log(Level.INFO, "Rendering system initialized");
     }
 

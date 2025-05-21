@@ -33,6 +33,11 @@ public class CollisionSystem implements ILateUpdate, ICollisionSPI {
     }
 
     @Override
+    public int getPriority() {
+        return 100;
+    }
+
+    @Override
     public void process(GameData gameData, World world) {
         // Detect collisions
         List<Pair<Entity, Entity>> collisions = detector.detectCollisions(gameData, world);

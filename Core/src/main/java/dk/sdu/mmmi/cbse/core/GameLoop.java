@@ -2,6 +2,7 @@ package dk.sdu.mmmi.cbse.core;
 
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
+import dk.sdu.mmmi.cbse.common.services.IFixedUpdate;
 import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
 import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.core.input.Input;
@@ -9,9 +10,6 @@ import dk.sdu.mmmi.cbse.core.utils.Time;
 import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.GraphicsContext;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ServiceLoader;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -32,10 +30,6 @@ public class GameLoop extends AnimationTimer {
 	// Separate thread for fixed-interval processing
 	private final ScheduledExecutorService fixedProcessorScheduler;
 
-	// loaded once at initialization
-	private final List<IUpdate> processors = new ArrayList<>();
-	private final List<ILateUpdate> postProcessors = new ArrayList<>();
-
 	private long lastTime = 0;
 
 	/**
@@ -50,10 +44,6 @@ public class GameLoop extends AnimationTimer {
 		this.world = world;
 		this.context = context;
 
-		// Load services once
-		ServiceLoader.load(IUpdate.class).forEach(processors::add);
-		ServiceLoader.load(ILateUpdate.class).forEach(postProcessors::add);
-
 		// Initialize fixed update thread
 		fixedProcessorScheduler = Executors.newScheduledThreadPool(1, r -> {
 			Thread t = Executors.defaultThreadFactory().newThread(r);
@@ -61,8 +51,8 @@ public class GameLoop extends AnimationTimer {
 			return t;
 		});
 
-		LOGGER.log(Level.INFO, "GameLoop initialized with {0} processors and {1} post-processors",
-				new Object[]{processors.size(), postProcessors.size()});
+//		LOGGER.log(Level.INFO, "GameLoop initialized with {0} processors and {1} post-processors",
+//				new Object[]{processors.size(), postProcessors.size()});
 	}
 
 	/**
@@ -127,14 +117,11 @@ public class GameLoop extends AnimationTimer {
 			return; // Game is paused
 		}
 
-		// Process all entities
-		processEntities(deltaTime);
+		processUpdateSystems();
 
-		// Process post-entity systems
-		processPostEntitySystems();
+		processFixedUpdateSystem(deltaTime);
 
-		// Clear screen and render
-		render();
+		processLateUpdateSystems();
 
 		// Update input for next frame
 		Input.update();
@@ -160,15 +147,11 @@ public class GameLoop extends AnimationTimer {
 	}
 
 	/**
-	 * Process all systems.
-	 *
-	 * @param deltaTime Time since last frame
+	 * Process all update systems.
 	 */
-	private void processEntities(double deltaTime) {
-		gameData.setDeltaTime((float) deltaTime);
-
+	private void processUpdateSystems() {
 		try {
-			for (IUpdate processor : processors) {
+			for (IUpdate processor : ModuleConfig.getUpdateServices()) {
 				processor.process(gameData, world);
 			}
 		} catch (Exception e) {
@@ -177,27 +160,32 @@ public class GameLoop extends AnimationTimer {
 	}
 
 	/**
-	 * Process all post systems.
-	 * These run after the main processing.
+	 * Process all fixded update systems.
+	 *
+	 * @param deltaTime Time since last frame
 	 */
-	private void processPostEntitySystems() {
+	private void processFixedUpdateSystem(double deltaTime) {
+		gameData.setDeltaTime((float) deltaTime);
+
 		try {
-			for (ILateUpdate postProcessor : postProcessors) {
-				postProcessor.process(gameData, world);
+			for (IFixedUpdate processor : ModuleConfig.getFixedUpdateServices()) {
+				processor.process(gameData, world);
 			}
 		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, "Error in post-processing", e);
+			LOGGER.log(Level.SEVERE, "Error processing entities", e);
 		}
 	}
 
 	/**
-	 * Render the game state.
+	 * Process all late systems.
 	 */
-	private void render() {
-		// ToDo: Implement a smart way to only process renderers (Entity and Debug Renderers) here.
-		// DO NOT DEPEND ON RENDERSYSTEM!
-		for (ILateUpdate processor : postProcessors) {
-			// ToDo: Rendering here
+	private void processLateUpdateSystems() {
+		try {
+			for (ILateUpdate postProcessor : ModuleConfig.getLateUpdateServices()) {
+				postProcessor.process(gameData, world);
+			}
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Error in post-processing", e);
 		}
 	}
 }

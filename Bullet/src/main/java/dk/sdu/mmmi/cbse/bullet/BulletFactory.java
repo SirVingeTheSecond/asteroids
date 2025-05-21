@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.bullet;
 
+import dk.sdu.mmmi.cbse.common.RenderLayer;
 import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
@@ -114,7 +115,7 @@ public class BulletFactory implements IBulletSPI {
         RendererComponent rendererComponent = new RendererComponent();
         rendererComponent.setStrokeColor(bulletTypeConfig.getColor());
         rendererComponent.setFillColor(bulletTypeConfig.getColor());
-        rendererComponent.setRenderLayer(400); // Bullets above most entities but below player
+        rendererComponent.setRenderLayer(RenderLayer.BULLET); // Bullets above most entities but below player
 
         // Create bullet entity
         Entity bullet = EntityBuilder.create()

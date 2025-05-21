@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.common.components;
 
+import dk.sdu.mmmi.cbse.common.RenderLayer;
 import javafx.scene.paint.Color;
 
 /**
@@ -13,6 +14,7 @@ public class RendererComponent implements IComponent {
     private float strokeWidth = 1.0f;
     private boolean filled = false;
     private ShapeType shapeType = ShapeType.POLYGON;
+    private RenderLayer renderLayer = RenderLayer.OBSTACLE;
 
     /**
      * Shape types for different rendering styles
@@ -50,13 +52,17 @@ public class RendererComponent implements IComponent {
      * Get rendering order layer
      * @return Layer value (higher values render on top)
      */
-    // ToDo
+    public RenderLayer getRenderLayer() {
+        return renderLayer;
+    }
 
     /**
-     * Set rendering order layer
-     * @param renderLayer Layer value (higher values render on top)
+     * Set rendering order layer using a predefined layer
+     * @param layer The render layer enum value
      */
-    // ToDo
+    public void setRenderLayer(RenderLayer layer) {
+        this.renderLayer = layer;
+    }
 
     /**
      * Get outline color
