@@ -8,12 +8,11 @@ import javafx.scene.paint.Color;
  */
 public class RendererComponent implements IComponent {
     private boolean visible = true;
-    private int renderLayer = 0; // Higher layers render on top
     private Color strokeColor = Color.WHITE;
     private Color fillColor = Color.TRANSPARENT;
     private float strokeWidth = 1.0f;
     private boolean filled = false;
-    private ShapeType shapeType = ShapeType.POLYGON; // Default to polygon shape
+    private ShapeType shapeType = ShapeType.POLYGON;
 
     /**
      * Shape types for different rendering styles
@@ -51,17 +50,13 @@ public class RendererComponent implements IComponent {
      * Get rendering order layer
      * @return Layer value (higher values render on top)
      */
-    public int getRenderLayer() {
-        return renderLayer;
-    }
+    // ToDo
 
     /**
      * Set rendering order layer
      * @param renderLayer Layer value (higher values render on top)
      */
-    public void setRenderLayer(int renderLayer) {
-        this.renderLayer = renderLayer;
-    }
+    // ToDo
 
     /**
      * Get outline color

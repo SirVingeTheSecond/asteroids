@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 /**
  * Singleton implementation of IRenderingContext.
  */
+// Is this still relevant for the architecture?
 public class RenderingContext implements IRenderingContext {
     private static final Logger LOGGER = Logger.getLogger(RenderingContext.class.getName());
     private static final RenderingContext INSTANCE = new RenderingContext();

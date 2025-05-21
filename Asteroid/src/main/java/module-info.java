@@ -1,3 +1,5 @@
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
+
 module Asteroid {
     requires java.logging;
     requires Common;
@@ -14,6 +16,6 @@ module Asteroid {
             with dk.sdu.mmmi.cbse.asteroid.AsteroidFactory;
     provides dk.sdu.mmmi.cbse.common.services.IPluginService
             with dk.sdu.mmmi.cbse.asteroid.AsteroidPlugin;
-    provides dk.sdu.mmmi.cbse.common.services.IProcessingService
+    provides IUpdate
             with dk.sdu.mmmi.cbse.asteroid.AsteroidSystem;
 }

@@ -1,3 +1,6 @@
+import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
+
 module Common {
     requires java.logging;
     requires javafx.graphics;
@@ -9,7 +12,7 @@ module Common {
     exports dk.sdu.mmmi.cbse.common;
 
     uses dk.sdu.mmmi.cbse.common.services.IPluginService;
-    uses dk.sdu.mmmi.cbse.common.services.IProcessingService;
-    uses dk.sdu.mmmi.cbse.common.services.IPostProcessingService;
+    uses IUpdate;
+    uses ILateUpdate;
     uses dk.sdu.mmmi.cbse.common.services.IEventService;
 }

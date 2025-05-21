@@ -4,7 +4,7 @@ import dk.sdu.mmmi.cbse.common.Pair;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.services.IPostProcessingService;
+import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionLayerMatrix;
 import dk.sdu.mmmi.cbse.commoncollision.ICollisionSPI;
@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 /**
  * System for collision detection and resolution.
  */
-public class CollisionSystem implements IPostProcessingService, ICollisionSPI {
+public class CollisionSystem implements ILateUpdate, ICollisionSPI {
     private static final Logger LOGGER = Logger.getLogger(CollisionSystem.class.getName());
 
     private final CollisionDetector detector;

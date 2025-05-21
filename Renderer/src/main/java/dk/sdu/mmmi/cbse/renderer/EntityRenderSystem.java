@@ -4,18 +4,61 @@ import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
-import dk.sdu.mmmi.cbse.common.services.IRendererSPI;
+import dk.sdu.mmmi.cbse.common.data.World;
+import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.transform.Affine;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Main entity rendering implementation.
  */
-public class EntityRenderer implements IRendererSPI {
+public class EntityRenderSystem implements ILateUpdate {
     private static final Logger LOGGER = Logger.getLogger(EntityRenderer.class.getName());
+
+    /**
+     * Render all entities in sorted order by render layer and Y position
+     */
+    private void renderEntities(World world) {
+        // Get all entities with renderer components
+        List<Entity> renderableEntities = getRenderableEntities(world);
+
+        // Sort by render layer (low to high) and then by Y position
+        renderableEntities.sort(Comparator.comparingInt(e ->
+                        e.getComponent(RendererComponent.class).getRenderLayer())
+                .thenComparingDouble(e ->
+                        e.getComponent(dk.sdu.mmmi.cbse.common.components.TransformComponent.class).getY()));
+
+        // Render all entities
+        int renderedCount = 0;
+        for (Entity entity : renderableEntities) {
+            if (entityRenderer.render(entity)) {
+                renderedCount++;
+            }
+        }
+
+        LOGGER.log(Level.FINEST, "Rendered {0} entities", renderedCount);
+    }
+
+    /**
+     * Get all entities with renderer components
+     */
+    private List<Entity> getRenderableEntities(World world) {
+        List<Entity> renderableEntities = new ArrayList<>();
+
+        for (Entity entity : world.getEntities()) {
+            if (entity.hasComponent(RendererComponent.class)) {
+                renderableEntities.add(entity);
+            }
+        }
+
+        return renderableEntities;
+    }
 
     @Override
     public boolean render(Entity entity) {

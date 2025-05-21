@@ -5,7 +5,7 @@ import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.services.IPostProcessingService;
+import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  * System that wraps entities around screen edges.
  * Runs as a post-processor after movement is applied.
  */
-public class ScreenWrapSystem implements IPostProcessingService {
+public class ScreenWrapSystem implements ILateUpdate {
     private static final Logger LOGGER = Logger.getLogger(ScreenWrapSystem.class.getName());
 
     @Override

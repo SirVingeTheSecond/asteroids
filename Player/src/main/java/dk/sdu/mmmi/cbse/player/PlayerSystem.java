@@ -9,7 +9,7 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
 import dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 /**
  * System for handling player input and controls.
  */
-public class PlayerSystem implements IProcessingService {
+public class PlayerSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(PlayerSystem.class.getName());
     private IWeaponSPI weaponSPI;
 

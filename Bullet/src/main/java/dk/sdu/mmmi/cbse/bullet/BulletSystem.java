@@ -1,6 +1,6 @@
 package dk.sdu.mmmi.cbse.bullet;
 
-import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.core.utils.Time;
 import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * System for processing bullet movement.
  */
-public class BulletSystem implements IProcessingService {
+public class BulletSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(BulletSystem.class.getName());
 
     @Override

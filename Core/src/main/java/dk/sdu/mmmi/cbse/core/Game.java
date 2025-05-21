@@ -5,7 +5,6 @@ import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
 import dk.sdu.mmmi.cbse.common.services.IPluginService;
-import dk.sdu.mmmi.cbse.common.services.IRendererSPI;
 import dk.sdu.mmmi.cbse.core.events.EventService;
 import dk.sdu.mmmi.cbse.core.input.Button;
 import dk.sdu.mmmi.cbse.core.input.Input;
@@ -125,8 +124,6 @@ public class Game extends Application {
         primaryStage.setResizable(false);
 
         GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
-
-        RenderingContext.getInstance().setGraphicsContext(graphicsContext);
 
         LOGGER.log(Level.INFO, "Rendering system initialized");
     }

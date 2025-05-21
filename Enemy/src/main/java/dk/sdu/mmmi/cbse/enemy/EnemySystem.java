@@ -7,14 +7,13 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.commonenemy.EnemyComponent;
 import dk.sdu.mmmi.cbse.commonenemy.EnemyType;
 import dk.sdu.mmmi.cbse.commonenemy.IEnemySPI;
 import dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 
-import java.security.Provider;
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,7 +21,7 @@ import java.util.logging.Logger;
 /**
  * System that processes enemy behavior.
  */
-public class EnemySystem implements IProcessingService {
+public class EnemySystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(EnemySystem.class.getName());
 
     private IEnemySPI enemySPI;

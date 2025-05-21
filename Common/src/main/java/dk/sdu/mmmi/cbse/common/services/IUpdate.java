@@ -6,7 +6,7 @@ import dk.sdu.mmmi.cbse.common.data.World;
 /**
  * Base interface for all processing services in the game.
  */
-public interface IProcessingService {
+public interface IUpdate {
     /**
      * Process entity behavior for a game update.
      *
@@ -14,4 +14,6 @@ public interface IProcessingService {
      * @param world Game world containing entities to process
      */
     void process(GameData gameData, World world);
+
+    int getPriority();
 }

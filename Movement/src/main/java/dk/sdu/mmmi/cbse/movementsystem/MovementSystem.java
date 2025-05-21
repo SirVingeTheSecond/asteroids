@@ -8,7 +8,7 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.core.utils.Time;
 
 import java.util.Random;
@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 /**
  * System that handles movement for all entities.
  */
-public class MovementSystem implements IProcessingService {
+public class MovementSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(MovementSystem.class.getName());
 
     private final Random random = new Random();

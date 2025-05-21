@@ -3,7 +3,7 @@ package dk.sdu.mmmi.cbse.weapon;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 
 import java.util.logging.Level;
@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 /**
  * System for processing weapon states.
  */
-public class WeaponSystem implements IProcessingService {
+public class WeaponSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(WeaponSystem.class.getName());
 
     /**

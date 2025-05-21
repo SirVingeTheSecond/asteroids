@@ -8,7 +8,7 @@ import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.events.IEventListener;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
-import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.commonasteroid.AsteroidComponent;
 import dk.sdu.mmmi.cbse.commonasteroid.AsteroidSize;
 import dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI;
@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 /**
  * System for processing asteroid behavior.
  */
-public class AsteroidSystem implements IProcessingService, IEventListener<AsteroidSplitEvent> {
+public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEvent> {
     private static final Logger LOGGER = Logger.getLogger(AsteroidSystem.class.getName());
 
     private final IAsteroidSPI asteroidSplitter;

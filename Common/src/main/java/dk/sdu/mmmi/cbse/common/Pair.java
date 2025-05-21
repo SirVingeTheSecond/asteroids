@@ -4,7 +4,6 @@ import java.util.Objects;
 
 /**
  * A generic container for two related objects.
- * Useful for representing collision pairs, coordinate pairs, and other paired data.
  *
  * @param <A> Type of the first element
  * @param <B> Type of the second element
@@ -57,7 +56,7 @@ public final class Pair<A, B> {
 
 	/**
 	 * Creates an ordered pair where the items are sorted by their hashCode.
-	 * Could be useful when the pair should be treated as an unordered pair
+	 * Useful when the pair should be treated as an unordered pair
 	 * (e.g. for collision detection where A,B is equivalent to B,A).
 	 *
 	 * @param <T> The common type of both objects

@@ -2,9 +2,8 @@ package dk.sdu.mmmi.cbse.core;
 
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
-import dk.sdu.mmmi.cbse.common.services.IPostProcessingService;
-import dk.sdu.mmmi.cbse.common.services.IProcessingService;
-import dk.sdu.mmmi.cbse.common.services.IRendererSPI;
+import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.core.input.Input;
 import dk.sdu.mmmi.cbse.core.utils.Time;
 import javafx.animation.AnimationTimer;
@@ -34,8 +33,8 @@ public class GameLoop extends AnimationTimer {
 	private final ScheduledExecutorService fixedProcessorScheduler;
 
 	// loaded once at initialization
-	private final List<IProcessingService> processors = new ArrayList<>();
-	private final List<IPostProcessingService> postProcessors = new ArrayList<>();
+	private final List<IUpdate> processors = new ArrayList<>();
+	private final List<ILateUpdate> postProcessors = new ArrayList<>();
 
 	private long lastTime = 0;
 
@@ -52,8 +51,8 @@ public class GameLoop extends AnimationTimer {
 		this.context = context;
 
 		// Load services once
-		ServiceLoader.load(IProcessingService.class).forEach(processors::add);
-		ServiceLoader.load(IPostProcessingService.class).forEach(postProcessors::add);
+		ServiceLoader.load(IUpdate.class).forEach(processors::add);
+		ServiceLoader.load(ILateUpdate.class).forEach(postProcessors::add);
 
 		// Initialize fixed update thread
 		fixedProcessorScheduler = Executors.newScheduledThreadPool(1, r -> {
@@ -169,7 +168,7 @@ public class GameLoop extends AnimationTimer {
 		gameData.setDeltaTime((float) deltaTime);
 
 		try {
-			for (IProcessingService processor : processors) {
+			for (IUpdate processor : processors) {
 				processor.process(gameData, world);
 			}
 		} catch (Exception e) {
@@ -183,7 +182,7 @@ public class GameLoop extends AnimationTimer {
 	 */
 	private void processPostEntitySystems() {
 		try {
-			for (IPostProcessingService postProcessor : postProcessors) {
+			for (ILateUpdate postProcessor : postProcessors) {
 				postProcessor.process(gameData, world);
 			}
 		} catch (Exception e) {
@@ -197,7 +196,7 @@ public class GameLoop extends AnimationTimer {
 	private void render() {
 		// ToDo: Implement a smart way to only process renderers (Entity and Debug Renderers) here.
 		// DO NOT DEPEND ON RENDERSYSTEM!
-		for (IPostProcessingService processor : postProcessors) {
+		for (ILateUpdate processor : postProcessors) {
 			// ToDo: Rendering here
 		}
 	}

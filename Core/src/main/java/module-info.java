@@ -1,10 +1,13 @@
+import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
+
 module Core {
     requires Common;
     requires java.logging;
     requires javafx.graphics;
 
-    uses dk.sdu.mmmi.cbse.common.services.IPostProcessingService;
-    uses dk.sdu.mmmi.cbse.common.services.IProcessingService;
+    uses ILateUpdate;
+    uses IUpdate;
     uses dk.sdu.mmmi.cbse.common.services.IPluginService;
     uses dk.sdu.mmmi.cbse.common.services.IRendererSPI;
 

@@ -1,3 +1,6 @@
+import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
+
 module Movement {
     requires Common;
     requires java.logging;
@@ -5,9 +8,9 @@ module Movement {
 
     exports dk.sdu.mmmi.cbse.movementsystem;
 
-    provides dk.sdu.mmmi.cbse.common.services.IProcessingService with
+    provides IUpdate with
             dk.sdu.mmmi.cbse.movementsystem.MovementSystem;
 
-    provides dk.sdu.mmmi.cbse.common.services.IPostProcessingService with
+    provides ILateUpdate with
             dk.sdu.mmmi.cbse.movementsystem.ScreenWrapSystem;
 }

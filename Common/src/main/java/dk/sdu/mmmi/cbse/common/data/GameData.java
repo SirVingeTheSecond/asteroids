@@ -4,6 +4,7 @@ package dk.sdu.mmmi.cbse.common.data;
  * Game state data container.
  * Holds global game state information.
  */
+// ToDo: Ensure this is singleton
 public class GameData {
     private int displayWidth = 800;
     private int displayHeight = 600;

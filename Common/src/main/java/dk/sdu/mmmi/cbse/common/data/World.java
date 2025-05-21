@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Container for all game entities.
  */
+// ToDo: Ensure this is thread-safe and singleton
 public class World {
 
     private final Map<String, Entity> entityMap = new ConcurrentHashMap<>();

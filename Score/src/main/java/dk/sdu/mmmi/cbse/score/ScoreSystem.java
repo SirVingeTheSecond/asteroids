@@ -4,7 +4,7 @@ import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.events.IEventListener;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
-import dk.sdu.mmmi.cbse.common.services.IProcessingService;
+import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.commonenemy.events.EnemyDestroyedEvent;
 
 import java.util.ServiceLoader;
@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 /**
  * System that manages the player's score.
  */
-public class ScoreSystem implements IProcessingService, IEventListener<EnemyDestroyedEvent> {
+public class ScoreSystem implements IUpdate, IEventListener<EnemyDestroyedEvent> {
     private static final Logger LOGGER = Logger.getLogger(ScoreSystem.class.getName());
 
     private final IEventService eventService;
