@@ -3,6 +3,8 @@ module Renderer {
     requires java.logging;
     requires javafx.graphics;
 
+    uses dk.sdu.mmmi.cbse.common.services.IRenderingContext;
+
     exports dk.sdu.mmmi.cbse.renderer;
 
     provides dk.sdu.mmmi.cbse.common.services.IRenderingContext

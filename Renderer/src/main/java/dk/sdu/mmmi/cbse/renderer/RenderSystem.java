@@ -6,11 +6,13 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
+import dk.sdu.mmmi.cbse.common.services.IRenderingContext;
 import javafx.scene.canvas.GraphicsContext;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,18 +24,39 @@ public class RenderSystem implements ILateUpdate {
     private static final Logger LOGGER = Logger.getLogger(RenderSystem.class.getName());
     private static final int RENDER_PRIORITY = Integer.MAX_VALUE; // Ensure rendering is the very last step
 
-    private final RenderingContext renderingContext;
+    // Get the IRenderingContext through ServiceLoader rather than direct dependency
+    private IRenderingContext renderingContext;
 
     /**
      * Create a new render system
      */
     public RenderSystem() {
-        this.renderingContext = RenderingContext.getInstance();
-        LOGGER.log(Level.INFO, "RenderSystem initialized");
+        renderingContext = ServiceLoader.load(IRenderingContext.class)
+                .findFirst()
+                .orElse(null);
+
+        if (renderingContext == null) {
+            LOGGER.log(Level.SEVERE, "No IRenderingContext implementation found");
+        } else {
+            LOGGER.log(Level.INFO, "RenderSystem initialized with {0}",
+                    renderingContext.getClass().getName());
+        }
     }
 
     @Override
     public void process(GameData gameData, World world) {
+        // If context wasn't found in constructor, try once more
+        if (renderingContext == null) {
+            renderingContext = ServiceLoader.load(IRenderingContext.class)
+                    .findFirst()
+                    .orElse(null);
+
+            if (renderingContext == null) {
+                LOGGER.log(Level.SEVERE, "No IRenderingContext implementation available");
+                return;
+            }
+        }
+
         GraphicsContext context = renderingContext.getGraphicsContext();
         if (context == null) {
             LOGGER.log(Level.WARNING, "No GraphicsContext available for rendering");

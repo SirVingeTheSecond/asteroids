@@ -1,5 +1,4 @@
-import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
-import dk.sdu.mmmi.cbse.common.services.IUpdate;
+
 
 module Common {
     requires java.logging;
@@ -12,7 +11,7 @@ module Common {
     exports dk.sdu.mmmi.cbse.common;
 
     uses dk.sdu.mmmi.cbse.common.services.IPluginService;
-    uses IUpdate;
-    uses ILateUpdate;
+    uses dk.sdu.mmmi.cbse.common.services.ILateUpdate;
+    uses dk.sdu.mmmi.cbse.common.services.IUpdate;
     uses dk.sdu.mmmi.cbse.common.services.IEventService;
 }
