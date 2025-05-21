@@ -32,7 +32,6 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
         this.asteroidSplitter = ServiceLoader.load(IAsteroidSPI.class).findFirst().orElse(null);
         this.eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
 
-        // Register for asteroid split events
         if (eventService != null) {
             eventService.subscribe(AsteroidSplitEvent.class, this);
             LOGGER.log(Level.INFO, "AsteroidSystem subscribed to AsteroidSplitEvent");

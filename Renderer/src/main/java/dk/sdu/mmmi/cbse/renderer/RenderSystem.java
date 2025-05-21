@@ -22,34 +22,18 @@ import java.util.logging.Logger;
  */
 public class RenderSystem implements ILateUpdate {
     private static final Logger LOGGER = Logger.getLogger(RenderSystem.class.getName());
-    private static final int RENDER_PRIORITY = Integer.MAX_VALUE; // Ensure rendering is the very last step
+    private static final int RENDER_PRIORITY = Integer.MAX_VALUE;
 
-    // Get the IRenderingContext through ServiceLoader rather than direct dependency
     private IRenderingContext renderingContext;
 
-    /**
-     * Create a new render system
-     */
     public RenderSystem() {
-        renderingContext = ServiceLoader.load(IRenderingContext.class)
-                .findFirst()
-                .orElse(null);
-
-        if (renderingContext == null) {
-            LOGGER.log(Level.SEVERE, "No IRenderingContext implementation found");
-        } else {
-            LOGGER.log(Level.INFO, "RenderSystem initialized with {0}",
-                    renderingContext.getClass().getName());
-        }
+        renderingContext = ServiceLoader.load(IRenderingContext.class).findFirst().orElse(null);
     }
 
     @Override
     public void process(GameData gameData, World world) {
-        // If context wasn't found in constructor, try once more
         if (renderingContext == null) {
-            renderingContext = ServiceLoader.load(IRenderingContext.class)
-                    .findFirst()
-                    .orElse(null);
+            renderingContext = ServiceLoader.load(IRenderingContext.class).findFirst().orElse(null);
 
             if (renderingContext == null) {
                 LOGGER.log(Level.SEVERE, "No IRenderingContext implementation available");
@@ -79,12 +63,10 @@ public class RenderSystem implements ILateUpdate {
         renderableEntities.sort(Comparator.comparingInt(e ->
                 e.getComponent(RendererComponent.class).getRenderLayer().getValue()));
 
-        // Render each entity
         for (Entity entity : renderableEntities) {
             EntityRenderer.renderEntity(entity, context, gameData.isDebugMode());
         }
 
-        // Render debug information if enabled
         if (gameData.isDebugMode()) {
             renderDebugInfo(context, gameData, world);
         }

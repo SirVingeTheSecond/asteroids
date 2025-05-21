@@ -124,18 +124,9 @@ public class Game extends Application {
         primaryStage.setTitle("Astrostrike");
         primaryStage.setResizable(false);
 
-        // ToDo: Should below be pulled from ModuleConfig?
-        List<IRenderingContext> contexts = new ArrayList<>();
-        ServiceLoader.load(IRenderingContext.class).forEach(contexts::add);
-
-        if (contexts.isEmpty()) {
-            LOGGER.log(Level.SEVERE, "No IRenderingContext implementations found!");
-        } else {
-            for (IRenderingContext context : contexts) {
-                context.setGraphicsContext(graphicsContext);
-                LOGGER.log(Level.INFO, "GraphicsContext set on {0}",
-                        context.getClass().getName());
-            }
+        for (IRenderingContext context : ModuleConfig.getRenderingContexts()) {
+            context.setGraphicsContext(graphicsContext);
+            LOGGER.log(Level.INFO, "GraphicsContext set on {0}", context.getClass().getName());
         }
 
         LOGGER.log(Level.INFO, "Rendering system initialized");
