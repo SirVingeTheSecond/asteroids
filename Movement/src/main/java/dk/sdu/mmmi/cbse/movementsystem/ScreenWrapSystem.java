@@ -1,8 +1,10 @@
 package dk.sdu.mmmi.cbse.movementsystem;
 
 import dk.sdu.mmmi.cbse.common.Vector2D;
+import dk.sdu.mmmi.cbse.common.components.TagComponent;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
+import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
@@ -12,7 +14,6 @@ import java.util.logging.Logger;
 
 /**
  * System that wraps entities around screen edges.
- * Runs as a post-processor after movement is applied.
  */
 public class ScreenWrapSystem implements ILateUpdate {
     private static final Logger LOGGER = Logger.getLogger(ScreenWrapSystem.class.getName());
@@ -27,6 +28,12 @@ public class ScreenWrapSystem implements ILateUpdate {
         for (Entity entity : world.getEntities()) {
             // Skip entities without transform component
             if (!entity.hasComponent(TransformComponent.class)) {
+                continue;
+            }
+
+            // Skip bullets - they should be destroyed when out of bounds, not wrapped
+            TagComponent tagComponent = entity.getComponent(TagComponent.class);
+            if (tagComponent != null && tagComponent.hasType(EntityType.BULLET)) {
                 continue;
             }
 
