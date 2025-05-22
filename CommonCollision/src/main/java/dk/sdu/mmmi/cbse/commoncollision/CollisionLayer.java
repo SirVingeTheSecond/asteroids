@@ -1,7 +1,7 @@
 package dk.sdu.mmmi.cbse.commoncollision;
 
 /**
- * Defines physics layers for collision filtering.
+ * Defines layers for collision filtering.
  * Each layer represents a category of game objects for controlling which objects can collide with each other.
  */
 public enum CollisionLayer {

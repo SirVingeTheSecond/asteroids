@@ -16,15 +16,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System that handles movement for all entities.
+ * System that handles ALL entity movement at variable framerate.
  */
 public class MovementSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(MovementSystem.class.getName());
-    // ToDo: This might not be the smartest approach.
     private static final long DIRECTION_CHANGE_DELAY = 2000; // milliseconds
-
     private final Random random = new Random();
-
 
     @Override
     public int getPriority() {
@@ -32,60 +29,52 @@ public class MovementSystem implements IUpdate {
     }
 
     @Override
-    public void process(GameData gameData, World world) {
+    public void update(GameData gameData, World world) {
         float deltaTime = (float) Time.getDeltaTime();
 
         for (Entity entity : world.getEntities()) {
-            // Skip entities without required components
-            if (!hasRequiredComponents(entity)) {
-                continue;
-            }
-
             TransformComponent transform = entity.getComponent(TransformComponent.class);
-            MovementComponent movement = entity.getComponent(MovementComponent.class);
+            if (transform == null) continue;
 
-            // Skip player entities (handled by PlayerControlSystem)
-            TagComponent tag = entity.getComponent(TagComponent.class);
-            if (tag != null && tag.hasType(EntityType.PLAYER)) {
-                continue;
-            }
-
-            // Process based on movement pattern
-            switch (movement.getPattern()) {
-                case LINEAR:
-                    processLinearMovement(transform, movement, deltaTime);
-                    break;
-                case RANDOM:
-                    processRandomMovement(transform, movement, deltaTime);
-                    break;
-                case PLAYER:
-                    break;
-            }
-
-            // Apply rotation - multiply by deltaTime to make sure we are independent of framerate
-            if (Math.abs(movement.getRotationSpeed()) > 0.0001f) {
-                transform.rotate(movement.getRotationSpeed() * deltaTime);
+            if (entity.hasComponent(MovementComponent.class)) {
+                moveEntity(entity, transform, deltaTime);
             }
         }
     }
 
     /**
-     * Check if entity has required components for movement
-     *
-     * @param entity Entity to check
-     * @return true if has required components
+     * Handle movement for entities.
      */
-    private boolean hasRequiredComponents(Entity entity) {
-        return entity.hasComponent(TransformComponent.class) &&
-                entity.hasComponent(MovementComponent.class);
+    private void moveEntity(Entity entity, TransformComponent transform, float deltaTime) {
+        MovementComponent movement = entity.getComponent(MovementComponent.class);
+
+        // Skip player entities (handled by PlayerControlSystem)
+        TagComponent tag = entity.getComponent(TagComponent.class);
+        if (tag != null && tag.hasType(EntityType.PLAYER)) {
+            return;
+        }
+
+        // Process based on movement pattern
+        switch (movement.getPattern()) {
+            case LINEAR:
+                processLinearMovement(transform, movement, deltaTime);
+                break;
+            case RANDOM:
+                processRandomMovement(transform, movement, deltaTime);
+                break;
+            case PLAYER:
+                // Handled by PlayerControlSystem
+                break;
+        }
+
+        // Apply rotation - multiply by deltaTime for framerate independence
+        if (Math.abs(movement.getRotationSpeed()) > 0.0001f) {
+            transform.rotate(movement.getRotationSpeed() * deltaTime);
+        }
     }
 
     /**
      * Process linear movement pattern
-     *
-     * @param transform Transform component
-     * @param movement Movement component
-     * @param deltaTime Time since last update
      */
     private void processLinearMovement(TransformComponent transform, MovementComponent movement, float deltaTime) {
         if (movement.getSpeed() <= 0) {
@@ -93,18 +82,12 @@ public class MovementSystem implements IUpdate {
         }
 
         Vector2D forward = transform.getForward();
-
         Vector2D velocity = forward.scale(movement.getSpeed() * deltaTime);
-
         transform.translate(velocity);
     }
 
     /**
      * Process random movement pattern
-     *
-     * @param transform Transform component
-     * @param movement Movement component
-     * @param deltaTime Time since last update
      */
     private void processRandomMovement(TransformComponent transform, MovementComponent movement, float deltaTime) {
         // Check if it's time to change direction
@@ -124,7 +107,6 @@ public class MovementSystem implements IUpdate {
             }
         }
 
-        // Apply linear movement in current direction
         processLinearMovement(transform, movement, deltaTime);
     }
 }

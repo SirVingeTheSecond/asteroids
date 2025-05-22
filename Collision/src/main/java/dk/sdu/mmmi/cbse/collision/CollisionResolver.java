@@ -16,6 +16,7 @@ import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -102,6 +103,11 @@ public class CollisionResolver {
         TagComponent targetTag = target.getComponent(TagComponent.class);
 
         if (bulletComponent == null || targetTag == null) {
+            return false;
+        }
+
+        UUID shooterID = bulletComponent.getShooterID();
+        if (shooterID != null && shooterID.toString().equals(target.getID())) {
             return false;
         }
 

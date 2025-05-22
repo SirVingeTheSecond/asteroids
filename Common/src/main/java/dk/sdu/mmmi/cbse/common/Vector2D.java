@@ -3,7 +3,7 @@ package dk.sdu.mmmi.cbse.common;
 import java.util.Objects;
 
 /**
- * Immutable 2D vector class for geometry and physics calculations.
+ * Immutable 2D vector.
  */
 public record Vector2D(float x, float y) {
     /**

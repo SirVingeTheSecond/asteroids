@@ -40,7 +40,7 @@ public class EnemySystem implements IUpdate {
     }
 
     @Override
-    public void process(GameData gameData, World world) {
+    public void update(GameData gameData, World world) {
         if (enemySPI == null) {
             enemySPI = ServiceLoader.load(IEnemySPI.class).findFirst().orElse(null);
         }

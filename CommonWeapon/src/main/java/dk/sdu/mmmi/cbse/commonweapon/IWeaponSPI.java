@@ -14,7 +14,20 @@ public interface IWeaponSPI {
      * @param gameData Current game state
      * @param bulletType Type of bullet to create
      */
-    void shoot(Entity shooter, GameData gameData, String bulletType);
+    Entity shoot(Entity shooter, GameData gameData, String bulletType);
 
+    /**
+     * Get the default weapon
+     * @return Default weapon configuration
+     */
     Weapon getWeapon();
+
+    /**
+     * Get a specific weapon by name
+     * @param weaponName The name of the weapon to retrieve
+     * @return Weapon configuration
+     */
+    default Weapon getWeapon(String weaponName) {
+        return getWeapon();
+    }
 }

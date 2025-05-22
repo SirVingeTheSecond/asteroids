@@ -38,7 +38,7 @@ public class ScoreSystem implements IUpdate, IEventListener<EnemyDestroyedEvent>
     }
 
     @Override
-    public void process(GameData gameData, World world) {
+    public void update(GameData gameData, World world) {
         // ToDo: Update UI
     }
 

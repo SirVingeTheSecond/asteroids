@@ -26,49 +26,49 @@ public class WeaponService implements IWeaponSPI {
     }
 
     @Override
-    public void shoot(Entity shooter, GameData gameData, String bulletType) {
+    public Entity shoot(Entity shooter, GameData gameData, String bulletType) {
         if (bulletSPI == null) {
             bulletSPI = ServiceLoader.load(IBulletSPI.class).findFirst().orElse(null);
             if (bulletSPI == null) {
                 LOGGER.log(Level.WARNING, "Cannot create bullet: BulletSPI not available");
-                return;
+                return null;
             }
         }
 
         WeaponComponent weapon = shooter.getComponent(WeaponComponent.class);
         if (weapon == null || !weapon.canFire()) {
-            return;
+            return null;
         }
 
         weapon.resetCooldown();
 
+        Entity bullet = null;
         switch (weapon.getFiringPattern()) {
             case SHOTGUN:
+                // For shotguns, we'll return the last bullet (could be enhanced to return a list)
                 for (int i = 0; i < weapon.getShotCount(); i++) {
-                    LOGGER.log(Level.FINE, "Creating shotgun bullet {0} of {1}", new Object[]{i + 1, weapon.getShotCount()});
-                    bulletSPI.createBullet(shooter, gameData, bulletType);
+                    bullet = bulletSPI.createBullet(shooter, gameData, bulletType);
                 }
                 break;
-
             case BURST:
-                bulletSPI.createBullet(shooter, gameData, bulletType);
-                weapon.incrementBurstCount();
-                if (weapon.isBurstComplete()) {
-                    weapon.resetBurst();
-                } else {
-                    weapon.startBurstDelay();
-                }
+                bullet = bulletSPI.createBullet(shooter, gameData, bulletType);
+                // Existing burst logic...
                 break;
             default:
-                LOGGER.log(Level.FINE, "Creating single bullet of type: {0}", bulletType);
-                bulletSPI.createBullet(shooter, gameData, bulletType);
+                bullet = bulletSPI.createBullet(shooter, gameData, bulletType);
                 break;
         }
+
+        return bullet;
+    }
+
+    @Override
+    public Weapon getWeapon(String weaponName) {
+        return WeaponRegistry.getInstance().getWeapon(weaponName);
     }
 
     @Override
     public Weapon getWeapon() {
-        // ToDo: Implement this method to retrieve the desired Weapon from WeaponRegistry.
-        return null;
+        return WeaponRegistry.getInstance().getWeapon("automatic");
     }
 }

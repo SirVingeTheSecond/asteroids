@@ -10,7 +10,7 @@ public interface IFixedUpdate {
      * @param gameData Current game state data
      * @param world Game world containing entities to process
      */
-    void process(GameData gameData, World world);
+    void fixedUpdate(GameData gameData, World world);
 
     int getPriority();
 }

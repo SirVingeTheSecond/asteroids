@@ -25,7 +25,7 @@ public class WeaponSystem implements IUpdate {
     }
 
     @Override
-    public void process(GameData gameData, World world) {
+    public void update(GameData gameData, World world) {
         for (Entity entity : world.getEntities()) {
             WeaponComponent weapon = entity.getComponent(WeaponComponent.class);
             if (weapon == null) {

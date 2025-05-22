@@ -42,7 +42,7 @@ public class PlayerSystem implements IUpdate {
     }
 
     @Override
-    public void process(GameData gameData, World world) {
+    public void update(GameData gameData, World world) {
         if (weaponSPI == null) {
             weaponSPI = ServiceLoader.load(IWeaponSPI.class).findFirst().orElse(null);
         }
@@ -165,9 +165,12 @@ public class PlayerSystem implements IUpdate {
             weapon.setFiring(shootPressed);
         }
 
-        // If player is firing and weapon can fire, shoot
         if (weapon.isFiring() && weapon.canFire() && weaponSPI != null) {
-            weaponSPI.shoot(player, gameData, weapon.getBulletType());
+            Entity bullet = weaponSPI.shoot(player, gameData, weapon.getBulletType());
+            if (bullet != null) {
+                world.addEntity(bullet);
+                LOGGER.log(Level.FINE, "Added bullet to world: {0}", bullet.getID());
+            }
         }
     }
 }

@@ -15,6 +15,7 @@
         <module>Bullet</module>
         <module>Collision</module>
         <module>Common</module>
+        <module>CommonAsteroid</module>
         <module>CommonBullet</module>
         <module>CommonCollision</module>
         <module>CommonEnemy</module>
@@ -24,12 +25,10 @@
         <module>Enemy</module>
         <module>Movement</module>
         <module>Particles</module>
-        <module>Physics</module>
         <module>Player</module>
         <module>Renderer</module>
-        <module>Weapon</module>
-        <module>CommonAsteroid</module>
         <module>Score</module>
+        <module>Weapon</module>
     </modules>
 
     <properties>

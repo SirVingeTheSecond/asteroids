@@ -26,6 +26,7 @@ public class Entity {
      * Get the unique identifier for this entity
      * @return Unique ID string
      */
+    // ToDo: Ensure this returns an UUID.
     public String getID() {
         return id.toString();
     }

@@ -107,10 +107,8 @@ public class GameLoop extends AnimationTimer {
 
 	@Override
 	public void handle(long now) {
-		// Calculate delta time in seconds
 		double deltaTime = calculateDeltaTime(now);
 
-		// Update global time
 		Time.update(deltaTime);
 
 		if (Time.getTimeScale() == 0) {
@@ -123,7 +121,6 @@ public class GameLoop extends AnimationTimer {
 
 		processLateUpdateSystems();
 
-		// Update input for next frame
 		Input.update();
 	}
 
@@ -152,7 +149,7 @@ public class GameLoop extends AnimationTimer {
 	private void processUpdateSystems() {
 		try {
 			for (IUpdate processor : ModuleConfig.getUpdateServices()) {
-				processor.process(gameData, world);
+				processor.update(gameData, world);
 			}
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "Error processing entities", e);
@@ -169,7 +166,7 @@ public class GameLoop extends AnimationTimer {
 
 		try {
 			for (IFixedUpdate processor : ModuleConfig.getFixedUpdateServices()) {
-				processor.process(gameData, world);
+				processor.fixedUpdate(gameData, world);
 			}
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "Error processing entities", e);

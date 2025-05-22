@@ -2,6 +2,7 @@ package dk.sdu.mmmi.cbse.bullet;
 
 import dk.sdu.mmmi.cbse.common.RenderLayer;
 import dk.sdu.mmmi.cbse.common.Vector2D;
+import dk.sdu.mmmi.cbse.common.components.MovementComponent;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;
@@ -24,13 +25,12 @@ import java.util.logging.Logger;
 
 /**
  * Factory for creating bullet entities.
- * Implements IBulletSPI for service discovery.
  */
 public class BulletFactory implements IBulletSPI {
     private static final Logger LOGGER = Logger.getLogger(BulletFactory.class.getName());
 
-    private static final float DEFAULT_BULLET_RADIUS = 2.0f;
-    private static final float DEFAULT_SPAWN_DISTANCE = 5.0f;
+    private static final float DEFAULT_BULLET_RADIUS = 2f;
+    private static final float DEFAULT_SPAWN_DISTANCE = 15f;
     private final BulletRegistry bulletRegistry;
     private final Random random = new Random();
 
@@ -107,6 +107,12 @@ public class BulletFactory implements IBulletSPI {
         bulletComponent.setBouncing(bulletTypeConfig.isBouncing());
         bulletComponent.setBounceCount(bulletTypeConfig.getBounceCount());
 
+        // Movement
+        MovementComponent movementComponent = new MovementComponent();
+        movementComponent.setPattern(MovementComponent.MovementPattern.LINEAR);
+        movementComponent.setSpeed(speed); // Use the calculated speed
+        movementComponent.setRotationSpeed(0.0f); // Bullets don't rotate while moving
+
         // Create collision component
         ColliderComponent colliderComponent = new ColliderComponent();
         colliderComponent.setLayer(isPlayerBullet ? CollisionLayer.PLAYER_PROJECTILE : CollisionLayer.ENEMY_PROJECTILE);
@@ -115,7 +121,7 @@ public class BulletFactory implements IBulletSPI {
         RendererComponent rendererComponent = new RendererComponent();
         rendererComponent.setStrokeColor(bulletTypeConfig.getColor());
         rendererComponent.setFillColor(bulletTypeConfig.getColor());
-        rendererComponent.setRenderLayer(RenderLayer.BULLET); // Bullets above most entities but below player
+        rendererComponent.setRenderLayer(RenderLayer.BULLET);
 
         // Create bullet entity
         Entity bullet = EntityBuilder.create()
@@ -125,8 +131,8 @@ public class BulletFactory implements IBulletSPI {
                 .withRadius(DEFAULT_BULLET_RADIUS)
                 .withShape(-1, -1, 1, -1, 1, 1, -1, 1)
                 .with(bulletComponent)
+                .with(movementComponent)
                 .with(colliderComponent)
-                .with(new TagComponent(EntityType.BULLET))
                 .with(rendererComponent)
                 .build();
 

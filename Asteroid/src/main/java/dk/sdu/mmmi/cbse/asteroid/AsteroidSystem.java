@@ -49,7 +49,7 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
     }
 
     @Override
-    public void process(GameData gameData, World world) {
+    public void update(GameData gameData, World world) {
         this.world = world;
 
         // ToDo: Add Asteroid rotation logic.

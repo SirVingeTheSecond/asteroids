@@ -46,6 +46,8 @@ public class CollisionLayerMatrix {
         // PLAYER_PROJECTILE collides with ENEMY, OBSTACLE
         setLayersCollide(CollisionLayer.PLAYER_PROJECTILE, CollisionLayer.OBSTACLE, true);
 
+        setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.PLAYER_PROJECTILE, false);
+
         // ENEMY_PROJECTILE collides with PLAYER, OBSTACLE
         setLayersCollide(CollisionLayer.ENEMY_PROJECTILE, CollisionLayer.OBSTACLE, true);
 
