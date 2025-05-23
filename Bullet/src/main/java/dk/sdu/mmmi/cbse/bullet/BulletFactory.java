@@ -17,6 +17,8 @@ import dk.sdu.mmmi.cbse.commoncollision.ColliderComponent;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
 import dk.sdu.mmmi.cbse.commonweapon.Weapon;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
+import dk.sdu.mmmi.cbse.core.input.InputController;
+import javafx.scene.paint.Color;
 
 import java.util.Random;
 import java.util.UUID;
@@ -29,7 +31,7 @@ import java.util.logging.Logger;
 public class BulletFactory implements IBulletSPI {
     private static final Logger LOGGER = Logger.getLogger(BulletFactory.class.getName());
 
-    private static final float DEFAULT_BULLET_RADIUS = 2f;
+    private static final float DEFAULT_BULLET_RADIUS = 4f;
     private static final float DEFAULT_SPAWN_DISTANCE = 15f;
     private final BulletRegistry bulletRegistry;
     private final Random random = new Random();
@@ -59,30 +61,30 @@ public class BulletFactory implements IBulletSPI {
         // Get bullet type configuration
         BulletType bulletTypeConfig = bulletRegistry.getBulletType(bulletType);
 
-        // Calculate rotation - add spread for shotguns
-        float rotation = shooterTransform.getRotation();
+        float rotation;
+        if (isPlayerBullet) {
+            Vector2D playerPos = shooterTransform.getPosition();
+            Vector2D mousePos = InputController.getMousePosition();
+            Vector2D direction = mousePos.subtract(playerPos);
+            rotation = (float) Math.toDegrees(Math.atan2(direction.y(), direction.x()));
+        } else {
+            rotation = shooterTransform.getRotation();
+        }
+
+        // Apply spread for shotguns AFTER calculating base direction
         if (weaponComponent != null && weaponComponent.getFiringPattern() == Weapon.FiringPattern.SHOTGUN) {
-            // Apply spread angle for shotguns
             float spreadAngle = weaponComponent.getSpreadAngle();
             int shotCount = weaponComponent.getShotCount();
 
             if (shotCount > 1) {
-                // Calculate position in spread pattern
                 float angleOffset = spreadAngle * (random.nextFloat() - 0.5f);
                 rotation += angleOffset;
             }
         }
 
-        // Calculate spawn position in front of the shooter
         float spawnDistance = shooterTransform.getRadius() + DEFAULT_SPAWN_DISTANCE;
-        Vector2D forward = shooterTransform.getForward();
-
-        // Adjust forward direction if rotation was modified for shotgun spread
-        if (rotation != shooterTransform.getRotation()) {
-            float radians = (float) Math.toRadians(rotation);
-            forward = new Vector2D((float) Math.cos(radians), (float) Math.sin(radians));
-        }
-
+        float radians = (float) Math.toRadians(rotation);
+        Vector2D forward = new Vector2D((float) Math.cos(radians), (float) Math.sin(radians));
         Vector2D spawnPosition = shooterTransform.getPosition().add(forward.scale(spawnDistance));
 
         // Create bullet component
@@ -110,35 +112,54 @@ public class BulletFactory implements IBulletSPI {
         // Movement
         MovementComponent movementComponent = new MovementComponent();
         movementComponent.setPattern(MovementComponent.MovementPattern.LINEAR);
-        movementComponent.setSpeed(speed); // Use the calculated speed
-        movementComponent.setRotationSpeed(0.0f); // Bullets don't rotate while moving
+        movementComponent.setSpeed(speed);
+        movementComponent.setRotationSpeed(0.0f);
 
-        // Create collision component
+        // collision
         ColliderComponent colliderComponent = new ColliderComponent();
         colliderComponent.setLayer(isPlayerBullet ? CollisionLayer.PLAYER_PROJECTILE : CollisionLayer.ENEMY_PROJECTILE);
 
-        // Create renderer component
         RendererComponent rendererComponent = new RendererComponent();
-        rendererComponent.setStrokeColor(bulletTypeConfig.getColor());
-        rendererComponent.setFillColor(bulletTypeConfig.getColor());
-        rendererComponent.setRenderLayer(RenderLayer.BULLET);
+        rendererComponent.setShapeType(RendererComponent.ShapeType.CIRCLE);
 
-        // Create bullet entity
+        Color baseColor = bulletTypeConfig.getColor();
+        Color strokeColor = darkenColor(baseColor, 0.3f); // 30% darker stroke
+        Color fillColor = lightenColor(baseColor, 0.2f);  // 20% lighter fill
+
+        rendererComponent.setStrokeColor(strokeColor);
+        rendererComponent.setFillColor(fillColor);
+        rendererComponent.setStrokeWidth(2.0f);
+        rendererComponent.setRenderLayer(RenderLayer.BULLET);
+        rendererComponent.setFilled(true);
+
         Entity bullet = EntityBuilder.create()
                 .withType(EntityType.BULLET)
                 .atPosition(spawnPosition)
                 .withRotation(rotation)
                 .withRadius(DEFAULT_BULLET_RADIUS)
-                .withShape(-1, -1, 1, -1, 1, 1, -1, 1)
                 .with(bulletComponent)
                 .with(movementComponent)
                 .with(colliderComponent)
                 .with(rendererComponent)
                 .build();
 
-        LOGGER.log(Level.FINE, "Created bullet of type {0} from shooter {1}",
-                new Object[]{bulletType, shooter.getID()});
+        LOGGER.log(Level.FINE, "Created circular bullet of type {0} from shooter {1} with direction {2}",
+                new Object[]{bulletType, shooter.getID(), rotation});
 
         return bullet;
+    }
+
+    private Color darkenColor(Color color, float factor) {
+        double red = Math.max(0, color.getRed() - factor);
+        double green = Math.max(0, color.getGreen() - factor);
+        double blue = Math.max(0, color.getBlue() - factor);
+        return new Color(red, green, blue, color.getOpacity());
+    }
+
+    private Color lightenColor(Color color, float factor) {
+        double red = Math.min(1.0, color.getRed() + factor);
+        double green = Math.min(1.0, color.getGreen() + factor);
+        double blue = Math.min(1.0, color.getBlue() + factor);
+        return new Color(red, green, blue, color.getOpacity());
     }
 }

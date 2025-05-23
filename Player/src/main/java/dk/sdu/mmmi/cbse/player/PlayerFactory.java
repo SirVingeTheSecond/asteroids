@@ -37,17 +37,18 @@ public class PlayerFactory {
 
         // Transform
         TransformComponent transform = new TransformComponent();
-        transform.setPolygonCoordinates(-5, -5, 10, 0, -5, 5); // Triangle shape
+        transform.setPolygonCoordinates(-7,-7,15,0,-7,7); // Triangle shape
         transform.setPosition(new Vector2D((float) gameData.getDisplayWidth() / 2, (float) gameData.getDisplayHeight() / 2));
-        transform.setRadius(8); // Collision radius
+        transform.setRadius(8);
         player.addComponent(transform);
 
         // renderer
         RendererComponent renderer = new RendererComponent();
-        renderer.setStrokeColor(Color.GREEN);
-        renderer.setFillColor(Color.LIGHTGREEN);
-        renderer.setStrokeWidth(2.0f);
+        renderer.setStrokeColor(Color.LIGHTGREEN);
+        renderer.setFillColor(Color.DARKGREEN);
+        renderer.setStrokeWidth(2f);
         renderer.setRenderLayer(RenderLayer.PLAYER);
+        renderer.setFilled(true);
         player.addComponent(renderer);
 
         // player component

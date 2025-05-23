@@ -40,45 +40,45 @@ public class BulletRegistry {
     }
 
     /**
-     * Register default bullet types
+     * Register default bullet types.
      */
     private void registerBulletTypes() {
-        // Standard bullet - balanced speed and damage
+        // Standard bullet
         registerBulletType("standard", new BulletType.Builder()
-                .speed(5.0f)
+                .speed(45.0f)
                 .damage(10.0f)
                 .piercing(false)
                 .bouncing(false)
-                .color(Color.YELLOW)
+                .color(Color.GOLD) // Changed from YELLOW for better contrast potential
                 .build());
 
-        // Piercing bullet - penetrates enemies
+        // Piercing bullet
         registerBulletType("piercing", new BulletType.Builder()
                 .speed(6.0f)
                 .damage(15.0f)
                 .piercing(true)
                 .pierceCount(2)
                 .bouncing(false)
-                .color(Color.BLUE)
+                .color(Color.DODGERBLUE)
                 .build());
 
-        // Bouncing bullet - bounces off walls
+        // Bouncing bullet
         registerBulletType("bouncing", new BulletType.Builder()
                 .speed(4.5f)
                 .damage(8.0f)
                 .piercing(false)
                 .bouncing(true)
                 .bounceCount(3)
-                .color(Color.GREEN)
+                .color(Color.LIME)
                 .build());
 
-        // Heavy bullet - high damage, slow speed
+        // Heavy bullet
         registerBulletType("heavy", new BulletType.Builder()
                 .speed(3.5f)
                 .damage(30.0f)
                 .piercing(false)
                 .bouncing(false)
-                .color(Color.ORANGE)
+                .color(Color.ORANGERED)
                 .build());
     }
 

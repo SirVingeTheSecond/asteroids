@@ -8,6 +8,7 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
+import dk.sdu.mmmi.cbse.common.services.IFixedUpdate;
 import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.core.utils.Time;
 
@@ -16,9 +17,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System that handles ALL entity movement at variable framerate.
+ * System that handles entity movement.
  */
-public class MovementSystem implements IUpdate {
+public class MovementSystem implements IUpdate, IFixedUpdate {
     private static final Logger LOGGER = Logger.getLogger(MovementSystem.class.getName());
     private static final long DIRECTION_CHANGE_DELAY = 2000; // milliseconds
     private final Random random = new Random();
@@ -36,8 +37,34 @@ public class MovementSystem implements IUpdate {
             TransformComponent transform = entity.getComponent(TransformComponent.class);
             if (transform == null) continue;
 
+            TagComponent tag = entity.getComponent(TagComponent.class);
+
+            // Skip bullets - they're handled in fixedUpdate for smooth movement
+            if (tag != null && tag.hasType(EntityType.BULLET)) {
+                continue;
+            }
+
             if (entity.hasComponent(MovementComponent.class)) {
                 moveEntity(entity, transform, deltaTime);
+            }
+        }
+    }
+
+    @Override
+    public void fixedUpdate(GameData gameData, World world) {
+        float fixedDeltaTime = 1.0f / 60.0f;
+
+        for (Entity entity : world.getEntities()) {
+            TransformComponent transform = entity.getComponent(TransformComponent.class);
+            if (transform == null) continue;
+
+            TagComponent tag = entity.getComponent(TagComponent.class);
+
+            // Only process bullets in fixed update
+            if (tag != null && tag.hasType(EntityType.BULLET)) {
+                if (entity.hasComponent(MovementComponent.class)) {
+                    moveEntity(entity, transform, fixedDeltaTime);
+                }
             }
         }
     }

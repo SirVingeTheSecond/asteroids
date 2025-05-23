@@ -28,10 +28,10 @@ import javafx.scene.paint.Color;
 public class AsteroidFactory implements IAsteroidSPI {
     private static final Logger LOGGER = Logger.getLogger(AsteroidFactory.class.getName());
 
-    private static final float MIN_SPEED = 30.0f;  // Units per second
-    private static final float MAX_SPEED = 60.0f;  // Units per second
-    private static final float MIN_ROTATION_SPEED = -50.0f;  // Degrees per second
-    private static final float MAX_ROTATION_SPEED = 50.0f;   // Degrees per second
+    private static final float MIN_SPEED = 45.0f; // Units per second
+    private static final float MAX_SPEED = 45.0f; // Units per second
+    private static final float MIN_ROTATION_SPEED = -50.0f; // Degrees per second
+    private static final float MAX_ROTATION_SPEED = 50.0f; // Degrees per second
     private static final int NUM_SPLIT_ASTEROIDS = 2; // Number of asteroids to create when splitting
 
     private final Random random = new Random();
@@ -186,7 +186,7 @@ public class AsteroidFactory implements IAsteroidSPI {
         MovementComponent movement = new MovementComponent();
         movement.setPattern(MovementComponent.MovementPattern.LINEAR);
         movement.setSpeed(speed);
-        movement.setRotationSpeed(rotationSpeed);
+        movement.setRotationSpeed(0.0f);
         return movement;
     }
 
