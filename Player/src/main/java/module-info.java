@@ -1,13 +1,15 @@
 module Player {
-    requires java.logging;
     requires Common;
     requires javafx.graphics;
     requires CommonPlayer;
     requires CommonWeapon;
     requires CommonCollision;
+    requires CommonPhysics;
     requires Core;
+    requires java.logging;
 
     uses dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
+    uses dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
 
     exports dk.sdu.mmmi.cbse.player;
 

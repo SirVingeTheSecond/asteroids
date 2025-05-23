@@ -10,6 +10,7 @@ import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IFixedUpdate;
 import dk.sdu.mmmi.cbse.common.services.IUpdate;
+import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import dk.sdu.mmmi.cbse.core.utils.Time;
 
 import java.util.Random;
@@ -17,12 +18,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System that handles entity movement.
+ * System that handles entity movement for non-physics entities.
  */
 public class MovementSystem implements IUpdate, IFixedUpdate {
     private static final Logger LOGGER = Logger.getLogger(MovementSystem.class.getName());
-    private static final long DIRECTION_CHANGE_DELAY = 2000; // milliseconds
     private final Random random = new Random();
+
+    private static final float FIXED_DELTA_TIME = 1f / 120;
+    private static final int DIRECTION_CHANGE_DELAY = 2000; // milliseconds
 
     @Override
     public int getPriority() {
@@ -39,8 +42,11 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
 
             TagComponent tag = entity.getComponent(TagComponent.class);
 
-            // Skip bullets - they're handled in fixedUpdate for smooth movement
             if (tag != null && tag.hasType(EntityType.BULLET)) {
+                continue;
+            }
+
+            if (entity.hasComponent(PhysicsComponent.class)) {
                 continue;
             }
 
@@ -52,32 +58,28 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
 
     @Override
     public void fixedUpdate(GameData gameData, World world) {
-        float fixedDeltaTime = 1.0f / 60.0f;
-
         for (Entity entity : world.getEntities()) {
             TransformComponent transform = entity.getComponent(TransformComponent.class);
             if (transform == null) continue;
 
             TagComponent tag = entity.getComponent(TagComponent.class);
 
-            // Only process bullets in fixed update
-            if (tag != null && tag.hasType(EntityType.BULLET)) {
+            if (tag != null && tag.hasType(EntityType.BULLET) && !entity.hasComponent(PhysicsComponent.class)) {
                 if (entity.hasComponent(MovementComponent.class)) {
-                    moveEntity(entity, transform, fixedDeltaTime);
+                    moveEntity(entity, transform, FIXED_DELTA_TIME);
                 }
             }
         }
     }
 
     /**
-     * Handle movement for entities.
+     * Handle movement for entities without physics components.
      */
     private void moveEntity(Entity entity, TransformComponent transform, float deltaTime) {
         MovementComponent movement = entity.getComponent(MovementComponent.class);
 
-        // Skip player entities (handled by PlayerControlSystem)
         TagComponent tag = entity.getComponent(TagComponent.class);
-        if (tag != null && tag.hasType(EntityType.PLAYER)) {
+        if (tag != null && tag.hasType(EntityType.PLAYER) && entity.hasComponent(PhysicsComponent.class)) {
             return;
         }
 
@@ -90,11 +92,11 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
                 processRandomMovement(transform, movement, deltaTime);
                 break;
             case PLAYER:
-                // Handled by PlayerControlSystem
+                // Player movement with physics is handled by PlayerSystem + PhysicsSystem
+                // Player movement without physics is handled by PlayerSystem directly
                 break;
         }
 
-        // Apply rotation - multiply by deltaTime for framerate independence
         if (Math.abs(movement.getRotationSpeed()) > 0.0001f) {
             transform.rotate(movement.getRotationSpeed() * deltaTime);
         }
@@ -117,12 +119,10 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
      * Process random movement pattern
      */
     private void processRandomMovement(TransformComponent transform, MovementComponent movement, float deltaTime) {
-        // Check if it's time to change direction
         long lastChange = movement.getLastDirectionChange();
         long currentTime = System.currentTimeMillis();
 
         if (currentTime - lastChange > DIRECTION_CHANGE_DELAY) {
-            // Randomly adjust rotation between fixed time intervals
             if (random.nextFloat() < 0.2f) {
                 float rotation = transform.getRotation();
                 rotation += (random.nextFloat() * 60 - 30); // +/- 30 degrees

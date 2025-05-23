@@ -1,6 +1,7 @@
 module Movement {
     requires Core;
     requires Common;
+    requires CommonPhysics;
     requires java.logging;
 
     exports dk.sdu.mmmi.cbse.movementsystem;

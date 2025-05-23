@@ -19,12 +19,14 @@
         <module>CommonBullet</module>
         <module>CommonCollision</module>
         <module>CommonEnemy</module>
+        <module>CommonPhysics</module>
         <module>CommonPlayer</module>
         <module>CommonWeapon</module>
         <module>Core</module>
         <module>Enemy</module>
         <module>Movement</module>
         <module>Particles</module>
+        <module>Physics</module>
         <module>Player</module>
         <module>Renderer</module>
         <module>Score</module>

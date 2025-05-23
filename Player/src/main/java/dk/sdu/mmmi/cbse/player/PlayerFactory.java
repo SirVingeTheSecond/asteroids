@@ -11,6 +11,7 @@ import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.commoncollision.ColliderComponent;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
+import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 import javafx.scene.paint.Color;
@@ -25,13 +26,13 @@ public class PlayerFactory {
     private static final Logger LOGGER = Logger.getLogger(PlayerFactory.class.getName());
 
     /**
-     * Create a new player entity
+     * Create a new player entity.
      *
      * @param gameData Game data
      * @return New player entity
      */
     public Entity createPlayer(GameData gameData) {
-        LOGGER.log(Level.INFO, "Creating player entity");
+        LOGGER.log(Level.INFO, "Creating player entity with physics");
 
         Entity player = new Entity();
 
@@ -42,7 +43,15 @@ public class PlayerFactory {
         transform.setRadius(8);
         player.addComponent(transform);
 
-        // renderer
+        // Physics component for acceleration/deceleration
+        PhysicsComponent physics = new PhysicsComponent(PhysicsComponent.PhysicsType.DYNAMIC);
+        physics.setMass(1.0f);           // Standard mass
+        physics.setDrag(0.92f);          // 8% drag per frame
+        physics.setMaxSpeed(150.0f);
+        physics.setAngularDrag(0.95f);
+        player.addComponent(physics);
+
+        // Renderer
         RendererComponent renderer = new RendererComponent();
         renderer.setStrokeColor(Color.LIGHTGREEN);
         renderer.setFillColor(Color.DARKGREEN);
@@ -51,19 +60,19 @@ public class PlayerFactory {
         renderer.setFilled(true);
         player.addComponent(renderer);
 
-        // player component
+        // Player component
         PlayerComponent playerComponent = new PlayerComponent();
         playerComponent.setLives(3);
         player.addComponent(playerComponent);
 
-        // movement component
+        // Movement component (for compatibility with existing systems)
         MovementComponent movement = new MovementComponent();
         movement.setPattern(MovementComponent.MovementPattern.PLAYER);
-        movement.setSpeed(150.0f);
+        movement.setSpeed(150.0f); // Base speed (used as max speed reference)
         movement.setRotationSpeed(0.0f);
         player.addComponent(movement);
 
-        // weapon component
+        // Weapon component
         WeaponComponent weapon = new WeaponComponent();
         weapon.setBulletType("standard");
         weapon.setDamage(10.0f);
@@ -71,17 +80,17 @@ public class PlayerFactory {
         weapon.setCooldownTime(15); // Frames between shots (4 shots per second at 60 FPS)
         player.addComponent(weapon);
 
-        // collider component
+        // Collider component
         ColliderComponent collider = new ColliderComponent();
         collider.setLayer(CollisionLayer.PLAYER);
         player.addComponent(collider);
 
-        // tag component
+        // Tag component
         TagComponent tag = new TagComponent();
         tag.addType(EntityType.PLAYER);
         player.addComponent(tag);
 
-        LOGGER.log(Level.INFO, "Player entity created: {0}", player.getID());
+        LOGGER.log(Level.INFO, "Player entity created with physics: {0}", player.getID());
         return player;
     }
 }
