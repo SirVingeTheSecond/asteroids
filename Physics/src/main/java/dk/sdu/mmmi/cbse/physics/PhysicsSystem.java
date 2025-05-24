@@ -11,6 +11,7 @@ import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import dk.sdu.mmmi.cbse.commoncollision.ColliderComponent;
 import dk.sdu.mmmi.cbse.commoncollision.ICollisionSPI;
+import dk.sdu.mmmi.cbse.core.utils.Time;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +47,7 @@ public class PhysicsSystem implements IUpdate, IFixedUpdate {
 
     @Override
     public void fixedUpdate(GameData gameData, World world) {
-        float fixedDeltaTime = 1.0f / 120.0f;
+        float fixedDeltaTime = Time.getFixedDeltaTime();
 
         List<Entity> physicsEntities = getPhysicsEntities(world);
 
@@ -63,7 +64,7 @@ public class PhysicsSystem implements IUpdate, IFixedUpdate {
 
     @Override
     public void update(GameData gameData, World world) {
-        float deltaTime = gameData.getDeltaTime();
+        float deltaTime = Time.getDeltaTimeF();
 
         List<Entity> physicsEntities = getPhysicsEntities(world);
 
@@ -118,7 +119,7 @@ public class PhysicsSystem implements IUpdate, IFixedUpdate {
             transform.setRotation(newRotation);
         }
 
-        // ToDo: Is this for backward compatibility? No backwards compatibility!
+        // Update MovementComponent for backward compatibility
         updateMovementComponent(entity, physics);
     }
 
@@ -256,7 +257,7 @@ public class PhysicsSystem implements IUpdate, IFixedUpdate {
 
         // Check for collisions
         boolean valid = true;
-        // ToDo: Implement based on the collision system
+        // TODO: Implement based on the collision system
         // For now, assume the position is valid
         // You might want to extend ICollisionSPI to include position validation
 

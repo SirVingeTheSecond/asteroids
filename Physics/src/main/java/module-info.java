@@ -3,6 +3,7 @@ module Physics {
     requires CommonPhysics;
     requires CommonCollision;
     requires java.logging;
+    requires Core;
 
     uses dk.sdu.mmmi.cbse.commoncollision.ICollisionSPI;
 

@@ -128,7 +128,7 @@ public class PlayerSystem implements IUpdate {
             return;
         }
 
-        float deltaTime = (float) Time.getDeltaTime();
+        float deltaTime = Time.getDeltaTimeF();
 
         if (direction.magnitudeSquared() > 0.001f) {
             direction = direction.normalize();
@@ -216,10 +216,10 @@ public class PlayerSystem implements IUpdate {
         RendererComponent renderer = player.getComponent(RendererComponent.class);
         if (renderer != null) {
             if (playerComponent.isInvulnerable()) {
-                // Flicker player when invulnerable
-                int frame = (int)(System.currentTimeMillis() / 100) % 2;
-                renderer.setStrokeColor(frame == 0 ? Color.LIGHTGREEN : Color.CYAN);
-                renderer.setFillColor(frame == 0 ? Color.DARKGREEN : Color.DARKCYAN);
+                // Flicker player when invulnerable using time-based calculation
+                int flickerFrame = (int)(Time.getTime() * 10) % 2; // 10Hz flicker rate
+                renderer.setStrokeColor(flickerFrame == 0 ? Color.LIGHTGREEN : Color.CYAN);
+                renderer.setFillColor(flickerFrame == 0 ? Color.DARKGREEN : Color.DARKCYAN);
             } else {
                 // Normal colors
                 renderer.setStrokeColor(Color.LIGHTGREEN);

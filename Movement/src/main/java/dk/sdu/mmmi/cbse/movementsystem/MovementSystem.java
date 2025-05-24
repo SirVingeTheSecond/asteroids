@@ -24,8 +24,8 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
     private static final Logger LOGGER = Logger.getLogger(MovementSystem.class.getName());
     private final Random random = new Random();
 
-    private static final float FIXED_DELTA_TIME = 1f / 120;
-    private static final int DIRECTION_CHANGE_DELAY = 2000; // milliseconds
+    private static final float FIXED_DELTA_TIME = 1.0f / 120.0f;
+    private static final long DIRECTION_CHANGE_DELAY = 2000; // milliseconds
 
     @Override
     public int getPriority() {
@@ -42,14 +42,17 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
 
             TagComponent tag = entity.getComponent(TagComponent.class);
 
+            // Skip bullets - they're handled in fixedUpdate for smooth movement
             if (tag != null && tag.hasType(EntityType.BULLET)) {
                 continue;
             }
 
+            // Skip entities with physics components - they're handled by PhysicsSystem
             if (entity.hasComponent(PhysicsComponent.class)) {
                 continue;
             }
 
+            // Only process entities that have MovementComponent but no PhysicsComponent
             if (entity.hasComponent(MovementComponent.class)) {
                 moveEntity(entity, transform, deltaTime);
             }
@@ -64,7 +67,9 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
 
             TagComponent tag = entity.getComponent(TagComponent.class);
 
-            if (tag != null && tag.hasType(EntityType.BULLET) && !entity.hasComponent(PhysicsComponent.class)) {
+            // Only process bullets in fixed update (and only if they don't have physics)
+            if (tag != null && tag.hasType(EntityType.BULLET) &&
+                    !entity.hasComponent(PhysicsComponent.class)) {
                 if (entity.hasComponent(MovementComponent.class)) {
                     moveEntity(entity, transform, FIXED_DELTA_TIME);
                 }
@@ -78,8 +83,10 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
     private void moveEntity(Entity entity, TransformComponent transform, float deltaTime) {
         MovementComponent movement = entity.getComponent(MovementComponent.class);
 
+        // Skip player entities with physics (handled by PhysicsSystem)
         TagComponent tag = entity.getComponent(TagComponent.class);
-        if (tag != null && tag.hasType(EntityType.PLAYER) && entity.hasComponent(PhysicsComponent.class)) {
+        if (tag != null && tag.hasType(EntityType.PLAYER) &&
+                entity.hasComponent(PhysicsComponent.class)) {
             return;
         }
 
@@ -120,7 +127,7 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
      */
     private void processRandomMovement(TransformComponent transform, MovementComponent movement, float deltaTime) {
         long lastChange = movement.getLastDirectionChange();
-        long currentTime = System.currentTimeMillis();
+        long currentTime = System.currentTimeMillis(); // ToDo: Should use Time.getTime() here
 
         if (currentTime - lastChange > DIRECTION_CHANGE_DELAY) {
             if (random.nextFloat() < 0.2f) {

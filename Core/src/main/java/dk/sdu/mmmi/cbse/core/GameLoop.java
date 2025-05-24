@@ -17,7 +17,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Game loop implementation using JavaFX AnimationTimer and a separate thread for fixed updates.
  * Handles the main processing cycle of the game.
  */
 public class GameLoop extends AnimationTimer {
@@ -27,7 +26,7 @@ public class GameLoop extends AnimationTimer {
 	private final World world;
 	private final GraphicsContext context;
 
-	// Separate thread for fixed-interval processing
+	// for fixed-interval processing
 	private final ScheduledExecutorService fixedProcessorScheduler;
 
 	private long lastTime = 0;
@@ -51,8 +50,8 @@ public class GameLoop extends AnimationTimer {
 			return t;
 		});
 
-//		LOGGER.log(Level.INFO, "GameLoop initialized with {0} processors and {1} post-processors",
-//				new Object[]{processors.size(), postProcessors.size()});
+		LOGGER.log(Level.INFO, "GameLoop initialized with fixed update rate: {0}Hz ({1}ms intervals)",
+				new Object[]{Time.FIXED_UPDATE_RATE, Time.FIXED_UPDATE_INTERVAL_MS});
 	}
 
 	/**
@@ -62,14 +61,14 @@ public class GameLoop extends AnimationTimer {
 	public void start() {
 		super.start();
 
-		// Schedule fixed update at 60Hz (16ms intervals)
+		// Schedule fixed update using centralized time constants
 		fixedProcessorScheduler.scheduleAtFixedRate(() -> {
 			try {
 				fixedUpdate();
 			} catch (Exception e) {
 				LOGGER.log(Level.SEVERE, "Error in fixed update", e);
 			}
-		}, 0, 16, TimeUnit.MILLISECONDS);
+		}, 0, Time.FIXED_UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS);
 
 		LOGGER.log(Level.INFO, "Game loop started");
 	}
@@ -98,11 +97,11 @@ public class GameLoop extends AnimationTimer {
 	 * Update that runs on a separate thread at a fixed interval
 	 */
 	private void fixedUpdate() {
-		if (Time.getTimeScale() == 0) {
+		if (Time.isPaused()) {
 			return;
 		}
 
-		// ToDo: Add Collisions and Physics here.
+		processFixedUpdateSystems();
 	}
 
 	@Override
@@ -111,13 +110,11 @@ public class GameLoop extends AnimationTimer {
 
 		Time.update(deltaTime);
 
-		if (Time.getTimeScale() == 0) {
+		if (Time.isPaused()) {
 			return; // Game is paused
 		}
 
 		processUpdateSystems();
-
-		processFixedUpdateSystem(deltaTime);
 
 		processLateUpdateSystems();
 
@@ -152,29 +149,26 @@ public class GameLoop extends AnimationTimer {
 				processor.update(gameData, world);
 			}
 		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, "Error processing entities", e);
+			LOGGER.log(Level.SEVERE, "Error processing update systems", e);
 		}
 	}
 
 	/**
-	 * Process all fixded update systems.
-	 *
-	 * @param deltaTime Time since last frame
+	 * Process fixed update systems in the separate thread.
+	 * This runs at a consistent rate defined by Time.FIXED_UPDATE_RATE.
 	 */
-	private void processFixedUpdateSystem(double deltaTime) {
-		gameData.setDeltaTime((float) deltaTime);
-
+	private void processFixedUpdateSystems() {
 		try {
 			for (IFixedUpdate processor : ModuleConfig.getFixedUpdateServices()) {
 				processor.fixedUpdate(gameData, world);
 			}
 		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, "Error processing entities", e);
+			LOGGER.log(Level.SEVERE, "Error processing fixed update systems", e);
 		}
 	}
 
 	/**
-	 * Process all late systems.
+	 * Process all late update systems.
 	 */
 	private void processLateUpdateSystems() {
 		try {
