@@ -2,7 +2,6 @@ package dk.sdu.mmmi.cbse.player;
 
 import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.MovementComponent;
-import dk.sdu.mmmi.cbse.common.components.RendererComponent;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
@@ -10,6 +9,7 @@ import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IUpdate;
+import dk.sdu.mmmi.cbse.common.utils.FlickerUtility;
 import dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
 import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
@@ -18,14 +18,13 @@ import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 import dk.sdu.mmmi.cbse.core.input.Button;
 import dk.sdu.mmmi.cbse.core.utils.Time;
 import dk.sdu.mmmi.cbse.core.input.InputController;
-import javafx.scene.paint.Color;
 
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System for handling player input and controls.
+ * System for handling player input and controls with enhanced flicker support.
  */
 public class PlayerSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(PlayerSystem.class.getName());
@@ -36,6 +35,7 @@ public class PlayerSystem implements IUpdate {
     private static final float PLAYER_ACCELERATION = 800.0f;
     private static final float PLAYER_MAX_SPEED = 150.0f;
     private static final float PLAYER_DRAG = 0.92f; // Drag coefficient (0.92 = 8% drag per frame)
+    private static final float INVULNERABILITY_FLICKER_DURATION = 3.0f; // 3 seconds
 
     public PlayerSystem() {
         this.weaponSPI = ServiceLoader.load(IWeaponSPI.class).findFirst().orElse(null);
@@ -112,7 +112,7 @@ public class PlayerSystem implements IUpdate {
                 physics.setDrag(PLAYER_DRAG);
             }
         }
-        // Note: Deceleration is handled automatically by drag in PhysicsComponent
+        // Deceleration is handled by drag in PhysicsComponent
     }
 
     /**
@@ -205,27 +205,26 @@ public class PlayerSystem implements IUpdate {
     }
 
     /**
-     * Update player state and visual feedback
+     * Update player state and visual feedback using FlickerUtility
      * @param player Player entity
      * @param playerComponent Player component
      */
     private void updatePlayerState(Entity player, PlayerComponent playerComponent) {
+        float deltaTime = Time.getDeltaTimeF();
+
         playerComponent.updateInvulnerability();
 
-        // Visual feedback for invulnerability
-        RendererComponent renderer = player.getComponent(RendererComponent.class);
-        if (renderer != null) {
-            if (playerComponent.isInvulnerable()) {
-                // Flicker player when invulnerable using time-based calculation
-                int flickerFrame = (int)(Time.getTime() * 10) % 2; // 10Hz flicker rate
-                renderer.setStrokeColor(flickerFrame == 0 ? Color.LIGHTGREEN : Color.CYAN);
-                renderer.setFillColor(flickerFrame == 0 ? Color.DARKGREEN : Color.DARKCYAN);
-            } else {
-                // Normal colors
-                renderer.setStrokeColor(Color.LIGHTGREEN);
-                renderer.setFillColor(Color.DARKGREEN);
+        if (playerComponent.isInvulnerable()) {
+            if (!FlickerUtility.isFlickering(player)) {
+                FlickerUtility.startInvulnerabilityFlicker(player, INVULNERABILITY_FLICKER_DURATION);
+            }
+        } else {
+            if (FlickerUtility.isFlickering(player)) {
+                FlickerUtility.stopFlicker(player);
             }
         }
+
+        FlickerUtility.updateFlicker(player, deltaTime);
     }
 
     /**

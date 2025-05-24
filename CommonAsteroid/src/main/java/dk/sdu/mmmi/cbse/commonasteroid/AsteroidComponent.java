@@ -3,8 +3,7 @@ package dk.sdu.mmmi.cbse.commonasteroid;
 import dk.sdu.mmmi.cbse.common.components.IComponent;
 
 /**
- * Component for asteroid-specific properties.
- * Stores data related to asteroid behavior and splitting.
+ * Component for asteroid properties.
  */
 public class AsteroidComponent implements IComponent {
     private int splitCount = 0;
@@ -13,8 +12,13 @@ public class AsteroidComponent implements IComponent {
     private int scoreValue = 100;
     private AsteroidSize size = AsteroidSize.LARGE;
 
-    public AsteroidComponent() {
+    // Health system
+    private int maxHealth;
+    private int currentHealth;
 
+    public AsteroidComponent() {
+        // Set default health based on large size
+        setHealthForSize(AsteroidSize.LARGE);
     }
 
     /**
@@ -24,6 +28,7 @@ public class AsteroidComponent implements IComponent {
      */
     public AsteroidComponent(AsteroidSize size) {
         this.size = size;
+        setHealthForSize(size);
 
         switch (size) {
             case LARGE:
@@ -41,92 +46,125 @@ public class AsteroidComponent implements IComponent {
     }
 
     /**
-     * Get current split count
-     *
-     * @return Number of times asteroid has split
+     * Set health based on asteroid size
      */
+    private void setHealthForSize(AsteroidSize size) {
+        switch (size) {
+            case LARGE:
+                maxHealth = 3;
+                break;
+            case MEDIUM:
+                maxHealth = 2;
+                break;
+            case SMALL:
+                maxHealth = 1;
+                break;
+            default:
+                maxHealth = 1;
+                break;
+        }
+        currentHealth = maxHealth;
+    }
+
+    /**
+     * Apply damage to the asteroid
+     *
+     * @param damage Amount of damage to apply
+     * @return true if asteroid was destroyed (health <= 0)
+     */
+    public boolean takeDamage(int damage) {
+        currentHealth -= damage;
+        return currentHealth <= 0;
+    }
+
+    /**
+     * Check if asteroid is at full health
+     *
+     * @return true if at full health
+     */
+    public boolean isAtFullHealth() {
+        return currentHealth >= maxHealth;
+    }
+
+    /**
+     * Get health percentage (0.0 to 1.0)
+     *
+     * @return Health as percentage
+     */
+    public float getHealthPercentage() {
+        if (maxHealth <= 0) {
+            return 0.0f;
+        }
+        return (float) currentHealth / maxHealth;
+    }
+
+    /**
+     * Restore full health
+     */
+    public void heal() {
+        currentHealth = maxHealth;
+    }
+
+    // Existing getters and setters
     public int getSplitCount() {
         return splitCount;
     }
 
-    /**
-     * Set current split count
-     *
-     * @param splitCount Number of times asteroid has split
-     */
     public void setSplitCount(int splitCount) {
         this.splitCount = splitCount;
     }
 
-    /**
-     * Get maximum number of splits
-     *
-     * @return Maximum split count
-     */
     public int getMaxSplits() {
         return maxSplits;
     }
 
-    /**
-     * Set maximum number of splits
-     *
-     * @param maxSplits Maximum split count
-     */
     public void setMaxSplits(int maxSplits) {
         this.maxSplits = maxSplits;
     }
 
-    /**
-     * Get size ratio for split asteroids
-     *
-     * @return Ratio of child asteroid size to parent
-     */
     public float getSplitSizeRatio() {
         return splitSizeRatio;
     }
 
-    /**
-     * Set size ratio for split asteroids
-     *
-     * @param splitSizeRatio Ratio of child asteroid size to parent
-     */
     public void setSplitSizeRatio(float splitSizeRatio) {
         this.splitSizeRatio = splitSizeRatio;
     }
 
-    /**
-     * Get score value when destroyed
-     *
-     * @return Score value
-     */
     public int getScoreValue() {
         return scoreValue;
     }
 
-    /**
-     * Set score value when destroyed
-     *
-     * @param scoreValue Score value
-     */
     public void setScoreValue(int scoreValue) {
         this.scoreValue = scoreValue;
     }
 
-    /**
-     * Get asteroid size
-     *
-     * @return Asteroid size
-     */
     public AsteroidSize getSize() {
         return size;
     }
 
-    /**
-     * Set asteroid size
-     *
-     * @param size Asteroid size
-     */
     public void setSize(AsteroidSize size) {
         this.size = size;
+        setHealthForSize(size); // Update health when size changes
+    }
+
+    // Health getters and setters
+    public int getMaxHealth() {
+        return maxHealth;
+    }
+
+    public void setMaxHealth(int maxHealth) {
+        this.maxHealth = maxHealth;
+        // Ensure current health doesn't exceed new max
+        if (currentHealth > maxHealth) {
+            currentHealth = maxHealth;
+        }
+    }
+
+    public int getCurrentHealth() {
+        return currentHealth;
+    }
+
+    public void setCurrentHealth(int currentHealth) {
+        this.currentHealth = Math.max(0, Math.min(currentHealth, maxHealth));
     }
 }

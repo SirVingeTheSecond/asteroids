@@ -1,6 +1,7 @@
 package dk.sdu.mmmi.cbse.asteroid;
 
 import dk.sdu.mmmi.cbse.common.RenderLayer;
+import dk.sdu.mmmi.cbse.common.components.FlickerComponent;
 import dk.sdu.mmmi.cbse.common.components.MovementComponent;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;
@@ -13,17 +14,17 @@ import dk.sdu.mmmi.cbse.commonasteroid.AsteroidComponent;
 import dk.sdu.mmmi.cbse.commonasteroid.AsteroidSize;
 import dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI;
 import dk.sdu.mmmi.cbse.commoncollision.ColliderComponent;
+import dk.sdu.mmmi.cbse.commoncollision.CollisionHandlers;
+import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
+import dk.sdu.mmmi.cbse.commoncollision.CollisionResponseComponent;
+import javafx.scene.paint.Color;
 
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Random;
-
-import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
-import javafx.scene.paint.Color;
 
 /**
  * Factory for creating asteroid entities.
- * Implements the IAsteroidSPI service interface.
  */
 public class AsteroidFactory implements IAsteroidSPI {
     private static final Logger LOGGER = Logger.getLogger(AsteroidFactory.class.getName());
@@ -70,7 +71,6 @@ public class AsteroidFactory implements IAsteroidSPI {
             return;
         }
 
-        // Determine new asteroid size
         AsteroidSize newSize;
         switch (asteroidComponent.getSize()) {
             case LARGE:
@@ -83,12 +83,10 @@ public class AsteroidFactory implements IAsteroidSPI {
                 return; // Can't split smaller than SMALL
         }
 
-        // Create game data from the asteroid's current position
         GameData gameData = new GameData();
-        gameData.setDisplayWidth(1000); // Use reasonable defaults
+        gameData.setDisplayWidth(1000);
         gameData.setDisplayHeight(800);
 
-        // Create new split asteroids
         for (int i = 0; i < NUM_SPLIT_ASTEROIDS; i++) {
             Entity newAsteroid = createAsteroid(
                     gameData,
@@ -139,10 +137,8 @@ public class AsteroidFactory implements IAsteroidSPI {
             speed = parentMovement.getSpeed() * (0.8f + random.nextFloat() * 0.4f);
         }
 
-        // Create asteroid shape
         double[] shape = generateAsteroidShape(radius);
 
-        // Set up and return the new asteroid entity using EntityBuilder for clean composition
         return EntityBuilder.create()
                 .withType(EntityType.ASTEROID)
                 .atPosition(x, y)
@@ -153,6 +149,8 @@ public class AsteroidFactory implements IAsteroidSPI {
                 .with(createMovementComponent(speed, rotationSpeed))
                 .with(createRendererComponent(size))
                 .with(createCollisionComponent())
+                .with(createAsteroidCollisionResponse())
+                .with(createFlickerComponent())
                 .build();
     }
 
@@ -163,6 +161,7 @@ public class AsteroidFactory implements IAsteroidSPI {
         AsteroidComponent component = new AsteroidComponent(size);
         component.setSplitCount(splitCount);
 
+        // ToDo: Perhaps asteroids should only give points when fully destroyed?
         // Set score value based on size - smaller asteroids are worth more
         switch (size) {
             case LARGE:
@@ -200,7 +199,6 @@ public class AsteroidFactory implements IAsteroidSPI {
         RendererComponent renderer = new RendererComponent();
         renderer.setRenderLayer(RenderLayer.OBSTACLE);
 
-        // Configure visuals based on size
         switch (size) {
             case LARGE:
                 renderer.setStrokeColor(Color.GRAY);
@@ -219,6 +217,7 @@ public class AsteroidFactory implements IAsteroidSPI {
                 break;
         }
 
+        renderer.setFilled(true);
         return renderer;
     }
 
@@ -229,6 +228,31 @@ public class AsteroidFactory implements IAsteroidSPI {
         ColliderComponent collider = new ColliderComponent();
         collider.setLayer(CollisionLayer.OBSTACLE);
         return collider;
+    }
+
+    /**
+     * Create collision response component for asteroids
+     */
+    private CollisionResponseComponent createAsteroidCollisionResponse() {
+        CollisionResponseComponent response = new CollisionResponseComponent();
+
+        // Asteroids damage player on collision (only if player is not invulnerable)
+        response.addHandler(EntityType.PLAYER, CollisionHandlers.createPlayerDamageHandler(1));
+
+        // Asteroids ignore other asteroids
+        response.addHandler(EntityType.ASTEROID, CollisionHandlers.IGNORE_COLLISION_HANDLER);
+
+        return response;
+    }
+
+    /**
+     * Create flicker component for damage effects
+     */
+    private FlickerComponent createFlickerComponent() {
+        FlickerComponent flicker = new FlickerComponent();
+        flicker.setFlickerRate(8.0f); // 8 Hz flicker for clear damage indication
+        LOGGER.log(Level.FINE, "Created FlickerComponent with rate: {0}", flicker.getFlickerRate());
+        return flicker;
     }
 
     /**
@@ -263,6 +287,7 @@ public class AsteroidFactory implements IAsteroidSPI {
 
         for (int i = 0; i < vertices; i++) {
             double angle = Math.toRadians(i * angleStep);
+            // ToDo: Ensure the generated shape is convex.
             // Randomize radius slightly to vary shape
             double radius = size * (0.8 + random.nextDouble() * 0.4);
 

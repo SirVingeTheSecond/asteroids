@@ -4,6 +4,8 @@ module Asteroid {
     requires CommonAsteroid;
     requires CommonCollision;
     requires javafx.graphics;
+    requires Core;
+    requires CommonPlayer;
 
     uses dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI;
     uses dk.sdu.mmmi.cbse.common.services.IEventService;

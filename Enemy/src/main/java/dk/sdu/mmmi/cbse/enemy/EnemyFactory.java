@@ -10,8 +10,7 @@ import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.utils.EntityBuilder;
-import dk.sdu.mmmi.cbse.commoncollision.ColliderComponent;
-import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
+import dk.sdu.mmmi.cbse.commoncollision.*;
 import dk.sdu.mmmi.cbse.commonenemy.EnemyComponent;
 import dk.sdu.mmmi.cbse.commonenemy.EnemyType;
 import dk.sdu.mmmi.cbse.commonenemy.IEnemySPI;
@@ -25,7 +24,6 @@ import java.util.logging.Logger;
 
 /**
  * Factory for creating enemy entities.
- * Implements the IEnemySPI service interface.
  */
 public class EnemyFactory implements IEnemySPI {
     private static final Logger LOGGER = Logger.getLogger(EnemyFactory.class.getName());
@@ -74,7 +72,6 @@ public class EnemyFactory implements IEnemySPI {
                 break;
         }
 
-        // Create the enemy entity using the configuration
         Entity enemy = EntityBuilder.create()
                 .withType(EntityType.ENEMY)
                 .atPosition(x, y)
@@ -191,7 +188,6 @@ public class EnemyFactory implements IEnemySPI {
         RendererComponent renderer = new RendererComponent();
         renderer.setRenderLayer(RenderLayer.ENEMY);
 
-        // Configure visuals based on type
         switch (type) {
             case HUNTER:
                 renderer.setStrokeColor(Color.RED);
@@ -218,6 +214,25 @@ public class EnemyFactory implements IEnemySPI {
         ColliderComponent collider = new ColliderComponent();
         collider.setLayer(CollisionLayer.ENEMY);
         return collider;
+    }
+
+    private CollisionResponseComponent createEnemyCollisionResponse() {
+        CollisionResponseComponent response = new CollisionResponseComponent();
+
+        // Enemies damage player and are destroyed on collision
+        response.addHandler(EntityType.PLAYER, (self, player, context) -> {
+            CollisionResult result = CollisionHandlers.handlePlayerDamage(player, 1, context);
+            result.addRemoval(self); // Remove enemy after collision
+            return result;
+        });
+
+        // Enemies ignore other enemies
+        response.addHandler(EntityType.ENEMY, CollisionHandlers.IGNORE_COLLISION_HANDLER);
+
+        // Enemies are destroyed by obstacles
+        response.addHandler(EntityType.OBSTACLE, CollisionHandlers.REMOVE_ON_COLLISION_HANDLER);
+
+        return response;
     }
 
     /**

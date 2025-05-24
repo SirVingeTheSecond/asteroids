@@ -14,7 +14,9 @@ import dk.sdu.mmmi.cbse.commonbullet.BulletComponent;
 import dk.sdu.mmmi.cbse.commonbullet.BulletType;
 import dk.sdu.mmmi.cbse.commonbullet.IBulletSPI;
 import dk.sdu.mmmi.cbse.commoncollision.ColliderComponent;
+import dk.sdu.mmmi.cbse.commoncollision.CollisionHandlers;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
+import dk.sdu.mmmi.cbse.commoncollision.CollisionResponseComponent;
 import dk.sdu.mmmi.cbse.commonweapon.Weapon;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 import dk.sdu.mmmi.cbse.core.input.InputController;
@@ -46,7 +48,6 @@ public class BulletFactory implements IBulletSPI {
 
     @Override
     public Entity createBullet(Entity shooter, GameData gameData, String bulletType) {
-        // Get shooter components
         TransformComponent shooterTransform = shooter.getComponent(TransformComponent.class);
         WeaponComponent weaponComponent = shooter.getComponent(WeaponComponent.class);
         TagComponent shooterTag = shooter.getComponent(TagComponent.class);
@@ -57,8 +58,6 @@ public class BulletFactory implements IBulletSPI {
         }
 
         boolean isPlayerBullet = shooterTag != null && shooterTag.hasType(EntityType.PLAYER);
-
-        // Get bullet type configuration
         BulletType bulletTypeConfig = bulletRegistry.getBulletType(bulletType);
 
         float rotation;
@@ -87,13 +86,11 @@ public class BulletFactory implements IBulletSPI {
         Vector2D forward = new Vector2D((float) Math.cos(radians), (float) Math.sin(radians));
         Vector2D spawnPosition = shooterTransform.getPosition().add(forward.scale(spawnDistance));
 
-        // Create bullet component
         BulletComponent bulletComponent = new BulletComponent(
                 UUID.fromString(shooter.getID()),
                 isPlayerBullet ? BulletComponent.BulletSource.PLAYER : BulletComponent.BulletSource.ENEMY
         );
 
-        // Configure bullet from type and weapon
         float speed = bulletTypeConfig.getSpeed();
         float damage = bulletTypeConfig.getDamage();
 
@@ -141,12 +138,28 @@ public class BulletFactory implements IBulletSPI {
                 .with(movementComponent)
                 .with(colliderComponent)
                 .with(rendererComponent)
+                .with(createBulletCollisionResponse(isPlayerBullet))
                 .build();
 
         LOGGER.log(Level.FINE, "Created circular bullet of type {0} from shooter {1} with direction {2}",
                 new Object[]{bulletType, shooter.getID(), rotation});
 
         return bullet;
+    }
+
+    private CollisionResponseComponent createBulletCollisionResponse(boolean isPlayerBullet) {
+        CollisionResponseComponent response = new CollisionResponseComponent();
+
+        if (isPlayerBullet) {
+            response.addHandler(EntityType.ENEMY, CollisionHandlers.BULLET_DAMAGE_HANDLER);
+            response.addHandler(EntityType.ASTEROID, CollisionHandlers.BULLET_DAMAGE_HANDLER);
+        } else {
+            response.addHandler(EntityType.PLAYER, CollisionHandlers.BULLET_DAMAGE_HANDLER);
+        }
+
+        response.addHandler(EntityType.OBSTACLE, CollisionHandlers.REMOVE_ON_COLLISION_HANDLER);
+
+        return response;
     }
 
     private Color darkenColor(Color color, float factor) {

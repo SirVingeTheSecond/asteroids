@@ -2,6 +2,7 @@ package dk.sdu.mmmi.cbse.player;
 
 import dk.sdu.mmmi.cbse.common.RenderLayer;
 import dk.sdu.mmmi.cbse.common.Vector2D;
+import dk.sdu.mmmi.cbse.common.components.FlickerComponent;
 import dk.sdu.mmmi.cbse.common.components.MovementComponent;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
@@ -10,7 +11,9 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.commoncollision.ColliderComponent;
+import dk.sdu.mmmi.cbse.commoncollision.CollisionHandlers;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
+import dk.sdu.mmmi.cbse.commoncollision.CollisionResponseComponent;
 import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
@@ -32,7 +35,7 @@ public class PlayerFactory {
      * @return New player entity
      */
     public Entity createPlayer(GameData gameData) {
-        LOGGER.log(Level.INFO, "Creating player entity with physics");
+        LOGGER.log(Level.INFO, "Creating player entity with physics, flicker support, and collision response");
 
         Entity player = new Entity();
 
@@ -63,6 +66,7 @@ public class PlayerFactory {
         // Player
         PlayerComponent playerComponent = new PlayerComponent();
         playerComponent.setLives(3);
+        playerComponent.setMaxHealth(3); // 3 health points
         player.addComponent(playerComponent);
 
         // Movement
@@ -75,7 +79,7 @@ public class PlayerFactory {
         // Weapon
         WeaponComponent weapon = new WeaponComponent();
         weapon.setBulletType("standard");
-        weapon.setDamage(10.0f);
+        weapon.setDamage(1.0f);
         weapon.setProjectileSpeed(300.0f);
         weapon.setCooldownTime(0.25f); // 4 shots per second
         player.addComponent(weapon);
@@ -85,12 +89,35 @@ public class PlayerFactory {
         collider.setLayer(CollisionLayer.PLAYER);
         player.addComponent(collider);
 
+        // Collision Response
+        player.addComponent(createPlayerCollisionResponse());
+
+        // Flicker
+        FlickerComponent flicker = new FlickerComponent();
+        flicker.setFlickerRate(10.0f); // 10 Hz flicker for invulnerability
+        player.addComponent(flicker);
+        LOGGER.log(Level.FINE, "Added FlickerComponent to player with rate: {0}", flicker.getFlickerRate());
+
         // Tag
         TagComponent tag = new TagComponent();
         tag.addType(EntityType.PLAYER);
         player.addComponent(tag);
 
-        LOGGER.log(Level.INFO, "Player entity created with physics: {0}", player.getID());
+        LOGGER.log(Level.INFO, "Player entity created with 3 health points and collision response: {0}", player.getID());
         return player;
+    }
+
+    /**
+     * Create collision response component for player
+     */
+    private CollisionResponseComponent createPlayerCollisionResponse() {
+        CollisionResponseComponent response = new CollisionResponseComponent();
+
+        response.addHandler(EntityType.ASTEROID, CollisionHandlers.DIRECT_DAMAGE_HANDLER);
+        response.addHandler(EntityType.ENEMY, CollisionHandlers.DIRECT_DAMAGE_HANDLER);
+
+        response.addHandler(EntityType.BULLET, CollisionHandlers.ENEMY_BULLET_HANDLER);
+
+        return response;
     }
 }

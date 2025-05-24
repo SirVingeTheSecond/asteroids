@@ -9,10 +9,12 @@ import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.events.IEventListener;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
 import dk.sdu.mmmi.cbse.common.services.IUpdate;
+import dk.sdu.mmmi.cbse.common.utils.FlickerUtility;
 import dk.sdu.mmmi.cbse.commonasteroid.AsteroidComponent;
 import dk.sdu.mmmi.cbse.commonasteroid.AsteroidSize;
 import dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI;
 import dk.sdu.mmmi.cbse.commonasteroid.events.AsteroidSplitEvent;
+import dk.sdu.mmmi.cbse.core.utils.Time;
 
 import java.util.ServiceLoader;
 import java.util.logging.Level;
@@ -40,7 +42,7 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
         }
 
         LOGGER.log(Level.INFO, "AsteroidSystem initialized with splitter: {0}",
-                asteroidSplitter.getClass().getName());
+                asteroidSplitter != null ? asteroidSplitter.getClass().getName() : "not available");
     }
 
     @Override
@@ -51,8 +53,42 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
     @Override
     public void update(GameData gameData, World world) {
         this.world = world;
+        float deltaTime = Time.getDeltaTimeF();
 
-        // ToDo: Add Asteroid rotation logic.
+        // Process all asteroids
+        for (Entity entity : world.getEntities()) {
+            TagComponent tag = entity.getComponent(TagComponent.class);
+            if (tag == null || !tag.hasType(EntityType.ASTEROID)) {
+                continue;
+            }
+
+            processAsteroid(entity, deltaTime);
+        }
+    }
+
+    /**
+     * Process individual asteroid behavior
+     */
+    private void processAsteroid(Entity asteroid, float deltaTime) {
+        // Update flickering effect for damaged asteroids
+        FlickerUtility.updateFlicker(asteroid, deltaTime);
+
+        // Debug: Check if asteroid has flicker component and is flickering
+        if (asteroid.hasComponent(dk.sdu.mmmi.cbse.common.components.FlickerComponent.class)) {
+            dk.sdu.mmmi.cbse.common.components.FlickerComponent flicker =
+                    asteroid.getComponent(dk.sdu.mmmi.cbse.common.components.FlickerComponent.class);
+            if (flicker != null && flicker.isFlickering()) {
+                LOGGER.log(Level.FINE, "Asteroid {0} is flickering - timer: {1}/{2}",
+                        new Object[]{asteroid.getID(), flicker.getFlickerTimer(), flicker.getFlickerDuration()});
+            }
+        }
+
+        // TODO: Add asteroid rotation logic here if desired
+        // TransformComponent transform = asteroid.getComponent(TransformComponent.class);
+        // MovementComponent movement = asteroid.getComponent(MovementComponent.class);
+        // if (transform != null && movement != null) {
+        //     transform.rotate(movement.getRotationSpeed() * deltaTime);
+        // }
     }
 
     /**
@@ -89,17 +125,8 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
                 new Object[]{asteroid.getID(), asteroidComponent.getSize(),
                         asteroidComponent.getSplitCount()});
 
-        asteroidSplitter.createSplitAsteroid(asteroid, world);
-    }
-
-    /**
-     * Clean up resources when system is destroyed.
-     * Call when module is stopped.
-     */
-    public void cleanup() {
-        if (eventService != null) {
-            eventService.unsubscribe(AsteroidSplitEvent.class, this);
-            LOGGER.log(Level.INFO, "AsteroidSystem unsubscribed from events");
+        if (asteroidSplitter != null) {
+            asteroidSplitter.createSplitAsteroid(asteroid, world);
         }
     }
 }

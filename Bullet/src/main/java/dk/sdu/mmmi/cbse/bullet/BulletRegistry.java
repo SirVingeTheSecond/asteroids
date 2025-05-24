@@ -10,7 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Registry for different bullet types.
+ * Registry for different bullet types with correct damage values.
  */
 public class BulletRegistry {
     private static final Logger LOGGER = Logger.getLogger(BulletRegistry.class.getName());
@@ -40,22 +40,22 @@ public class BulletRegistry {
     }
 
     /**
-     * Register default bullet types.
+     * Register default bullet types with CORRECT damage values.
      */
     private void registerBulletTypes() {
         // Standard bullet
         registerBulletType("standard", new BulletType.Builder()
-                .speed(45.0f)
-                .damage(10.0f)
+                .speed(300.0f)
+                .damage(1.0f)
                 .piercing(false)
                 .bouncing(false)
-                .color(Color.GOLD) // Changed from YELLOW for better contrast potential
+                .color(Color.GOLD)
                 .build());
 
         // Piercing bullet
         registerBulletType("piercing", new BulletType.Builder()
-                .speed(6.0f)
-                .damage(15.0f)
+                .speed(320.0f)
+                .damage(1.0f)
                 .piercing(true)
                 .pierceCount(2)
                 .bouncing(false)
@@ -64,8 +64,8 @@ public class BulletRegistry {
 
         // Bouncing bullet
         registerBulletType("bouncing", new BulletType.Builder()
-                .speed(4.5f)
-                .damage(8.0f)
+                .speed(280.0f)
+                .damage(1.0f)
                 .piercing(false)
                 .bouncing(true)
                 .bounceCount(3)
@@ -74,8 +74,8 @@ public class BulletRegistry {
 
         // Heavy bullet
         registerBulletType("heavy", new BulletType.Builder()
-                .speed(3.5f)
-                .damage(30.0f)
+                .speed(250.0f)
+                .damage(2.0f)
                 .piercing(false)
                 .bouncing(false)
                 .color(Color.ORANGERED)
@@ -90,7 +90,8 @@ public class BulletRegistry {
      */
     public void registerBulletType(String name, BulletType type) {
         bulletTypes.put(name.toLowerCase(), type);
-        LOGGER.log(Level.FINE, "Registered bullet type: {0}", name);
+        LOGGER.log(Level.FINE, "Registered bullet type: {0} with damage: {1}",
+                new Object[]{name, type.getDamage()});
     }
 
     /**

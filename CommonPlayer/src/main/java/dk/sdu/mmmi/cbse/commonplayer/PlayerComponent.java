@@ -4,11 +4,15 @@ import dk.sdu.mmmi.cbse.common.components.IComponent;
 
 /**
  * Component for player-specific properties.
- * Contains information like lives, score, and invulnerability state.
  */
 public class PlayerComponent implements IComponent {
     private int lives = 3;
     private int score = 0;
+
+    // Health system
+    private int maxHealth = 3;
+    private int currentHealth = 3;
+
     private boolean invulnerable = false;
     private int invulnerabilityTimer = 0; // Frames of invulnerability remaining
     private static final int INVULNERABILITY_DURATION = 180; // 3 seconds at 60 FPS
@@ -39,23 +43,100 @@ public class PlayerComponent implements IComponent {
     }
 
     /**
-     * Damage player (reduce lives)
+     * Get current health
      *
-     * @return true if player died
+     * @return Current health points
      */
-    public boolean damage() {
+    public int getCurrentHealth() {
+        return currentHealth;
+    }
+
+    /**
+     * Get maximum health
+     *
+     * @return Maximum health points
+     */
+    public int getMaxHealth() {
+        return maxHealth;
+    }
+
+    /**
+     * Set maximum health and reset current health
+     *
+     * @param maxHealth Maximum health to set
+     */
+    public void setMaxHealth(int maxHealth) {
+        this.maxHealth = maxHealth;
+        this.currentHealth = maxHealth;
+    }
+
+    /**
+     * Restore full health
+     */
+    public void heal() {
+        currentHealth = maxHealth;
+    }
+
+    /**
+     * Apply damage to player
+     *
+     * @param damage Amount of damage to apply
+     * @return true if player died (health reached 0)
+     */
+    public boolean takeDamage(int damage) {
         if (invulnerable) {
             return false;
         }
 
-        lives--;
-        if (lives > 0) {
-            // Make temporarily invulnerable after taking damage
+        currentHealth -= damage;
+
+        if (currentHealth <= 0) {
+            currentHealth = 0;
+            lives--;
+
+            if (lives > 0) {
+                // Respawn with full health and temporary invulnerability
+                currentHealth = maxHealth;
+                setInvulnerable(true);
+                return false; // Still alive
+            } else {
+                return true; // Player died (no lives left)
+            }
+        } else {
+            // Damaged but not killed, make temporarily invulnerable
             setInvulnerable(true);
             return false;
         }
+    }
 
-        return true; // Player died
+    /**
+     * Damage player (backward compatibility - defaults to 1 damage)
+     *
+     * @return true if player died
+     */
+    public boolean damage() {
+        return takeDamage(1);
+    }
+
+    /**
+     * Get health percentage (0.0 to 1.0)
+     *
+     * @return Health as percentage
+     */
+    public float getHealthPercentage() {
+        if (maxHealth <= 0) {
+            return 0.0f;
+        }
+        return (float) currentHealth / maxHealth;
+    }
+
+    /**
+     * Check if player is at full health
+     *
+     * @return true if at full health
+     */
+    public boolean isAtFullHealth() {
+        return currentHealth >= maxHealth;
     }
 
     /**

@@ -7,6 +7,7 @@ module Player {
     requires CommonPhysics;
     requires Core;
     requires java.logging;
+    requires CommonBullet;
 
     uses dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
     uses dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;

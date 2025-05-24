@@ -17,33 +17,57 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Collision detection system with tiered approach for optimal performance.
+ * Collision detection system based on four different phases of collision checking:
+ * <br>
+ * 1. Spatial partitioning (broad-phase)
+ * <br>
+ * 2. Circle-circle test (medium-phase)
+ * <br>
+ * 3. Point-in-polygon for bullets (narrow-phase)
+ * <br>
+ * 4. SAT polygon-polygon (precise-phase)
  */
 public class CollisionDetector {
     private static final Logger LOGGER = Logger.getLogger(CollisionDetector.class.getName());
     private final CollisionLayerMatrix layerMatrix;
+    private final SpatialGrid spatialGrid;
+
+    // Grid configuration for spatial partitioning
+    private static final int GRID_SIZE = 64; // Cells of 64x64 pixels
 
     public CollisionDetector() {
         this.layerMatrix = CollisionLayerMatrix.getInstance();
-        LOGGER.log(Level.INFO, "CollisionDetector initialized");
+        this.spatialGrid = new SpatialGrid(GRID_SIZE);
+        LOGGER.log(Level.INFO, "CollisionDetector initialized with spatial partitioning");
     }
 
     /**
-     * Detect all collisions in the world
+     * Detect all collisions using spatial partitioning for O(n) instead of O(n²)
      */
     public List<Pair<Entity, Entity>> detectCollisions(GameData gameData, World world) {
         List<Pair<Entity, Entity>> collisions = new ArrayList<>();
         List<Entity> collidableEntities = getCollidableEntities(world);
 
-        // Check each entity against all others (optimized to avoid duplicate checks)
-        for (int i = 0; i < collidableEntities.size(); i++) {
-            Entity entity1 = collidableEntities.get(i);
+        // Early exit if too few entities
+        if (collidableEntities.size() < 2) {
+            return collisions;
+        }
 
-            for (int j = i + 1; j < collidableEntities.size(); j++) {
-                Entity entity2 = collidableEntities.get(j);
+        // Update spatial grid
+        spatialGrid.clear();
+        spatialGrid.updateGrid(collidableEntities, gameData);
+
+        // Check collisions only within same grid cells
+        for (Entity entity1 : collidableEntities) {
+            List<Entity> nearbyEntities = spatialGrid.getNearbyEntities(entity1);
+
+            for (Entity entity2 : nearbyEntities) {
+                // Avoid duplicate checks and self-collision
+                if (System.identityHashCode(entity1) >= System.identityHashCode(entity2)) {
+                    continue;
+                }
 
                 if (canCollide(entity1, entity2) && isColliding(entity1, entity2)) {
-                    // Use ordered pair to maintain consistent collision pair ordering
                     collisions.add(Pair.ordered(entity1, entity2));
                     LOGGER.log(Level.FINE, "Collision detected between entities {0} and {1}",
                             new Object[]{entity1.getID(), entity2.getID()});
@@ -55,7 +79,7 @@ public class CollisionDetector {
     }
 
     /**
-     * Tiered collision detection with optimizations for different entity types
+     * Optimized four-tier collision detection
      */
     public boolean isColliding(Entity entity1, Entity entity2) {
         TransformComponent transform1 = entity1.getComponent(TransformComponent.class);
@@ -65,12 +89,12 @@ public class CollisionDetector {
             return false;
         }
 
-        // 1: Circle-based test
+        // Tier 1: Circle-based broad-phase test (fastest)
         if (!circleCircleCollision(transform1, transform2)) {
             return false;  // Definitely not colliding
         }
 
-        // 2: Handle bullet collisions (treat bullets as points)
+        // Tier 2: Handle bullet collisions (treat bullets as points)
         TagComponent tag1 = entity1.getComponent(TagComponent.class);
         TagComponent tag2 = entity2.getComponent(TagComponent.class);
 
@@ -82,17 +106,91 @@ public class CollisionDetector {
             return polygonPointCollision(transform1, transform2.getPosition());
         }
 
-        // 3: Full polygon collision for precision
+        // Tier 3: SAT polygon collision for precision
         if (hasPolygonShape(transform1) && hasPolygonShape(transform2)) {
-            return polygonPolygonCollision(transform1, transform2);
+            return satPolygonCollision(transform1, transform2);
         }
 
+        // Tier 4: Default to circle collision
         return true;
     }
 
     /**
-     * Check if two entities can collide based on their collision layers
+     * Optimized SAT (Separating Axis Theorem) polygon collision
+     * More efficient than line-line intersection for convex polygons
      */
+    private boolean satPolygonCollision(TransformComponent t1, TransformComponent t2) {
+        double[] poly1 = transformPolygonToWorld(t1);
+        double[] poly2 = transformPolygonToWorld(t2);
+
+        // Test separation on axes from polygon 1
+        if (isSeparatedOnAxes(poly1, poly2)) {
+            return false;
+        }
+
+        // Test separation on axes from polygon 2
+        if (isSeparatedOnAxes(poly2, poly1)) {
+            return false;
+        }
+
+        return true; // No separating axis found, polygons are colliding
+    }
+
+    /**
+     * Test if polygons are separated on any axis of the first polygon
+     */
+    private boolean isSeparatedOnAxes(double[] poly1, double[] poly2) {
+        int numPoints1 = poly1.length / 2;
+
+        for (int i = 0; i < numPoints1; i++) {
+            int next = (i + 1) % numPoints1;
+
+            // Get edge vector
+            double edgeX = poly1[next * 2] - poly1[i * 2];
+            double edgeY = poly1[next * 2 + 1] - poly1[i * 2 + 1];
+
+            // Get perpendicular (normal) vector
+            double normalX = -edgeY;
+            double normalY = edgeX;
+
+            // Normalize the normal
+            double length = Math.sqrt(normalX * normalX + normalY * normalY);
+            if (length < 0.000001) continue;
+
+            normalX /= length;
+            normalY /= length;
+
+            // Project both polygons onto this axis
+            double[] proj1 = projectPolygon(poly1, normalX, normalY);
+            double[] proj2 = projectPolygon(poly2, normalX, normalY);
+
+            // Check for separation
+            if (proj1[1] < proj2[0] || proj2[1] < proj1[0]) {
+                return true; // Separated on this axis
+            }
+        }
+
+        return false; // No separation found
+    }
+
+    /**
+     * Project polygon onto axis and return [min, max] projection values
+     */
+    private double[] projectPolygon(double[] polygon, double axisX, double axisY) {
+        int numPoints = polygon.length / 2;
+        double min = Double.MAX_VALUE;
+        double max = Double.MIN_VALUE;
+
+        for (int i = 0; i < numPoints; i++) {
+            double dot = polygon[i * 2] * axisX + polygon[i * 2 + 1] * axisY;
+            min = Math.min(min, dot);
+            max = Math.max(max, dot);
+        }
+
+        return new double[]{min, max};
+    }
+
+    // [Rest of the existing methods remain unchanged]
     private boolean canCollide(Entity entity1, Entity entity2) {
         ColliderComponent collider1 = entity1.getComponent(ColliderComponent.class);
         ColliderComponent collider2 = entity2.getComponent(ColliderComponent.class);
@@ -104,9 +202,6 @@ public class CollisionDetector {
         return layerMatrix.canLayersCollide(collider1.getLayer(), collider2.getLayer());
     }
 
-    /**
-     * Circle-Circle collision test (fast broad-phase)
-     */
     private boolean circleCircleCollision(TransformComponent t1, TransformComponent t2) {
         float dx = t1.getX() - t2.getX();
         float dy = t1.getY() - t2.getY();
@@ -118,9 +213,6 @@ public class CollisionDetector {
         return distanceSquared <= radiiSumSquared;
     }
 
-    /**
-     * Check if a point is inside a polygon (for bullet collisions)
-     */
     private boolean polygonPointCollision(TransformComponent polygon, Vector2D point) {
         if (!hasPolygonShape(polygon)) {
             // Fall back to circle collision if no polygon defined
@@ -154,89 +246,6 @@ public class CollisionDetector {
         return inside;
     }
 
-    /**
-     * Check collision between two polygon shapes
-     */
-    private boolean polygonPolygonCollision(TransformComponent t1, TransformComponent t2) {
-        double[] poly1 = transformPolygonToWorld(t1);
-        double[] poly2 = transformPolygonToWorld(t2);
-
-        // Check if any line of poly1 intersects with any line of poly2
-        int numPoints1 = poly1.length / 2;
-        int numPoints2 = poly2.length / 2;
-
-        for (int i = 0; i < numPoints1; i++) {
-            int nextI = (i + 1) % numPoints1;
-            float x1 = (float) poly1[i * 2];
-            float y1 = (float) poly1[i * 2 + 1];
-            float x2 = (float) poly1[nextI * 2];
-            float y2 = (float) poly1[nextI * 2 + 1];
-
-            for (int j = 0; j < numPoints2; j++) {
-                int nextJ = (j + 1) % numPoints2;
-                float x3 = (float) poly2[j * 2];
-                float y3 = (float) poly2[j * 2 + 1];
-                float x4 = (float) poly2[nextJ * 2];
-                float y4 = (float) poly2[nextJ * 2 + 1];
-
-                if (lineLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4)) {
-                    return true;  // Lines intersect
-                }
-            }
-        }
-
-        // Check if one polygon is completely inside the other
-        return pointInsidePolygon(poly1[0], poly1[1], poly2) ||
-                pointInsidePolygon(poly2[0], poly2[1], poly1);
-    }
-
-    /**
-     * Check if line segments intersect
-     */
-    private boolean lineLineIntersection(float x1, float y1, float x2, float y2,
-                                         float x3, float y3, float x4, float y4) {
-        // Calculate the denominator of the intersection formula
-        float denominator = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-
-        // Lines are parallel if denominator is zero
-        if (denominator == 0) {
-            return false;
-        }
-
-        float uA = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
-        float uB = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
-
-        // If uA and uB are between 0-1, lines are intersecting
-        return (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1);
-    }
-
-    /**
-     * Check if a point is inside a polygon
-     */
-    private boolean pointInsidePolygon(double x, double y, double[] polygon) {
-        boolean inside = false;
-        int numPoints = polygon.length / 2;
-
-        for (int i = 0, j = numPoints - 1; i < numPoints; j = i++) {
-            float xi = (float) polygon[i * 2];
-            float yi = (float) polygon[i * 2 + 1];
-            float xj = (float) polygon[j * 2];
-            float yj = (float) polygon[j * 2 + 1];
-
-            boolean intersect = ((yi > y) != (yj > y)) &&
-                    (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-
-            if (intersect) {
-                inside = !inside;
-            }
-        }
-
-        return inside;
-    }
-
-    /**
-     * Transform polygon local coordinates to world space
-     */
     private double[] transformPolygonToWorld(TransformComponent transform) {
         double[] localCoords = transform.getPolygonCoordinates();
 
@@ -264,9 +273,6 @@ public class CollisionDetector {
         return worldCoords;
     }
 
-    /**
-     * Create a polygon approximation of a circle
-     */
     private double[] approximateCircleAsPolygon(float radius, int sides) {
         double[] coords = new double[sides * 2];
         double angleStep = 2 * Math.PI / sides;
@@ -280,17 +286,11 @@ public class CollisionDetector {
         return coords;
     }
 
-    /**
-     * Check if transform has a polygon shape defined
-     */
     private boolean hasPolygonShape(TransformComponent transform) {
         double[] coords = transform.getPolygonCoordinates();
         return coords != null && coords.length >= 6; // At least 3 points
     }
 
-    /**
-     * Get all entities that can collide
-     */
     private List<Entity> getCollidableEntities(World world) {
         List<Entity> collidableEntities = new ArrayList<>();
 

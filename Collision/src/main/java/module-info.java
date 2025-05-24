@@ -16,7 +16,8 @@ module Collision {
             with dk.sdu.mmmi.cbse.collision.CollisionSystem;
 
     provides dk.sdu.mmmi.cbse.common.services.IPluginService
-            with dk.sdu.mmmi.cbse.collision.CollisionPlugin;
+            with dk.sdu.mmmi.cbse.collision.CollisionPlugin,
+                    dk.sdu.mmmi.cbse.collision.BoundarySystem;
 
     provides dk.sdu.mmmi.cbse.commoncollision.ICollisionSPI
             with dk.sdu.mmmi.cbse.collision.CollisionSystem;
