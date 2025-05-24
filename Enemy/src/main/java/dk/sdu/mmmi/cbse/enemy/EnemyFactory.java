@@ -226,31 +226,30 @@ public class EnemyFactory implements IEnemySPI {
     private WeaponComponent createWeaponComponent(EnemyConfig config) {
         WeaponComponent weapon = new WeaponComponent();
 
-        // Configure based on enemy type
         switch (config.getType()) {
             case HUNTER:
                 weapon.setFiringPattern(Weapon.FiringPattern.BURST);
                 weapon.setBurstCount(3);
                 weapon.setDamage(8.0f);
-                weapon.setCooldownTime(90); // Longer cooldown
+                weapon.setCooldownTime(1.5f);
+                weapon.setBurstDelay(0.05f);
                 break;
             case TURRET:
                 weapon.setFiringPattern(Weapon.FiringPattern.SHOTGUN);
                 weapon.setShotCount(3);
                 weapon.setSpreadAngle(30.0f);
                 weapon.setDamage(5.0f);
-                weapon.setCooldownTime(120); // Long cooldown
+                weapon.setCooldownTime(2.0f);
                 break;
             default: // BASIC
                 weapon.setFiringPattern(Weapon.FiringPattern.AUTOMATIC);
                 weapon.setDamage(10.0f);
-                weapon.setCooldownTime(60);
+                weapon.setCooldownTime(1.0f);
                 break;
         }
 
         weapon.setProjectileSpeed(200.0f);
         weapon.setBulletType(config.getBulletType());
-
         return weapon;
     }
 }

@@ -1,7 +1,7 @@
 package dk.sdu.mmmi.cbse.commonweapon;
 
 /**
- * Configuration class for weapon.
+ * Configuration class for weapon types.
  */
 public class Weapon {
     public enum FiringPattern {
@@ -14,13 +14,13 @@ public class Weapon {
     private final FiringPattern firingPattern;
     private final float damage;
     private final float projectileSpeed;
-    private final int cooldownTime;
+    private final float cooldownTime; // Seconds between shots
 
-    // Burst
+    // Burst configuration
     private final int burstCount;
-    private final int burstDelay;
+    private final float burstDelay; // Seconds between burst shots
 
-    // Shotgun
+    // Shotgun configuration
     private final int shotCount;
     private final float spreadAngle;
 
@@ -43,6 +43,8 @@ public class Weapon {
 
     /**
      * Get firing pattern
+     *
+     * @return Firing pattern
      */
     public FiringPattern getFiringPattern() {
         return firingPattern;
@@ -50,6 +52,8 @@ public class Weapon {
 
     /**
      * Get weapon damage
+     *
+     * @return Damage per shot
      */
     public float getDamage() {
         return damage;
@@ -57,112 +61,185 @@ public class Weapon {
 
     /**
      * Get projectile speed
+     *
+     * @return Speed in units per second
      */
     public float getProjectileSpeed() {
         return projectileSpeed;
     }
 
     /**
-     * Get cooldown time
+     * Get cooldown time between shots
+     *
+     * @return Cooldown time in seconds
      */
-    public int getCooldownTime() {
+    public float getCooldownTime() {
         return cooldownTime;
     }
 
     /**
-     * Get burst count
+     * Get burst count for burst weapons
+     *
+     * @return Number of shots in a burst
      */
     public int getBurstCount() {
         return burstCount;
     }
 
     /**
-     * Get burst delay
+     * Get burst delay between shots in a burst
+     *
+     * @return Delay in seconds between burst shots
      */
-    public int getBurstDelay() {
+    public float getBurstDelay() {
         return burstDelay;
     }
 
     /**
-     * Get shot count for shotgun
+     * Get shot count for shotgun weapons
+     *
+     * @return Number of projectiles per shot
      */
     public int getShotCount() {
         return shotCount;
     }
 
     /**
-     * Get spread angle for shotgun
+     * Get spread angle for shotgun weapons
+     *
+     * @return Spread angle in degrees
      */
     public float getSpreadAngle() {
         return spreadAngle;
     }
 
     /**
-     * Get default bullet type
+     * Get default bullet type for this weapon
+     *
+     * @return Default bullet type identifier
      */
     public String getDefaultBulletType() {
         return defaultBulletType;
     }
 
     /**
-     * Builder for WeaponType
+     * Builder for Weapon configuration
      */
     public static class Builder {
         private FiringPattern firingPattern = FiringPattern.AUTOMATIC;
         private float damage = 10.0f;
         private float projectileSpeed = 5.0f;
-        private int cooldownTime = 20;
+        private float cooldownTime = 0.33f; // ~3 shots per second
         private int burstCount = 3;
-        private int burstDelay = 5;
+        private float burstDelay = 0.083f; // ~12 shots per second burst rate
         private int shotCount = 5;
         private float spreadAngle = 30.0f;
         private String defaultBulletType = "standard";
 
+        /**
+         * Set firing pattern
+         *
+         * @param firingPattern Weapon firing pattern
+         * @return Builder for method chaining
+         */
         public Builder type(FiringPattern firingPattern) {
             this.firingPattern = firingPattern;
             return this;
         }
 
+        /**
+         * Set weapon damage
+         *
+         * @param damage Damage per shot
+         * @return Builder for method chaining
+         */
         public Builder damage(float damage) {
             this.damage = damage;
             return this;
         }
 
+        /**
+         * Set projectile speed
+         *
+         * @param projectileSpeed Speed in units per second
+         * @return Builder for method chaining
+         */
         public Builder projectileSpeed(float projectileSpeed) {
             this.projectileSpeed = projectileSpeed;
             return this;
         }
 
-        public Builder cooldownTime(int cooldownTime) {
+        /**
+         * Set cooldown time between shots
+         *
+         * @param cooldownTime Time in seconds between shots
+         * @return Builder for method chaining
+         */
+        public Builder cooldownTime(float cooldownTime) {
             this.cooldownTime = cooldownTime;
             return this;
         }
 
+        /**
+         * Set burst count for burst weapons
+         *
+         * @param burstCount Number of shots in a burst
+         * @return Builder for method chaining
+         */
         public Builder burstCount(int burstCount) {
             this.burstCount = burstCount;
             return this;
         }
 
-        public Builder burstDelay(int burstDelay) {
+        /**
+         * Set burst delay between shots in a burst
+         *
+         * @param burstDelay Time in seconds between burst shots
+         * @return Builder for method chaining
+         */
+        public Builder burstDelay(float burstDelay) {
             this.burstDelay = burstDelay;
             return this;
         }
 
+        /**
+         * Set shot count for shotgun weapons
+         *
+         * @param shotCount Number of projectiles per shot
+         * @return Builder for method chaining
+         */
         public Builder shotCount(int shotCount) {
             this.shotCount = shotCount;
             return this;
         }
 
+        /**
+         * Set spread angle for shotgun weapons
+         *
+         * @param spreadAngle Spread angle in degrees
+         * @return Builder for method chaining
+         */
         public Builder spreadAngle(float spreadAngle) {
             this.spreadAngle = spreadAngle;
             return this;
         }
 
+        /**
+         * Set default bullet type
+         *
+         * @param defaultBulletType Default bullet type identifier
+         * @return Builder for method chaining
+         */
         public Builder defaultBulletType(String defaultBulletType) {
             this.defaultBulletType = defaultBulletType;
             return this;
         }
 
+        /**
+         * Build the weapon configuration
+         *
+         * @return Immutable weapon configuration
+         */
         public Weapon build() {
             return new Weapon(this);
         }

@@ -4,22 +4,22 @@ import dk.sdu.mmmi.cbse.common.components.IComponent;
 
 /**
  * Component for weapon properties.
- * Stores the runtime state of a weapon.
+ * Stores the runtime state of a weapon with time-based cooldowns.
  */
 public class WeaponComponent implements IComponent {
     private Weapon.FiringPattern firingPattern = Weapon.FiringPattern.AUTOMATIC;
     private float damage = 10.0f;
     private float projectileSpeed = 8.0f;
-    private int cooldownTime = 20; // Frames between shots
-    private int currentCooldown = 0; // Current cooldown counter
+    private float cooldownTime = 0.33f; // Seconds between shots
+    private float currentCooldown = 0.0f; // Current cooldown timer in seconds
 
-    // Burst
+    // Burst configuration
     private int burstCount = 3; // Number of bullets in a burst
-    private int burstDelay = 5; // Frames between burst shots
+    private float burstDelay = 0.083f; // Seconds between burst shots
     private int currentBurstCount = 0; // Current bullets fired in burst
-    private int currentBurstDelay = 0; // Current burst delay counter
+    private float currentBurstDelay = 0.0f; // Current burst delay timer in seconds
 
-    // Shotgun
+    // Shotgun configuration
     private int shotCount = 5; // Number of bullets per shot
     private float spreadAngle = 30.0f; // Angle of spread in degrees
 
@@ -29,23 +29,26 @@ public class WeaponComponent implements IComponent {
     // Firing state
     private boolean firing = false;
 
+    /**
+     * Create a weapon component with default values
+     */
     public WeaponComponent() {
-
+        // Using default values
     }
 
     /**
      * Create a weapon component from weapon type
      *
-     * @param weapon Weapon type
+     * @param weapon Weapon type configuration
      */
     public WeaponComponent(Weapon weapon) {
         configureFromType(weapon);
     }
 
     /**
-     * Configure weapon properties based on type
+     * Configure weapon properties based on weapon type
      *
-     * @param weapon Weapon type
+     * @param weapon Weapon type configuration
      */
     public void configureFromType(Weapon weapon) {
         this.firingPattern = weapon.getFiringPattern();
@@ -58,6 +61,78 @@ public class WeaponComponent implements IComponent {
         this.spreadAngle = weapon.getSpreadAngle();
         this.bulletType = weapon.getDefaultBulletType();
     }
+
+    /**
+     * Update weapon cooldown timers
+     *
+     * @param deltaTime Time elapsed since last update in seconds
+     */
+    public void updateCooldown(float deltaTime) {
+        if (currentCooldown > 0.0f) {
+            currentCooldown = Math.max(0.0f, currentCooldown - deltaTime);
+        }
+
+        if (currentBurstDelay > 0.0f) {
+            currentBurstDelay = Math.max(0.0f, currentBurstDelay - deltaTime);
+        }
+    }
+
+    /**
+     * Check if weapon can fire
+     *
+     * @return true if weapon can fire
+     */
+    public boolean canFire() {
+        return currentCooldown <= 0.0f;
+    }
+
+    /**
+     * Reset cooldown after firing
+     */
+    public void resetCooldown() {
+        currentCooldown = cooldownTime;
+    }
+
+    /**
+     * Start burst delay timer
+     */
+    public void startBurstDelay() {
+        currentBurstDelay = burstDelay;
+    }
+
+    /**
+     * Check if burst delay has completed
+     *
+     * @return true if burst delay is complete
+     */
+    public boolean isBurstDelayComplete() {
+        return currentBurstDelay <= 0.0f;
+    }
+
+    /**
+     * Increment burst count and check if burst is complete
+     */
+    public void incrementBurstCount() {
+        currentBurstCount++;
+    }
+
+    /**
+     * Check if current burst is complete
+     *
+     * @return true if burst is complete
+     */
+    public boolean isBurstComplete() {
+        return currentBurstCount >= burstCount;
+    }
+
+    /**
+     * Reset burst counter
+     */
+    public void resetBurst() {
+        currentBurstCount = 0;
+    }
+
+    // Getters and setters
 
     public Weapon.FiringPattern getFiringPattern() {
         return firingPattern;
@@ -83,38 +158,20 @@ public class WeaponComponent implements IComponent {
         this.projectileSpeed = projectileSpeed;
     }
 
-    public int getCooldownTime() {
+    public float getCooldownTime() {
         return cooldownTime;
     }
 
-    public void setCooldownTime(int cooldownTime) {
+    public void setCooldownTime(float cooldownTime) {
         this.cooldownTime = cooldownTime;
     }
 
-    public int getCurrentCooldown() {
+    public float getCurrentCooldown() {
         return currentCooldown;
     }
 
-    public void setCurrentCooldown(int currentCooldown) {
+    public void setCurrentCooldown(float currentCooldown) {
         this.currentCooldown = currentCooldown;
-    }
-
-    public boolean canFire() {
-        return currentCooldown <= 0;
-    }
-
-    public void resetCooldown() {
-        currentCooldown = cooldownTime;
-    }
-
-    public void updateCooldown() {
-        if (currentCooldown > 0) {
-            currentCooldown--;
-        }
-
-        if (currentBurstDelay > 0) {
-            currentBurstDelay--;
-        }
     }
 
     public int getBurstCount() {
@@ -125,11 +182,11 @@ public class WeaponComponent implements IComponent {
         this.burstCount = burstCount;
     }
 
-    public int getBurstDelay() {
+    public float getBurstDelay() {
         return burstDelay;
     }
 
-    public void setBurstDelay(int burstDelay) {
+    public void setBurstDelay(float burstDelay) {
         this.burstDelay = burstDelay;
     }
 
@@ -141,32 +198,12 @@ public class WeaponComponent implements IComponent {
         this.currentBurstCount = currentBurstCount;
     }
 
-    public void incrementBurstCount() {
-        currentBurstCount++;
-    }
-
-    public boolean isBurstComplete() {
-        return currentBurstCount >= burstCount;
-    }
-
-    public void resetBurst() {
-        currentBurstCount = 0;
-    }
-
-    public int getCurrentBurstDelay() {
+    public float getCurrentBurstDelay() {
         return currentBurstDelay;
     }
 
-    public void setCurrentBurstDelay(int currentBurstDelay) {
+    public void setCurrentBurstDelay(float currentBurstDelay) {
         this.currentBurstDelay = currentBurstDelay;
-    }
-
-    public void startBurstDelay() {
-        currentBurstDelay = burstDelay;
-    }
-
-    public boolean isBurstDelayComplete() {
-        return currentBurstDelay <= 0;
     }
 
     public int getShotCount() {

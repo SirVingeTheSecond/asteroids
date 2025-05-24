@@ -77,7 +77,7 @@ public class PlayerFactory {
         weapon.setBulletType("standard");
         weapon.setDamage(10.0f);
         weapon.setProjectileSpeed(300.0f);
-        weapon.setCooldownTime(15); // Frames between shots (4 shots per second at 60 FPS)
+        weapon.setCooldownTime(0.25f); // 4 shots per second
         player.addComponent(weapon);
 
         // Collider component

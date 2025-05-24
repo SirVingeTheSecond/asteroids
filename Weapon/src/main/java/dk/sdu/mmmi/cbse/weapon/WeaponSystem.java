@@ -5,6 +5,7 @@ import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
+import dk.sdu.mmmi.cbse.core.utils.Time;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,15 +27,15 @@ public class WeaponSystem implements IUpdate {
 
     @Override
     public void update(GameData gameData, World world) {
+        float deltaTime = Time.getDeltaTimeF();
+
         for (Entity entity : world.getEntities()) {
             WeaponComponent weapon = entity.getComponent(WeaponComponent.class);
             if (weapon == null) {
                 continue;
             }
 
-            weapon.updateCooldown();
-
-            // ToDo: Anything missing in here?
+            weapon.updateCooldown(deltaTime);
         }
     }
 }

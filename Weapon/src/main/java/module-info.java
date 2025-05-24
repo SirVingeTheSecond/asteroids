@@ -3,6 +3,7 @@ module Weapon {
     requires CommonBullet;
     requires CommonWeapon;
     requires java.logging;
+    requires Core;
 
     uses dk.sdu.mmmi.cbse.commonbullet.IBulletSPI;
 
