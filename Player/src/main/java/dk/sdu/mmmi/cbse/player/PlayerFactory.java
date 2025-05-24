@@ -38,15 +38,15 @@ public class PlayerFactory {
 
         // Transform
         TransformComponent transform = new TransformComponent();
-        transform.setPolygonCoordinates(-7,-7,15,0,-7,7); // Triangle shape
+        transform.setPolygonCoordinates(-7,-7,15,0,-7,7); // Triangle
         transform.setPosition(new Vector2D((float) gameData.getDisplayWidth() / 2, (float) gameData.getDisplayHeight() / 2));
         transform.setRadius(8);
         player.addComponent(transform);
 
-        // Physics component for acceleration/deceleration
+        // Physics
         PhysicsComponent physics = new PhysicsComponent(PhysicsComponent.PhysicsType.DYNAMIC);
-        physics.setMass(1.0f);           // Standard mass
-        physics.setDrag(0.92f);          // 8% drag per frame
+        physics.setMass(1.0f);
+        physics.setDrag(0.92f); // 8% drag per frame
         physics.setMaxSpeed(150.0f);
         physics.setAngularDrag(0.95f);
         player.addComponent(physics);
@@ -60,19 +60,19 @@ public class PlayerFactory {
         renderer.setFilled(true);
         player.addComponent(renderer);
 
-        // Player component
+        // Player
         PlayerComponent playerComponent = new PlayerComponent();
         playerComponent.setLives(3);
         player.addComponent(playerComponent);
 
-        // Movement component (for compatibility with existing systems)
+        // Movement
         MovementComponent movement = new MovementComponent();
         movement.setPattern(MovementComponent.MovementPattern.PLAYER);
-        movement.setSpeed(150.0f); // Base speed (used as max speed reference)
+        movement.setSpeed(150.0f);
         movement.setRotationSpeed(0.0f);
         player.addComponent(movement);
 
-        // Weapon component
+        // Weapon
         WeaponComponent weapon = new WeaponComponent();
         weapon.setBulletType("standard");
         weapon.setDamage(10.0f);
@@ -80,12 +80,12 @@ public class PlayerFactory {
         weapon.setCooldownTime(0.25f); // 4 shots per second
         player.addComponent(weapon);
 
-        // Collider component
+        // Collider
         ColliderComponent collider = new ColliderComponent();
         collider.setLayer(CollisionLayer.PLAYER);
         player.addComponent(collider);
 
-        // Tag component
+        // Tag
         TagComponent tag = new TagComponent();
         tag.addType(EntityType.PLAYER);
         player.addComponent(tag);

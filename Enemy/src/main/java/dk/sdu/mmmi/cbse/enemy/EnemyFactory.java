@@ -34,7 +34,7 @@ public class EnemyFactory implements IEnemySPI {
 
     // Enemy counts for spawning
     private static final int MAX_ENEMIES = 5;
-    private static final float SPAWN_PROBABILITY = 0.01f; // 1% chance per frame
+    private static final float SPAWN_PROBABILITY = 0.01f; // ToDo: Should not be frame dependent but rather time dependent.
 
     /**
      * Create a new enemy factory
