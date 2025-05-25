@@ -19,7 +19,7 @@ public class CollisionLayerMatrix {
 
     private CollisionLayerMatrix() {
         initializeDefaultMatrix();
-        LOGGER.log(Level.INFO, "CollisionLayerMatrix initialized with optimized EnumSet lookups");
+        LOGGER.log(Level.INFO, "CollisionLayerMatrix initialized with boundary separation");
     }
 
     public static CollisionLayerMatrix getInstance() {
@@ -38,22 +38,28 @@ public class CollisionLayerMatrix {
     }
 
     /**
-     * Define collision rules in a centralized, maintainable way
+     * Define collision rules with proper boundary separation
      */
     private void defineCollisionRules() {
         // Player collisions
         setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.ENEMY, true);
         setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.ENEMY_PROJECTILE, true);
-        setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.OBSTACLE, true); // ← Player hits asteroids!
+        setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.OBSTACLE, true);     // Asteroids
+        setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.BOUNDARY, true);    // Screen edges
         setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.TRIGGER, true);
 
         // Enemy collisions
         setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.PLAYER_PROJECTILE, true);
-        setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.OBSTACLE, true);
+        setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.OBSTACLE, true);     // Asteroids
+        setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.BOUNDARY, true);     // Screen edges
 
-        // Projectile collisions
-        setLayersCollide(CollisionLayer.PLAYER_PROJECTILE, CollisionLayer.OBSTACLE, true); // ← Player bullets hit asteroids!
-        setLayersCollide(CollisionLayer.ENEMY_PROJECTILE, CollisionLayer.OBSTACLE, true);
+        // Bullets collisions
+        setLayersCollide(CollisionLayer.PLAYER_PROJECTILE, CollisionLayer.OBSTACLE, true);  // Bullets hit asteroids
+        setLayersCollide(CollisionLayer.ENEMY_PROJECTILE, CollisionLayer.OBSTACLE, true);   // Enemy bullets hit asteroids
+
+        // Bullets do NOT collide with boundaries
+        setLayersCollide(CollisionLayer.PLAYER_PROJECTILE, CollisionLayer.BOUNDARY, false);
+        setLayersCollide(CollisionLayer.ENEMY_PROJECTILE, CollisionLayer.BOUNDARY, false);
 
         // Prevent friendly fire
         setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.PLAYER_PROJECTILE, false);
@@ -71,9 +77,9 @@ public class CollisionLayerMatrix {
             setLayersCollide(CollisionLayer.INVINCIBLE, layer, false);
         }
 
-        LOGGER.log(Level.INFO, "Collision rules defined - Player-Obstacle: {0}, PlayerProjectile-Obstacle: {1}",
-                new Object[]{canLayersCollide(CollisionLayer.PLAYER, CollisionLayer.OBSTACLE),
-                        canLayersCollide(CollisionLayer.PLAYER_PROJECTILE, CollisionLayer.OBSTACLE)});
+        LOGGER.log(Level.INFO, "Collision rules defined - Player-Boundary: {0}, Projectile-Boundary: {1}",
+                new Object[]{canLayersCollide(CollisionLayer.PLAYER, CollisionLayer.BOUNDARY),
+                        canLayersCollide(CollisionLayer.PLAYER_PROJECTILE, CollisionLayer.BOUNDARY)});
     }
 
     /**
@@ -98,7 +104,7 @@ public class CollisionLayerMatrix {
     }
 
     /**
-     * Check if two layers can collide (optimized with EnumSet - already O(1))
+     * Check if two layers can collide
      */
     public boolean canLayersCollide(CollisionLayer layer1, CollisionLayer layer2) {
         // Fast path for INVINCIBLE layer
@@ -106,7 +112,7 @@ public class CollisionLayerMatrix {
             return false;
         }
 
-        // Use EnumSet for O(1) lookup - no cache needed!
+        // Use EnumSet for O(1) lookup
         EnumSet<CollisionLayer> collisionsLayer1 = collisionMatrix.get(layer1);
         return collisionsLayer1 != null && collisionsLayer1.contains(layer2);
     }

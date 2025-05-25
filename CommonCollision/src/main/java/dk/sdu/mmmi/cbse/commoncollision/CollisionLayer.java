@@ -11,8 +11,9 @@ public enum CollisionLayer {
     ENEMY_PROJECTILE(3),
     PLAYER_PROJECTILE(4),
     OBSTACLE(5),
-    TRIGGER(6),
-    INVINCIBLE(7);
+    BOUNDARY(6),
+    TRIGGER(7),
+    INVINCIBLE(8);
 
     private final int value;
 

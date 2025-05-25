@@ -82,7 +82,7 @@ public class PhysicsService implements IPhysicsSPI {
             return;
         }
 
-        // Apply torque as angular acceleration (simplified)
+        // Apply torque as angular acceleration
         // τ = I * α, assuming unit moment of inertia: α = τ
         float currentAngularVelocity = physics.getAngularVelocity();
         physics.setAngularVelocity(currentAngularVelocity + torque);

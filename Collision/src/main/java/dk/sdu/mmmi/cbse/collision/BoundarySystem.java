@@ -18,60 +18,74 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System that creates invisible boundary walls around the screen edges.
+ * System that creates boundary walls around screen edges.
  */
 public class BoundarySystem implements IPluginService {
     private static final Logger LOGGER = Logger.getLogger(BoundarySystem.class.getName());
 
     private final List<Entity> boundaryWalls = new ArrayList<>();
-    private static final float WALL_THICKNESS = 50.0f;
-    private static final boolean DEBUG_VISIBLE = false; // Set to true to see boundaries
+    private static final float WALL_THICKNESS = 100.0f;
+    private static final float WALL_EXTENSION = 50.0f;
+    private static final boolean DEBUG_VISIBLE = false; // ToDo: Not here?
 
     @Override
     public void start(GameData gameData, World world) {
+        LOGGER.log(Level.INFO, "BoundarySystem starting - creating boundary walls that only affect entities");
+
         createBoundaryWalls(gameData, world);
-        LOGGER.log(Level.INFO, "BoundarySystem created {0} boundary walls", boundaryWalls.size());
+
+        LOGGER.log(Level.INFO, "BoundarySystem created {0} boundary walls using BOUNDARY layer",
+                boundaryWalls.size());
     }
 
     @Override
     public void stop(GameData gameData, World world) {
-        // Remove all boundary walls
+        LOGGER.log(Level.INFO, "BoundarySystem stopping - removing {0} boundary walls", boundaryWalls.size());
+
         for (Entity wall : boundaryWalls) {
             world.removeEntity(wall);
         }
         boundaryWalls.clear();
-        LOGGER.log(Level.INFO, "BoundarySystem removed all boundary walls");
+
+        LOGGER.log(Level.INFO, "BoundarySystem stopped - all boundary walls removed");
     }
 
     /**
-     * Create invisible walls around the screen perimeter
+     * Create boundary walls that only affect entities (player, enemies), not projectiles
      */
     private void createBoundaryWalls(GameData gameData, World world) {
         float screenWidth = gameData.getDisplayWidth();
         float screenHeight = gameData.getDisplayHeight();
 
+        float extendedWidth = screenWidth + (2 * WALL_EXTENSION);
+        float extendedHeight = screenHeight + (2 * WALL_EXTENSION);
+
         // Top wall
-        Entity topWall = createWall(
+        Entity topWall = createBoundaryWall(
+                "TopWall",
                 screenWidth / 2, -WALL_THICKNESS / 2,
-                screenWidth, WALL_THICKNESS
+                extendedWidth, WALL_THICKNESS
         );
 
         // Bottom wall
-        Entity bottomWall = createWall(
+        Entity bottomWall = createBoundaryWall(
+                "BottomWall",
                 screenWidth / 2, screenHeight + WALL_THICKNESS / 2,
-                screenWidth, WALL_THICKNESS
+                extendedWidth, WALL_THICKNESS
         );
 
         // Left wall
-        Entity leftWall = createWall(
+        Entity leftWall = createBoundaryWall(
+                "LeftWall",
                 -WALL_THICKNESS / 2, screenHeight / 2,
-                WALL_THICKNESS, screenHeight
+                WALL_THICKNESS, extendedHeight
         );
 
         // Right wall
-        Entity rightWall = createWall(
+        Entity rightWall = createBoundaryWall(
+                "RightWall",
                 screenWidth + WALL_THICKNESS / 2, screenHeight / 2,
-                WALL_THICKNESS, screenHeight
+                WALL_THICKNESS, extendedHeight
         );
 
         // Add walls to world and track them
@@ -79,49 +93,50 @@ public class BoundarySystem implements IPluginService {
         for (Entity wall : walls) {
             world.addEntity(wall);
             boundaryWalls.add(wall);
+
+            LOGGER.log(Level.FINE, "Added boundary wall: {0} using BOUNDARY collision layer", wall.getID());
         }
     }
 
     /**
-     * Create a single boundary wall entity
+     * Create a single boundary wall entity using BOUNDARY collision layer
      */
-    private Entity createWall(float x, float y, float width, float height) {
+    private Entity createBoundaryWall(String name, float x, float y, float width, float height) {
         // Create rectangular shape coordinates
         float halfWidth = width / 2;
         float halfHeight = height / 2;
         double[] shape = {
-                -halfWidth, -halfHeight,  // Top-left
-                halfWidth, -halfHeight,  // Top-right
-                halfWidth,  halfHeight,  // Bottom-right
-                -halfWidth,  halfHeight   // Bottom-left
+                -halfWidth, -halfHeight,  // Bottom-left
+                halfWidth, -halfHeight,   // Bottom-right
+                halfWidth,  halfHeight,   // Top-right
+                -halfWidth,  halfHeight   // Top-left
         };
 
         // Create collider component
         ColliderComponent collider = new ColliderComponent();
-        collider.setLayer(CollisionLayer.OBSTACLE);
+        collider.setLayer(CollisionLayer.BOUNDARY);
 
-        // Create renderer component (invisible unless debug mode)
+        // Create renderer component
         RendererComponent renderer = new RendererComponent();
         renderer.setVisible(DEBUG_VISIBLE);
         if (DEBUG_VISIBLE) {
-            renderer.setStrokeColor(Color.RED);
+            renderer.setStrokeColor(Color.BLUE);
             renderer.setFillColor(Color.TRANSPARENT);
             renderer.setStrokeWidth(2.0f);
             renderer.setRenderLayer(RenderLayer.UI);
         }
 
-        // Create wall entity
+        // Create boundary wall entity
         Entity wall = EntityBuilder.create()
                 .withType(EntityType.OBSTACLE)
                 .atPosition(x, y)
-                .withRadius(Math.max(width, height) / 2) // larger for broad-phase collision
+                .withRadius(Math.max(width, height) / 2)
                 .withShape(shape)
                 .with(collider)
                 .with(renderer)
                 .build();
 
-        LOGGER.log(Level.FINE, "Created boundary wall at ({0}, {1}) with size ({2}, {3})",
-                new Object[]{x, y, width, height});
+        LOGGER.log(Level.FINE, "Created boundary wall '{0}' with BOUNDARY collision layer", name);
 
         return wall;
     }
@@ -134,8 +149,28 @@ public class BoundarySystem implements IPluginService {
             RendererComponent renderer = wall.getComponent(RendererComponent.class);
             if (renderer != null) {
                 renderer.setVisible(visible);
+                if (visible) {
+                    renderer.setStrokeColor(Color.BLUE);  // Blue for boundaries
+                    renderer.setFillColor(Color.TRANSPARENT);
+                    renderer.setStrokeWidth(2.0f);
+                    renderer.setRenderLayer(RenderLayer.UI);
+                }
             }
         }
         LOGGER.log(Level.INFO, "Boundary debug visualization: {0}", visible ? "enabled" : "disabled");
+    }
+
+    /**
+     * Get the number of boundary walls created
+     */
+    public int getBoundaryWallCount() {
+        return boundaryWalls.size();
+    }
+
+    /**
+     * Check if boundary system has been initialized
+     */
+    public boolean isInitialized() {
+        return !boundaryWalls.isEmpty();
     }
 }

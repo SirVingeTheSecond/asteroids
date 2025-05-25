@@ -14,9 +14,13 @@ import java.util.logging.Logger;
 
 /**
  * System that wraps entities around screen edges.
+ * Excludes players when boundary collision system is active.
  */
 public class ScreenWrapSystem implements ILateUpdate {
     private static final Logger LOGGER = Logger.getLogger(ScreenWrapSystem.class.getName());
+
+    // Configuration flag - set to false when using boundary collision system
+    private static final boolean ENABLE_PLAYER_WRAP = false;
 
     @Override
     public int getPriority() {
@@ -26,14 +30,19 @@ public class ScreenWrapSystem implements ILateUpdate {
     @Override
     public void process(GameData gameData, World world) {
         for (Entity entity : world.getEntities()) {
-            // Skip entities without transform component
             if (!entity.hasComponent(TransformComponent.class)) {
                 continue;
             }
 
-            // Skip bullets - they should be destroyed when out of bounds, not wrapped
             TagComponent tagComponent = entity.getComponent(TagComponent.class);
+
+            // Skip bullets - they should be destroyed when out of bounds, not wrapped
             if (tagComponent != null && tagComponent.hasType(EntityType.BULLET)) {
+                continue;
+            }
+
+            // Skip players when boundary collision is enabled (controlled by flag)
+            if (!ENABLE_PLAYER_WRAP && tagComponent != null && tagComponent.hasType(EntityType.PLAYER)) {
                 continue;
             }
 
@@ -85,5 +94,14 @@ public class ScreenWrapSystem implements ILateUpdate {
         }
 
         return wrapped;
+    }
+
+    /**
+     * Enable or disable player wrapping
+     * @param enable true to enable player wrapping (disable boundary collision)
+     */
+    public static void setPlayerWrapEnabled(boolean enable) {
+        // ToDo: This would need to be implemented as a proper configuration system
+        LOGGER.log(Level.INFO, "Player wrap setting: {0} (requires restart)", enable);
     }
 }
