@@ -13,18 +13,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System that wraps entities around screen edges.
- * Excludes players when boundary collision system is active.
+ * System that wraps specific entities around screen edges.
+ * Only asteroids wrap - other entities use boundary collision system.
  */
 public class ScreenWrapSystem implements ILateUpdate {
     private static final Logger LOGGER = Logger.getLogger(ScreenWrapSystem.class.getName());
 
-    // Configuration flag - set to false when using boundary collision system
-    private static final boolean ENABLE_PLAYER_WRAP = false;
-
     @Override
     public int getPriority() {
-        return 100;
+        return 200; // Run after physics and collision systems
     }
 
     @Override
@@ -35,14 +32,12 @@ public class ScreenWrapSystem implements ILateUpdate {
             }
 
             TagComponent tagComponent = entity.getComponent(TagComponent.class);
-
-            // Skip bullets - they should be destroyed when out of bounds, not wrapped
-            if (tagComponent != null && tagComponent.hasType(EntityType.BULLET)) {
+            if (tagComponent == null) {
                 continue;
             }
 
-            // Skip players when boundary collision is enabled (controlled by flag)
-            if (!ENABLE_PLAYER_WRAP && tagComponent != null && tagComponent.hasType(EntityType.PLAYER)) {
+            // Only wrap asteroids - other entities should use boundary system
+            if (!tagComponent.hasType(EntityType.ASTEROID)) {
                 continue;
             }
 
@@ -50,7 +45,7 @@ public class ScreenWrapSystem implements ILateUpdate {
             boolean wrapped = handleScreenWrap(transform, gameData);
 
             if (wrapped) {
-                LOGGER.log(Level.FINE, "Entity wrapped at screen edge: {0}",
+                LOGGER.log(Level.FINE, "Asteroid wrapped at screen edge: {0}",
                         transform.getPosition());
             }
         }
@@ -68,23 +63,28 @@ public class ScreenWrapSystem implements ILateUpdate {
         float y = transform.getY();
         float width = gameData.getDisplayWidth();
         float height = gameData.getDisplayHeight();
+        float radius = transform.getRadius();
 
         boolean wrapped = false;
 
-        // Wrap position
-        if (x < 0) {
-            x = width;
+        // Add buffer for smooth wrapping (entity completely off-screen before wrapping)
+        float buffer = radius * 1.5f;
+
+        // Horizontal wrapping
+        if (x + buffer < 0) {
+            x = width + buffer;
             wrapped = true;
-        } else if (x > width) {
-            x = 0;
+        } else if (x - buffer > width) {
+            x = -buffer;
             wrapped = true;
         }
 
-        if (y < 0) {
-            y = height;
+        // Vertical wrapping
+        if (y + buffer < 0) {
+            y = height + buffer;
             wrapped = true;
-        } else if (y > height) {
-            y = 0;
+        } else if (y - buffer > height) {
+            y = -buffer;
             wrapped = true;
         }
 
@@ -94,14 +94,5 @@ public class ScreenWrapSystem implements ILateUpdate {
         }
 
         return wrapped;
-    }
-
-    /**
-     * Enable or disable player wrapping
-     * @param enable true to enable player wrapping (disable boundary collision)
-     */
-    public static void setPlayerWrapEnabled(boolean enable) {
-        // ToDo: This would need to be implemented as a proper configuration system
-        LOGGER.log(Level.INFO, "Player wrap setting: {0} (requires restart)", enable);
     }
 }

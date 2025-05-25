@@ -18,7 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Physics system focused on physics simulation.
+ * System handling physics behavior.
  */
 public class PhysicsSystem implements IUpdate, IFixedUpdate {
     private static final Logger LOGGER = Logger.getLogger(PhysicsSystem.class.getName());
@@ -74,17 +74,15 @@ public class PhysicsSystem implements IUpdate, IFixedUpdate {
 
         Vector2D velocity = physics.getVelocity();
 
-        // Skip if velocity is negligible
         if (velocity.magnitudeSquared() < 0.001f) return;
 
-        // Calculate intended displacement
         Vector2D displacement = velocity.scale(deltaTime);
         Vector2D currentPosition = transform.getPosition();
         Vector2D targetPosition = currentPosition.add(displacement);
 
         // Check if entity has collider and might hit boundaries
         if (entity.hasComponent(ColliderComponent.class)) {
-            Vector2D validPosition = resolvePositionWithBoundaries(entity, targetPosition, currentPosition);
+            Vector2D validPosition = resolvePositionWithBoundaries(entity, targetPosition);
             transform.setPosition(validPosition);
         } else {
             // No collision resolution needed
@@ -104,14 +102,15 @@ public class PhysicsSystem implements IUpdate, IFixedUpdate {
 
     /**
      * Boundary collision resolution that prevents entities from going through walls.
+     * Asteroids are excluded as they use screen wrapping instead.
      */
-    private Vector2D resolvePositionWithBoundaries(Entity entity, Vector2D targetPosition, Vector2D currentPosition) {
+    private Vector2D resolvePositionWithBoundaries(Entity entity, Vector2D targetPosition) {
         ColliderComponent collider = entity.getComponent(ColliderComponent.class);
 
-        // Only resolve boundary collisions for entities that can collide with boundaries
         if (collider == null || collider.getLayer() == CollisionLayer.PLAYER_PROJECTILE ||
-                collider.getLayer() == CollisionLayer.ENEMY_PROJECTILE) {
-            return targetPosition; // Bullets pass through boundaries
+                collider.getLayer() == CollisionLayer.ENEMY_PROJECTILE ||
+                collider.getLayer() == CollisionLayer.OBSTACLE) {
+            return targetPosition;
         }
 
         // boundary collision: check if position would be out of screen bounds

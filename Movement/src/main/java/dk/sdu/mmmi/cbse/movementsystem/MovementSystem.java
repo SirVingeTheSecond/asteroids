@@ -57,8 +57,8 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
             if (entity.hasComponent(MovementComponent.class)) {
                 moveEntity(entity, transform, deltaTime);
             } else if (tag != null && tag.hasType(EntityType.ASTEROID)) {
-                // Fallback: if asteroid doesn't have MovementComponent but no physics, create basic movement
-                handleAsteroidFallback(entity, transform, deltaTime);
+                // Fallback: if asteroid doesn't have MovementComponent but no physics, basic movement!
+                handleAsteroidFallback(entity, transform);
             }
         }
     }
@@ -117,11 +117,10 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
     /**
      * Fallback movement for asteroids without MovementComponent or PhysicsComponent
      */
-    private void handleAsteroidFallback(Entity entity, TransformComponent transform, float deltaTime) {
+    private void handleAsteroidFallback(Entity entity, TransformComponent transform) {
         LOGGER.log(Level.WARNING, "Asteroid {0} has no MovementComponent or PhysicsComponent, applying fallback movement",
                 entity.getID());
 
-        // Create a basic MovementComponent for the asteroid
         MovementComponent movement = new MovementComponent(MovementComponent.MovementPattern.LINEAR);
         movement.setSpeed(80.0f + random.nextFloat() * 40.0f); // Random speed between 80-120
         movement.setRotationSpeed(random.nextFloat() * 60.0f - 30.0f); // Random rotation ±30°/s

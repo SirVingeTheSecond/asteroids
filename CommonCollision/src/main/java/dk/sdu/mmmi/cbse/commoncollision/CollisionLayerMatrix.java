@@ -2,7 +2,6 @@ package dk.sdu.mmmi.cbse.commoncollision;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -19,7 +18,7 @@ public class CollisionLayerMatrix {
 
     private CollisionLayerMatrix() {
         initializeDefaultMatrix();
-        LOGGER.log(Level.INFO, "CollisionLayerMatrix initialized with boundary separation");
+        LOGGER.log(Level.INFO, "CollisionLayerMatrix initialized");
     }
 
     public static CollisionLayerMatrix getInstance() {
@@ -27,7 +26,7 @@ public class CollisionLayerMatrix {
     }
 
     /**
-     * Initialize the collision matrix with game-specific rules
+     * Initialize the collision matrix with default rules
      */
     private void initializeDefaultMatrix() {
         for (CollisionLayer layer : CollisionLayer.values()) {
@@ -38,24 +37,29 @@ public class CollisionLayerMatrix {
     }
 
     /**
-     * Define collision rules with proper boundary separation
+     * Define collision rules
      */
     private void defineCollisionRules() {
         // Player collisions
         setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.ENEMY, true);
         setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.ENEMY_PROJECTILE, true);
-        setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.OBSTACLE, true);     // Asteroids
-        setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.BOUNDARY, true);    // Screen edges
-        setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.TRIGGER, true);
+        setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.OBSTACLE, true);
+        setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.BOUNDARY, true);
 
         // Enemy collisions
         setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.PLAYER_PROJECTILE, true);
-        setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.OBSTACLE, true);     // Asteroids
-        setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.BOUNDARY, true);     // Screen edges
+        setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.OBSTACLE, true);
+        setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.BOUNDARY, true);
+
+        // Asteroid-Asteroid collisions
+        setLayersCollide(CollisionLayer.OBSTACLE, CollisionLayer.OBSTACLE, true);
 
         // Bullets collisions
-        setLayersCollide(CollisionLayer.PLAYER_PROJECTILE, CollisionLayer.OBSTACLE, true);  // Bullets hit asteroids
-        setLayersCollide(CollisionLayer.ENEMY_PROJECTILE, CollisionLayer.OBSTACLE, true);   // Enemy bullets hit asteroids
+        setLayersCollide(CollisionLayer.PLAYER_PROJECTILE, CollisionLayer.OBSTACLE, true);
+        setLayersCollide(CollisionLayer.ENEMY_PROJECTILE, CollisionLayer.OBSTACLE, true);
+
+        // Asteroids do NOT collide with boundaries (they wrap instead)
+        setLayersCollide(CollisionLayer.OBSTACLE, CollisionLayer.BOUNDARY, false);
 
         // Bullets do NOT collide with boundaries
         setLayersCollide(CollisionLayer.PLAYER_PROJECTILE, CollisionLayer.BOUNDARY, false);
@@ -77,9 +81,7 @@ public class CollisionLayerMatrix {
             setLayersCollide(CollisionLayer.INVINCIBLE, layer, false);
         }
 
-        LOGGER.log(Level.INFO, "Collision rules defined - Player-Boundary: {0}, Projectile-Boundary: {1}",
-                new Object[]{canLayersCollide(CollisionLayer.PLAYER, CollisionLayer.BOUNDARY),
-                        canLayersCollide(CollisionLayer.PLAYER_PROJECTILE, CollisionLayer.BOUNDARY)});
+        LOGGER.log(Level.INFO, "Collision rules defined");
     }
 
     /**
@@ -131,24 +133,5 @@ public class CollisionLayerMatrix {
         collisionMatrix.clear();
         initializeDefaultMatrix();
         LOGGER.log(Level.INFO, "Collision matrix reset to defaults");
-    }
-
-    /**
-     * Get statistics about the collision matrix
-     */
-    public Map<String, Object> getStatistics() {
-        Map<String, Object> stats = new HashMap<>();
-
-        int totalConnections = 0;
-        for (Map.Entry<CollisionLayer, EnumSet<CollisionLayer>> entry : collisionMatrix.entrySet()) {
-            int connections = entry.getValue().size();
-            stats.put(entry.getKey().name() + "_connections", connections);
-            totalConnections += connections;
-        }
-
-        stats.put("total_connections", totalConnections);
-        stats.put("total_layers", CollisionLayer.values().length);
-
-        return stats;
     }
 }

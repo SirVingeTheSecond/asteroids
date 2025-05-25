@@ -22,7 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Player movement system focusing on movement.
+ * System handling the Player.
  */
 public class PlayerSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(PlayerSystem.class.getName());
@@ -47,7 +47,6 @@ public class PlayerSystem implements IUpdate {
      */
     private void applySmartStopping(Entity player, Vector2D currentVelocity, float currentSpeed) {
         if (currentSpeed < 0.1f) {
-            // Very low speed - hard stop to prevent jitter
             physicsSPI.setVelocity(player, Vector2D.zero());
             return;
         }
@@ -61,8 +60,7 @@ public class PlayerSystem implements IUpdate {
             LOGGER.log(Level.FINEST, "Applied stopping force: {0} (multiplier: {1})",
                     new Object[]{stopForce.magnitude(), stopForceMultiplier});
         } else {
-            // Near stopping threshold - use velocity damping instead of force
-            Vector2D dampedVelocity = currentVelocity.scale(0.85f); // Exponential decay
+            Vector2D dampedVelocity = currentVelocity.scale(0.85f);
             if (dampedVelocity.magnitude() < 0.5f) {
                 dampedVelocity = Vector2D.zero(); // Complete stop
             }
@@ -88,31 +86,27 @@ public class PlayerSystem implements IUpdate {
 
         if (transform == null) return;
 
-        // Handle movement
         processMovement(player, transform);
 
-        // Handle rotation
         processRotation(transform);
 
-        // Handle shooting
         processShooting(player, gameData, world);
 
-        // Update player state
         updatePlayerState(player, playerComponent);
     }
 
     /**
-     * Clean, predictable movement using simple force application
+     * Movement using force
      */
     private void processMovement (Entity player, TransformComponent transform){
         if (physicsSPI == null) {
-            processDirectMovement(player, transform);
+            processDirectMovement(transform);
             return;
         }
 
         PhysicsComponent physics = player.getComponent(PhysicsComponent.class);
         if (physics == null) {
-            processDirectMovement(player, transform);
+            processDirectMovement(transform);
             return;
         }
 
@@ -125,14 +119,13 @@ public class PlayerSystem implements IUpdate {
         float currentSpeed = currentVelocity.magnitude();
 
         if (inputDirection.magnitudeSquared() > 0.001f) {
-            // Apply movement force in input direction
             Vector2D movementForce = inputDirection.scale(ACCELERATION_FORCE);
             physicsSPI.applyForce(player, movementForce);
 
             LOGGER.log(Level.FINEST, "Applied movement force: {0}, current speed: {1}",
                     new Object[]{movementForce.magnitude(), currentSpeed});
         } else {
-            // Improved stopping logic to prevent jitter
+            // Stopping logic to prevent jitter
             applySmartStopping(player, currentVelocity, currentSpeed);
         }
     }
@@ -140,7 +133,7 @@ public class PlayerSystem implements IUpdate {
     /**
      * Fallback movement for entities without physics
      */
-    private void processDirectMovement (Entity player, TransformComponent transform){
+    private void processDirectMovement (TransformComponent transform){
         Vector2D direction = getCleanInputDirection();
 
         if (direction.magnitudeSquared() > 0.001f) {

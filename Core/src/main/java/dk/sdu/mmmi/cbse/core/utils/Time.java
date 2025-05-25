@@ -1,10 +1,9 @@
 package dk.sdu.mmmi.cbse.core.utils;
 
 /**
- * Global time management class.
- * Centralized time handling for consistent behavior across all systems.
+ * Global time class for ensuring consistent behavior across all systems.
  *
- * Uses temporal anti-aliasing for smooth bullet movement: smaller delta time
+ * Uses temporal anti-aliasing for smooth movement: smaller delta time
  * steps than actual update frequency to reduce visual stepping artifacts.
  */
 public final class Time {
@@ -13,8 +12,8 @@ public final class Time {
 	public static final float FIXED_DELTA_TIME = 1.0f / FIXED_UPDATE_RATE; // 0.01666 seconds
 	public static final int FIXED_UPDATE_INTERVAL_MS = 1000 / FIXED_UPDATE_RATE; // 16 milliseconds
 
-	// Delta time for bullet movement (should explain how this is temporal anti-aliasing)
-	public static final int BULLET_UPDATE_RATE = 120; // Hz - for smoother visual movement
+	// Delta time for bullet movement (I should probably explain WHAT and HOW this is temporal anti-aliasing?)
+	public static final int BULLET_UPDATE_RATE = 120; // Hz
 	public static final float BULLET_DELTA_TIME = 1.0f / BULLET_UPDATE_RATE; // 0.0083 seconds
 
 	// Total elapsed game time in seconds

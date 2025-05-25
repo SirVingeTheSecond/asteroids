@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.asteroid;
 
+import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
@@ -23,7 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System for processing asteroid behavior and handling split events.
+ * System for processing asteroid behavior.
  */
 public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEvent> {
     private static final Logger LOGGER = Logger.getLogger(AsteroidSystem.class.getName());
@@ -45,8 +46,7 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
             LOGGER.log(Level.WARNING, "EventService not available, AsteroidSystem won't receive split events");
         }
 
-        LOGGER.log(Level.INFO, "AsteroidSystem initialized - Splitter: {0}, EventService: {1}, PhysicsSPI: {2}",
-                new Object[]{asteroidSplitter != null, eventService != null, physicsSPI != null});
+        LOGGER.log(Level.INFO, "AsteroidSystem initialized");
     }
 
     @Override
@@ -93,12 +93,11 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
         if (physics == null) {
             LOGGER.log(Level.WARNING, "Asteroid {0} missing PhysicsComponent, adding one", asteroid.getID());
 
-            // Add missing physics component
             PhysicsComponent newPhysics = new PhysicsComponent(PhysicsComponent.PhysicsType.DYNAMIC);
             newPhysics.setMass(1.2f);
-            newPhysics.setDrag(0.998f);
-            newPhysics.setAngularDrag(0.999f);
-            newPhysics.setMaxSpeed(300.0f);
+            newPhysics.setDrag(1); // no linear drag
+            newPhysics.setAngularDrag(1f); // no angular drag
+            newPhysics.setMaxSpeed(500.0f);
             asteroid.addComponent(newPhysics);
 
             // Give it some initial velocity if it doesn't have any
@@ -109,7 +108,7 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
                     float angle = (float)(Math.random() * 360.0);
                     float radians = (float) Math.toRadians(angle);
 
-                    dk.sdu.mmmi.cbse.common.Vector2D velocity = new dk.sdu.mmmi.cbse.common.Vector2D(
+                    Vector2D velocity = new Vector2D(
                             (float) Math.cos(radians) * speed,
                             (float) Math.sin(radians) * speed
                     );
@@ -132,7 +131,7 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
         TransformComponent transform = asteroid.getComponent(TransformComponent.class);
 
         if (asteroidComp != null && transform != null) {
-            dk.sdu.mmmi.cbse.common.Vector2D velocity = dk.sdu.mmmi.cbse.common.Vector2D.zero();
+            Vector2D velocity = Vector2D.zero();
             if (physicsSPI != null) {
                 velocity = physicsSPI.getVelocity(asteroid);
             }
@@ -155,7 +154,11 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
         }
 
         Entity asteroid = event.source();
-        LOGGER.log(Level.INFO, "Received AsteroidSplitEvent for asteroid: {0}", asteroid.getID());
+        Vector2D bulletVelocity = event.getBulletVelocity();
+        Vector2D impactPoint = event.getImpactPoint();
+
+        LOGGER.log(Level.INFO, "Received AsteroidSplitEvent for asteroid: {0}, bullet-caused: {1}",
+                new Object[]{asteroid.getID(), event.isBulletCaused()});
 
         // Validate asteroid for splitting
         if (!validateAsteroidForSplitting(asteroid)) {
@@ -166,7 +169,7 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
         TransformComponent transform = asteroid.getComponent(TransformComponent.class);
 
         // Log pre-split state
-        dk.sdu.mmmi.cbse.common.Vector2D velocity = dk.sdu.mmmi.cbse.common.Vector2D.zero();
+        Vector2D velocity = Vector2D.zero();
         if (physicsSPI != null) {
             velocity = physicsSPI.getVelocity(asteroid);
         }
@@ -182,13 +185,20 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
             return;
         }
 
-        // Perform the split
         if (asteroidSplitter != null) {
             try {
                 int entitiesBeforeSplit = world.getEntities().size();
                 int asteroidsBeforeSplit = countAsteroids(world);
 
-                asteroidSplitter.createSplitAsteroid(asteroid, world);
+                // This is not very pretty
+                if (asteroidSplitter instanceof AsteroidFactory factory && event.isBulletCaused()) {
+                    factory.createSplitAsteroidWithTrajectory(asteroid, bulletVelocity, impactPoint, world);
+                    LOGGER.log(Level.INFO, "Used trajectory splitting");
+                } else {
+                    // Fallback to standard splitting
+                    asteroidSplitter.createSplitAsteroid(asteroid, world);
+                    LOGGER.log(Level.INFO, "Used standard splitting");
+                }
 
                 int entitiesAfterSplit = world.getEntities().size();
                 int asteroidsAfterSplit = countAsteroids(world);
@@ -251,7 +261,7 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
     }
 
     /**
-     * Check if an asteroid can be split based on game rules
+     * Check if an asteroid can be split
      */
     private boolean canAsteroidSplit(AsteroidComponent asteroidComponent) {
         boolean canSplit = asteroidComponent.getSplitCount() < asteroidComponent.getMaxSplits() &&
