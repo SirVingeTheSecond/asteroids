@@ -6,9 +6,11 @@ module Asteroid {
     requires javafx.graphics;
     requires Core;
     requires CommonPlayer;
+    requires CommonPhysics;
 
     uses dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI;
     uses dk.sdu.mmmi.cbse.common.services.IEventService;
+    uses dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
 
     exports dk.sdu.mmmi.cbse.asteroid;
 

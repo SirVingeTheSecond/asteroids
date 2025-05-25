@@ -1,6 +1,7 @@
 package dk.sdu.mmmi.cbse.asteroid;
 
 import dk.sdu.mmmi.cbse.common.RenderLayer;
+import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.FlickerComponent;
 import dk.sdu.mmmi.cbse.common.components.MovementComponent;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
@@ -17,44 +18,53 @@ import dk.sdu.mmmi.cbse.commoncollision.ColliderComponent;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionHandlers;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionResponseComponent;
+import dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
+import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import javafx.scene.paint.Color;
 
 import java.util.Random;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Factory for creating asteroid entities.
+ * Enhanced factory for creating asteroid entities with consistent physics-based movement.
  */
 public class AsteroidFactory implements IAsteroidSPI {
     private static final Logger LOGGER = Logger.getLogger(AsteroidFactory.class.getName());
 
-    private static final float MIN_SPEED = 45.0f; // Units per second
-    private static final float MAX_SPEED = 45.0f; // Units per second
-    private static final float MIN_ROTATION_SPEED = -50.0f; // Degrees per second
-    private static final float MAX_ROTATION_SPEED = 50.0f; // Degrees per second
-    private static final int NUM_SPLIT_ASTEROIDS = 2; // Number of asteroids to create when splitting
+    // Initial asteroid movement constants
+    private static final float MIN_INITIAL_SPEED = 60.0f;
+    private static final float MAX_INITIAL_SPEED = 120.0f;
+    private static final float MIN_ANGULAR_VELOCITY = -90.0f;
+    private static final float MAX_ANGULAR_VELOCITY = 90.0f;
+
+    // Split physics constants
+    private static final int NUM_SPLIT_ASTEROIDS = 2;
+    private static final float SPLIT_VELOCITY_INHERITANCE = 0.8f; // 80% of parent velocity
+    private static final float SEPARATION_IMPULSE_MIN = 100.0f;
+    private static final float SEPARATION_IMPULSE_MAX = 180.0f;
+    private static final float MIN_SEPARATION_DISTANCE = 30.0f;
 
     private final Random random = new Random();
+    private final IPhysicsSPI physicsSPI;
 
-    /**
-     * Create a new asteroid entity
-     *
-     * @param gameData Current game data
-     * @param world The game world to add the asteroid to
-     * @return New asteroid entity
-     */
-    @Override
-    public Entity createAsteroid(GameData gameData, World world) {
-        return createAsteroid(gameData, AsteroidSize.LARGE, 0, null);
+    public AsteroidFactory() {
+        this.physicsSPI = ServiceLoader.load(IPhysicsSPI.class).findFirst().orElse(null);
+        if (physicsSPI == null) {
+            LOGGER.log(Level.WARNING, "PhysicsSPI not available - asteroids will use basic movement");
+        }
+        LOGGER.log(Level.INFO, "AsteroidFactory initialized with physics support: {0}",
+                physicsSPI != null);
     }
 
-    /**
-     * Create smaller asteroids from a parent asteroid when it's destroyed
-     *
-     * @param asteroid The parent asteroid being split
-     * @param world The game world to add the new asteroids to
-     */
+    @Override
+    public Entity createAsteroid(GameData gameData, World world) {
+        // Create initial asteroid with random movement
+        Vector2D randomVelocity = generateRandomVelocity();
+        return createAsteroid(gameData, AsteroidSize.LARGE, 0, null, randomVelocity);
+    }
+
     @Override
     public void createSplitAsteroid(Entity asteroid, World world) {
         AsteroidComponent asteroidComponent = asteroid.getComponent(AsteroidComponent.class);
@@ -68,90 +78,195 @@ public class AsteroidFactory implements IAsteroidSPI {
         // Check if asteroid can be split
         if (asteroidComponent.getSplitCount() >= asteroidComponent.getMaxSplits() ||
                 asteroidComponent.getSize() == AsteroidSize.SMALL) {
+            LOGGER.log(Level.FINE, "Asteroid cannot be split further: size={0}, splitCount={1}",
+                    new Object[]{asteroidComponent.getSize(), asteroidComponent.getSplitCount()});
             return;
         }
 
-        AsteroidSize newSize;
-        switch (asteroidComponent.getSize()) {
-            case LARGE:
-                newSize = AsteroidSize.MEDIUM;
-                break;
-            case MEDIUM:
-                newSize = AsteroidSize.SMALL;
-                break;
-            default:
-                return; // Can't split smaller than SMALL
-        }
+        AsteroidSize newSize = getNextSmallerSize(asteroidComponent.getSize());
+        if (newSize == null) return;
 
-        GameData gameData = new GameData();
-        gameData.setDisplayWidth(1000);
-        gameData.setDisplayHeight(800);
+        // Get parent velocity for inheritance
+        Vector2D parentVelocity = getAsteroidVelocity(asteroid);
 
+        LOGGER.log(Level.INFO, "Splitting asteroid {0}: {1} -> {2}, creating {3} pieces, parent velocity: {4}",
+                new Object[]{asteroid.getID(), asteroidComponent.getSize(), newSize,
+                        NUM_SPLIT_ASTEROIDS, parentVelocity.magnitude()});
+
+        // Create split pieces with physics-based separation
         for (int i = 0; i < NUM_SPLIT_ASTEROIDS; i++) {
-            Entity newAsteroid = createAsteroid(
-                    gameData,
+            Vector2D separationDirection = generateSeparationDirection(i, NUM_SPLIT_ASTEROIDS);
+            Entity newAsteroid = createSplitPiece(
                     newSize,
                     asteroidComponent.getSplitCount() + 1,
-                    asteroid
+                    asteroid,
+                    parentVelocity,
+                    separationDirection
             );
+
             world.addEntity(newAsteroid);
-            LOGGER.log(Level.FINE, "Created split asteroid: {0}", newAsteroid.getID());
+            LOGGER.log(Level.FINE, "Created split asteroid piece: {0} with separation: {1}",
+                    new Object[]{newAsteroid.getID(), separationDirection});
         }
     }
 
     /**
-     * Create an asteroid with specific properties
-     *
-     * @param gameData Game data containing screen dimensions
-     * @param size Asteroid size category
-     * @param splitCount Number of times this asteroid has been split
-     * @param parent Parent asteroid (if split from another)
-     * @return New asteroid entity
+     * Generate random velocity for initial asteroids
      */
-    private Entity createAsteroid(GameData gameData, AsteroidSize size, int splitCount, Entity parent) {
-        // Calculate size based on asteroid category
+    private Vector2D generateRandomVelocity() {
+        float speed = MIN_INITIAL_SPEED + random.nextFloat() * (MAX_INITIAL_SPEED - MIN_INITIAL_SPEED);
+        float angle = random.nextFloat() * 360.0f;
+        float radians = (float) Math.toRadians(angle);
+
+        return new Vector2D(
+                (float) Math.cos(radians) * speed,
+                (float) Math.sin(radians) * speed
+        );
+    }
+
+    /**
+     * Create a single split asteroid piece with proper physics
+     */
+    private Entity createSplitPiece(AsteroidSize size, int splitCount, Entity parent,
+                                    Vector2D parentVelocity, Vector2D separationDirection) {
+        TransformComponent parentTransform = parent.getComponent(TransformComponent.class);
+
+        // Calculate size and position
         float radius = calculateSizeForType(size);
+        Vector2D position = calculateSplitPosition(parentTransform, separationDirection, radius);
 
-        // Calculate position - either random or based on parent
-        float x, y;
-        if (parent != null && parent.hasComponent(TransformComponent.class)) {
-            TransformComponent parentTransform = parent.getComponent(TransformComponent.class);
-            // Position slightly offset from parent
-            double angle = random.nextDouble() * 2 * Math.PI;
-            double offset = parentTransform.getRadius();
-            x = parentTransform.getX() + (float) (Math.cos(angle) * offset);
-            y = parentTransform.getY() + (float) (Math.sin(angle) * offset);
-        } else {
-            // Random starting position
-            x = 100 + random.nextFloat() * (gameData.getDisplayWidth() - 200);
-            y = 100 + random.nextFloat() * (gameData.getDisplayHeight() - 200);
-        }
-
-        // Calculate movement speed - can inherit from parent
-        float speed = MIN_SPEED + random.nextFloat() * (MAX_SPEED - MIN_SPEED);
-        float rotationSpeed = MIN_ROTATION_SPEED + random.nextFloat() * (MAX_ROTATION_SPEED - MIN_ROTATION_SPEED);
-
-        if (parent != null && parent.hasComponent(MovementComponent.class)) {
-            MovementComponent parentMovement = parent.getComponent(MovementComponent.class);
-            // Inherit some of parent's speed, with variation
-            speed = parentMovement.getSpeed() * (0.8f + random.nextFloat() * 0.4f);
-        }
-
+        // Generate shape
         double[] shape = generateAsteroidShape(radius);
 
-        return EntityBuilder.create()
+        // Create the entity
+        Entity asteroid = EntityBuilder.create()
                 .withType(EntityType.ASTEROID)
-                .atPosition(x, y)
+                .atPosition(position)
                 .withRotation(random.nextInt(360))
                 .withRadius(radius)
                 .withShape(shape)
                 .with(createAsteroidComponent(size, splitCount))
-                .with(createMovementComponent(speed, rotationSpeed))
+                .with(createPhysicsComponent())
                 .with(createRendererComponent(size))
                 .with(createCollisionComponent())
                 .with(createAsteroidCollisionResponse())
                 .with(createFlickerComponent())
                 .build();
+
+        // Apply physics impulses for realistic splitting
+        applySplitPhysics(asteroid, parentVelocity, separationDirection);
+
+        return asteroid;
+    }
+
+    /**
+     * Calculate split position with proper separation
+     */
+    private Vector2D calculateSplitPosition(TransformComponent parentTransform,
+                                            Vector2D separationDirection, float newRadius) {
+        Vector2D parentPos = parentTransform.getPosition();
+        float parentRadius = parentTransform.getRadius();
+
+        // Calculate minimum separation distance to prevent overlap
+        float separationDistance = Math.max(MIN_SEPARATION_DISTANCE,
+                parentRadius + newRadius + 10.0f);
+
+        // Apply separation direction
+        Vector2D offset = separationDirection.scale(separationDistance);
+        return parentPos.add(offset);
+    }
+
+    /**
+     * Apply physics impulses to create realistic split behavior
+     */
+    private void applySplitPhysics(Entity asteroid, Vector2D parentVelocity, Vector2D separationDirection) {
+        if (physicsSPI == null || !physicsSPI.hasPhysics(asteroid)) {
+            LOGGER.log(Level.WARNING, "Cannot apply split physics to asteroid {0}: PhysicsSPI unavailable",
+                    asteroid.getID());
+            return;
+        }
+
+        // Inherit parent velocity (reduced)
+        Vector2D inheritedVelocity = parentVelocity.scale(SPLIT_VELOCITY_INHERITANCE);
+
+        // Add separation impulse
+        float separationMagnitude = SEPARATION_IMPULSE_MIN +
+                random.nextFloat() * (SEPARATION_IMPULSE_MAX - SEPARATION_IMPULSE_MIN);
+        Vector2D separationImpulse = separationDirection.scale(separationMagnitude);
+
+        // Apply total velocity
+        Vector2D totalVelocity = inheritedVelocity.add(separationImpulse);
+        physicsSPI.setVelocity(asteroid, totalVelocity);
+
+        // Add random angular velocity for visual appeal
+        float angularVelocity = MIN_ANGULAR_VELOCITY +
+                random.nextFloat() * (MAX_ANGULAR_VELOCITY - MIN_ANGULAR_VELOCITY);
+        physicsSPI.setAngularVelocity(asteroid, angularVelocity);
+
+        LOGGER.log(Level.FINE, "Applied split physics - Total velocity: {0}, Angular: {1}°/s",
+                new Object[]{totalVelocity.magnitude(), angularVelocity});
+    }
+
+    /**
+     * Generate separation direction for split pieces
+     */
+    private Vector2D generateSeparationDirection(int pieceIndex, int totalPieces) {
+        // Create evenly spaced directions around a circle
+        double baseAngle = (2.0 * Math.PI * pieceIndex) / totalPieces;
+
+        // Add random variation (±45 degrees)
+        double variation = (random.nextDouble() - 0.5) * Math.PI / 2.0;
+        double finalAngle = baseAngle + variation;
+
+        return new Vector2D(
+                (float) Math.cos(finalAngle),
+                (float) Math.sin(finalAngle)
+        );
+    }
+
+    /**
+     * Get asteroid velocity (from physics or fallback)
+     */
+    private Vector2D getAsteroidVelocity(Entity asteroid) {
+        if (physicsSPI != null && physicsSPI.hasPhysics(asteroid)) {
+            return physicsSPI.getVelocity(asteroid);
+        }
+
+        // Fallback: estimate velocity from movement component or return default
+        MovementComponent movement = asteroid.getComponent(MovementComponent.class);
+        TransformComponent transform = asteroid.getComponent(TransformComponent.class);
+
+        if (movement != null && transform != null) {
+            Vector2D forward = transform.getForward();
+            return forward.scale(movement.getSpeed());
+        }
+
+        // Return a small default velocity to ensure some separation
+        return new Vector2D(50.0f, 0.0f);
+    }
+
+    /**
+     * Get the next smaller asteroid size
+     */
+    private AsteroidSize getNextSmallerSize(AsteroidSize currentSize) {
+        switch (currentSize) {
+            case LARGE: return AsteroidSize.MEDIUM;
+            case MEDIUM: return AsteroidSize.SMALL;
+            case SMALL: return null; // Cannot split further
+            default: return null;
+        }
+    }
+
+    /**
+     * Create physics component for realistic asteroid behavior
+     */
+    private PhysicsComponent createPhysicsComponent() {
+        PhysicsComponent physics = new PhysicsComponent(PhysicsComponent.PhysicsType.DYNAMIC);
+        physics.setMass(1.2f); // Slightly heavier than bullets but lighter than player
+        physics.setDrag(0.998f); // Very minimal drag in space
+        physics.setAngularDrag(0.999f); // Very little angular drag
+        physics.setMaxSpeed(300.0f); // Reasonable speed limit
+        return physics;
     }
 
     /**
@@ -161,8 +276,6 @@ public class AsteroidFactory implements IAsteroidSPI {
         AsteroidComponent component = new AsteroidComponent(size);
         component.setSplitCount(splitCount);
 
-        // ToDo: Perhaps asteroids should only give points when fully destroyed?
-        // Set score value based on size - smaller asteroids are worth more
         switch (size) {
             case LARGE:
                 component.setScoreValue(100);
@@ -179,21 +292,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create movement component with specified parameters
-     */
-    private MovementComponent createMovementComponent(float speed, float rotationSpeed) {
-        MovementComponent movement = new MovementComponent();
-        movement.setPattern(MovementComponent.MovementPattern.LINEAR);
-        movement.setSpeed(speed);
-        movement.setRotationSpeed(0.0f);
-        return movement;
-    }
-
-    /**
      * Create renderer component for asteroid visualization
-     *
-     * @param size Asteroid size
-     * @return Configured RendererComponent
      */
     private RendererComponent createRendererComponent(AsteroidSize size) {
         RendererComponent renderer = new RendererComponent();
@@ -236,7 +335,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     private CollisionResponseComponent createAsteroidCollisionResponse() {
         CollisionResponseComponent response = new CollisionResponseComponent();
 
-        // Asteroids damage player on collision (only if player is not invulnerable)
+        // Asteroids damage player on collision
         response.addHandler(EntityType.PLAYER, CollisionHandlers.createPlayerDamageHandler(1));
 
         // Asteroids ignore other asteroids
@@ -250,25 +349,21 @@ public class AsteroidFactory implements IAsteroidSPI {
      */
     private FlickerComponent createFlickerComponent() {
         FlickerComponent flicker = new FlickerComponent();
-        flicker.setFlickerRate(8.0f); // 8 Hz flicker for clear damage indication
-        LOGGER.log(Level.FINE, "Created FlickerComponent with rate: {0}", flicker.getFlickerRate());
+        flicker.setFlickerRate(8.0f);
         return flicker;
     }
 
     /**
      * Calculate size based on asteroid type
-     *
-     * @param size Asteroid size category
-     * @return Radius in pixels
      */
     private float calculateSizeForType(AsteroidSize size) {
         switch (size) {
             case LARGE:
-                return 30.0f + random.nextFloat() * 10.0f;
+                return 25.0f + random.nextFloat() * 10.0f;
             case MEDIUM:
-                return 15.0f + random.nextFloat() * 5.0f;
+                return 12.0f + random.nextFloat() * 6.0f;
             case SMALL:
-                return 7.0f + random.nextFloat() * 3.0f;
+                return 6.0f + random.nextFloat() * 4.0f;
             default:
                 return 20.0f;
         }
@@ -276,9 +371,6 @@ public class AsteroidFactory implements IAsteroidSPI {
 
     /**
      * Generate asteroid shape coordinates
-     *
-     * @param size Base size of the asteroid
-     * @return Array of coordinate pairs [x1,y1,x2,y2,...]
      */
     private double[] generateAsteroidShape(float size) {
         int vertices = 8;
@@ -287,16 +379,83 @@ public class AsteroidFactory implements IAsteroidSPI {
 
         for (int i = 0; i < vertices; i++) {
             double angle = Math.toRadians(i * angleStep);
-            // ToDo: Ensure the generated shape is convex.
             // Randomize radius slightly to vary shape
             double radius = size * (0.8 + random.nextDouble() * 0.4);
 
-            // x,y coordinates in the array
             int index = i * 2;
             shape[index] = Math.cos(angle) * radius;       // x coordinate
             shape[index + 1] = Math.sin(angle) * radius;   // y coordinate
         }
 
         return shape;
+    }
+
+    /**
+     * Create asteroid with specific properties (used by split system)
+     */
+    private Entity createAsteroid(GameData gameData, AsteroidSize size, int splitCount,
+                                  Entity parent, Vector2D initialVelocity) {
+        float radius = calculateSizeForType(size);
+
+        // Calculate position
+        Vector2D position;
+        if (parent != null && parent.hasComponent(TransformComponent.class)) {
+            TransformComponent parentTransform = parent.getComponent(TransformComponent.class);
+            // Small offset from parent for non-split creation
+            double angle = random.nextDouble() * 2 * Math.PI;
+            double offset = parentTransform.getRadius() + radius + 15.0f;
+            float x = parentTransform.getX() + (float) (Math.cos(angle) * offset);
+            float y = parentTransform.getY() + (float) (Math.sin(angle) * offset);
+            position = new Vector2D(x, y);
+        } else {
+            // Random starting position for initial asteroids (away from center where player spawns)
+            float centerX = gameData.getDisplayWidth() / 2.0f;
+            float centerY = gameData.getDisplayHeight() / 2.0f;
+            float minDistance = 150.0f; // Keep away from player spawn
+
+            float angle = random.nextFloat() * 360.0f;
+            float distance = minDistance + random.nextFloat() * 200.0f;
+            float radians = (float) Math.toRadians(angle);
+
+            float x = centerX + (float) Math.cos(radians) * distance;
+            float y = centerY + (float) Math.sin(radians) * distance;
+
+            // Clamp to screen bounds
+            x = Math.max(radius, Math.min(gameData.getDisplayWidth() - radius, x));
+            y = Math.max(radius, Math.min(gameData.getDisplayHeight() - radius, y));
+
+            position = new Vector2D(x, y);
+        }
+
+        double[] shape = generateAsteroidShape(radius);
+
+        Entity asteroid = EntityBuilder.create()
+                .withType(EntityType.ASTEROID)
+                .atPosition(position)
+                .withRotation(random.nextInt(360))
+                .withRadius(radius)
+                .withShape(shape)
+                .with(createAsteroidComponent(size, splitCount))
+                .with(createPhysicsComponent())
+                .with(createRendererComponent(size))
+                .with(createCollisionComponent())
+                .with(createAsteroidCollisionResponse())
+                .with(createFlickerComponent())
+                .build();
+
+        // Apply initial velocity using physics
+        if (physicsSPI != null && !initialVelocity.equals(Vector2D.zero())) {
+            physicsSPI.setVelocity(asteroid, initialVelocity);
+
+            // Add random angular velocity for initial asteroids
+            float angularVelocity = MIN_ANGULAR_VELOCITY +
+                    random.nextFloat() * (MAX_ANGULAR_VELOCITY - MIN_ANGULAR_VELOCITY);
+            physicsSPI.setAngularVelocity(asteroid, angularVelocity);
+
+            LOGGER.log(Level.FINE, "Created asteroid with velocity: {0}, angular: {1}°/s",
+                    new Object[]{initialVelocity.magnitude(), angularVelocity});
+        }
+
+        return asteroid;
     }
 }

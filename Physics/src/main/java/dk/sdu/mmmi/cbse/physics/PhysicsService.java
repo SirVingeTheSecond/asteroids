@@ -28,8 +28,7 @@ public class PhysicsService implements IPhysicsSPI {
         }
 
         physics.addForce(force);
-
-        LOGGER.log(Level.FINE, "Applied force {0} to entity {1}",
+        LOGGER.log(Level.FINEST, "Applied force {0} to entity {1}",
                 new Object[]{force, entity.getID()});
     }
 
@@ -43,7 +42,6 @@ public class PhysicsService implements IPhysicsSPI {
         }
 
         physics.addImpulse(impulse);
-
         LOGGER.log(Level.FINE, "Applied impulse {0} to entity {1}",
                 new Object[]{impulse, entity.getID()});
     }
@@ -58,8 +56,7 @@ public class PhysicsService implements IPhysicsSPI {
         }
 
         physics.setVelocity(velocity);
-
-        LOGGER.log(Level.FINE, "Set velocity {0} for entity {1}",
+        LOGGER.log(Level.FINEST, "Set velocity {0} for entity {1}",
                 new Object[]{velocity, entity.getID()});
     }
 
@@ -67,7 +64,7 @@ public class PhysicsService implements IPhysicsSPI {
     public Vector2D getVelocity(Entity entity) {
         PhysicsComponent physics = entity.getComponent(PhysicsComponent.class);
         if (physics == null) {
-            return new Vector2D(0, 0);
+            return Vector2D.zero();
         }
 
         return physics.getVelocity();
@@ -82,12 +79,12 @@ public class PhysicsService implements IPhysicsSPI {
             return;
         }
 
-        // Apply torque as angular acceleration
-        // τ = I * α, assuming unit moment of inertia: α = τ
-        float currentAngularVelocity = physics.getAngularVelocity();
-        physics.setAngularVelocity(currentAngularVelocity + torque);
+        // Convert torque to angular acceleration and apply as angular force
+        float angularAcceleration = torque / physics.getMass();
+        float currentAngularVel = physics.getAngularVelocity();
+        physics.setAngularVelocity(currentAngularVel + angularAcceleration);
 
-        LOGGER.log(Level.FINE, "Applied torque {0} to entity {1}",
+        LOGGER.log(Level.FINEST, "Applied torque {0} to entity {1}",
                 new Object[]{torque, entity.getID()});
     }
 
@@ -101,8 +98,7 @@ public class PhysicsService implements IPhysicsSPI {
         }
 
         physics.setAngularVelocity(angularVelocity);
-
-        LOGGER.log(Level.FINE, "Set angular velocity {0} for entity {1}",
+        LOGGER.log(Level.FINEST, "Set angular velocity {0}°/s for entity {1}",
                 new Object[]{angularVelocity, entity.getID()});
     }
 
@@ -120,15 +116,14 @@ public class PhysicsService implements IPhysicsSPI {
     public void wakeUp(Entity entity) {
         PhysicsComponent physics = entity.getComponent(PhysicsComponent.class);
         if (physics == null) {
-            LOGGER.log(Level.WARNING, "Cannot wake up entity {0}: no PhysicsComponent",
-                    entity.getID());
             return;
         }
 
-        // Wake up by applying a tiny impulse
-        physics.addImpulse(new Vector2D(0.001f, 0.001f));
-
-        LOGGER.log(Level.FINE, "Woke up entity {0}", entity.getID());
+        // Wake up sleeping physics bodies by applying a tiny impulse
+        if (physics.isSleeping()) {
+            physics.addImpulse(new Vector2D(0.001f, 0.001f));
+            LOGGER.log(Level.FINE, "Woke up sleeping entity {0}", entity.getID());
+        }
     }
 
     @Override

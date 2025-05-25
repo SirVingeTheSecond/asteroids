@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 
 /**
  * System that handles entity movement for non-physics entities.
+ * Physics entities are handled by PhysicsSystem for consistent behavior.
  */
 public class MovementSystem implements IUpdate, IFixedUpdate {
     private static final Logger LOGGER = Logger.getLogger(MovementSystem.class.getName());
@@ -55,6 +56,9 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
             // Only process entities that have MovementComponent but no PhysicsComponent
             if (entity.hasComponent(MovementComponent.class)) {
                 moveEntity(entity, transform, deltaTime);
+            } else if (tag != null && tag.hasType(EntityType.ASTEROID)) {
+                // Fallback: if asteroid doesn't have MovementComponent but no physics, create basic movement
+                handleAsteroidFallback(entity, transform, deltaTime);
             }
         }
     }
@@ -104,9 +108,32 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
                 break;
         }
 
+        // Apply rotation if specified
         if (Math.abs(movement.getRotationSpeed()) > 0.0001f) {
             transform.rotate(movement.getRotationSpeed() * deltaTime);
         }
+    }
+
+    /**
+     * Fallback movement for asteroids without MovementComponent or PhysicsComponent
+     */
+    private void handleAsteroidFallback(Entity entity, TransformComponent transform, float deltaTime) {
+        LOGGER.log(Level.WARNING, "Asteroid {0} has no MovementComponent or PhysicsComponent, applying fallback movement",
+                entity.getID());
+
+        // Create a basic MovementComponent for the asteroid
+        MovementComponent movement = new MovementComponent(MovementComponent.MovementPattern.LINEAR);
+        movement.setSpeed(80.0f + random.nextFloat() * 40.0f); // Random speed between 80-120
+        movement.setRotationSpeed(random.nextFloat() * 60.0f - 30.0f); // Random rotation ±30°/s
+        entity.addComponent(movement);
+
+        // Set random initial rotation if not set
+        if (transform.getRotation() == 0) {
+            transform.setRotation(random.nextFloat() * 360.0f);
+        }
+
+        LOGGER.log(Level.INFO, "Added fallback MovementComponent to asteroid {0} with speed {1}",
+                new Object[]{entity.getID(), movement.getSpeed()});
     }
 
     /**
@@ -127,7 +154,7 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
      */
     private void processRandomMovement(TransformComponent transform, MovementComponent movement, float deltaTime) {
         long lastChange = movement.getLastDirectionChange();
-        long currentTime = System.currentTimeMillis(); // ToDo: Should use Time.getTime() here
+        long currentTime = System.currentTimeMillis(); // ToDo: Should use Time.getTime()
 
         if (currentTime - lastChange > DIRECTION_CHANGE_DELAY) {
             if (random.nextFloat() < 0.2f) {
@@ -136,7 +163,7 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
                 transform.setRotation(rotation);
                 movement.setLastDirectionChange(currentTime);
 
-                LOGGER.log(Level.FINE, "Entity {0} changed direction to {1}",
+                LOGGER.log(Level.FINE, "Entity at {0} changed direction to {1}°",
                         new Object[]{transform.getPosition(), rotation});
             }
         }
