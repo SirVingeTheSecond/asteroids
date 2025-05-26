@@ -1,4 +1,4 @@
-package dk.sdu.mmmi.cbse.player;
+package dk.sdu.mmmi.cbse;
 
 import dk.sdu.mmmi.cbse.common.RenderLayer;
 import dk.sdu.mmmi.cbse.common.Vector2D;

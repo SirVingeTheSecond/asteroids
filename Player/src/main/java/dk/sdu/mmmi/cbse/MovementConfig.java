@@ -1,4 +1,4 @@
-package dk.sdu.mmmi.cbse.player;
+package dk.sdu.mmmi.cbse;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

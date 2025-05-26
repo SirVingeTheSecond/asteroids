@@ -62,6 +62,10 @@ public class Game extends Application {
         try {
             LOGGER.log(Level.INFO, "Initializing game");
 
+            ModuleLayerManager.loadPluginModules();
+
+            ModuleLayerTest.testSplitPackageResolution();
+
             initializeMainServices();
             createGameWindow(primaryStage);
             setupInputHandling(canvas.getScene());
@@ -81,14 +85,12 @@ public class Game extends Application {
     }
 
     /**
-     * Initialize core services like event system
+     * Initialize services
      */
     private void initializeMainServices() {
-        // Create and register the EventService
         eventService = new EventService();
 
-        // Load all plugins
-        ServiceLoader.load(IPluginService.class).forEach(plugins::add);
+        plugins.addAll(ModuleLayerManager.getAllPluginServices());
 
         LOGGER.log(Level.INFO, "Main services initialized with {0} plugins", plugins.size());
     }

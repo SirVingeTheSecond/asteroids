@@ -1,4 +1,4 @@
-package dk.sdu.mmmi.cbse.asteroid;
+package dk.sdu.mmmi.cbse;
 
 import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
@@ -29,15 +29,14 @@ import java.util.logging.Logger;
 public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEvent> {
     private static final Logger LOGGER = Logger.getLogger(AsteroidSystem.class.getName());
 
-    private final IAsteroidSPI asteroidSplitter;
-    private final IEventService eventService;
-    private final IPhysicsSPI physicsSPI;
+    private IAsteroidSPI asteroidSplitter;
+    private IEventService eventService;
+    private IPhysicsSPI physicsSPI;
     private World world;
 
     public AsteroidSystem() {
-        this.asteroidSplitter = ServiceLoader.load(IAsteroidSPI.class).findFirst().orElse(null);
-        this.eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
-        this.physicsSPI = ServiceLoader.load(IPhysicsSPI.class).findFirst().orElse(null);
+        // Use layer-aware service loading
+        initializeServices();
 
         if (eventService != null) {
             eventService.subscribe(AsteroidSplitEvent.class, this);
@@ -47,6 +46,44 @@ public class AsteroidSystem implements IUpdate, IEventListener<AsteroidSplitEven
         }
 
         LOGGER.log(Level.INFO, "AsteroidSystem initialized");
+    }
+
+    /**
+     * Initialize services
+     */
+    private void initializeServices() {
+        ModuleLayer currentLayer = this.getClass().getModule().getLayer();
+
+        if (currentLayer != null) {
+            // Load from current layer first
+            asteroidSplitter = ServiceLoader.load(currentLayer, IAsteroidSPI.class)
+                    .findFirst()
+                    .orElse(null);
+            eventService = ServiceLoader.load(currentLayer, IEventService.class)
+                    .findFirst()
+                    .orElse(null);
+            physicsSPI = ServiceLoader.load(currentLayer, IPhysicsSPI.class)
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        // Fallback to boot layer if services not found
+        if (asteroidSplitter == null) {
+            asteroidSplitter = ServiceLoader.load(IAsteroidSPI.class).findFirst().orElse(null);
+        }
+        if (eventService == null) {
+            eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
+        }
+        if (physicsSPI == null) {
+            physicsSPI = ServiceLoader.load(IPhysicsSPI.class).findFirst().orElse(null);
+        }
+
+        LOGGER.log(Level.INFO, "Services loaded - Asteroid: {0}, Event: {1}, Physics: {2}",
+                new Object[]{
+                        asteroidSplitter != null,
+                        eventService != null,
+                        physicsSPI != null
+                });
     }
 
     @Override

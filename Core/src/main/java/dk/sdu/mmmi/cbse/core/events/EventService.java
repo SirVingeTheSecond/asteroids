@@ -24,7 +24,7 @@ public class EventService implements IEventService {
      */
     public EventService() {
         instanceCount++;
-        LOGGER.log(Level.INFO, "EventService instance #{0} created (using shared static listeners)", instanceCount);
+        LOGGER.log(Level.INFO, "EventService instance #{0} created", instanceCount);
     }
 
     @Override

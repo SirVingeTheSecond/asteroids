@@ -1,3 +1,7 @@
+import dk.sdu.mmmi.cbse.AsteroidFactory;
+import dk.sdu.mmmi.cbse.AsteroidPlugin;
+import dk.sdu.mmmi.cbse.AsteroidSystem;
+
 module Asteroid {
     requires java.logging;
     requires Common;
@@ -12,12 +16,12 @@ module Asteroid {
     uses dk.sdu.mmmi.cbse.common.services.IEventService;
     uses dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
 
-    exports dk.sdu.mmmi.cbse.asteroid;
+    exports dk.sdu.mmmi.cbse;
 
     provides dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI
-            with dk.sdu.mmmi.cbse.asteroid.AsteroidFactory;
+            with AsteroidFactory;
     provides dk.sdu.mmmi.cbse.common.services.IPluginService
-            with dk.sdu.mmmi.cbse.asteroid.AsteroidPlugin;
+            with AsteroidPlugin;
     provides dk.sdu.mmmi.cbse.common.services.IUpdate
-            with dk.sdu.mmmi.cbse.asteroid.AsteroidSystem;
+            with AsteroidSystem;
 }

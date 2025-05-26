@@ -46,7 +46,8 @@ public class ModuleConfig {
 
     public static List<IUpdate> getUpdateServices() {
         if (updateServices == null) {
-            updateServices = loadSortedServices(IUpdate.class, IUpdate::getPriority);
+            updateServices = ModuleLayerManager.getAllUpdateServices();
+            updateServices.sort(Comparator.comparingInt(IUpdate::getPriority));
         }
         return updateServices;
     }
