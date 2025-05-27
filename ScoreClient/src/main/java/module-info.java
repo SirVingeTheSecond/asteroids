@@ -1,10 +1,14 @@
-module Score {
+module ScoreClient {
     uses dk.sdu.mmmi.cbse.common.services.IEventService;
 
     requires Common;
     requires CommonEnemy;
     requires java.logging;
-    requires java.net.http;
+
+    requires spring.web;
+    requires spring.core;
+    requires spring.beans;
+    requires com.fasterxml.jackson.databind;
 
     exports dk.sdu.mmmi.cbse.scoreclient;
 
