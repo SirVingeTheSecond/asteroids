@@ -15,7 +15,7 @@ public class ScoreService {
         SpringApplication.run(ScoreService.class, args);
     }
 
-    @GetMapping("/score/get")
+    @GetMapping("/score")
     public int getScore() {
         return this.score;
     }

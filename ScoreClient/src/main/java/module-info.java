@@ -3,6 +3,7 @@ module ScoreClient {
 
     requires Common;
     requires CommonEnemy;
+    requires CommonAsteroid;
     requires java.logging;
 
     requires spring.web;
@@ -12,6 +13,6 @@ module ScoreClient {
 
     exports dk.sdu.mmmi.cbse.scoreclient;
 
-    provides dk.sdu.mmmi.cbse.common.services.IUpdate
+    provides dk.sdu.mmmi.cbse.common.services.IPluginService
             with dk.sdu.mmmi.cbse.scoreclient.ScoreSystem;
 }

@@ -8,26 +8,24 @@ import java.util.logging.Logger;
 
 /**
  * Configuration class for the scoring service RestTemplate.
- * Provides centralized configuration following CBSE principles of separation of concerns.
  */
 public class ScoreServiceConfig {
     private static final Logger LOGGER = Logger.getLogger(ScoreServiceConfig.class.getName());
 
-    // Configuration constants
+    // Config
     private static final Duration CONNECTION_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration READ_TIMEOUT = Duration.ofSeconds(10);
     private static final String DEFAULT_SERVICE_URL = "http://localhost:8080";
 
     /**
-     * Create a configured RestTemplate for scoring service communication.
-     * Encapsulates REST client configuration to maintain high cohesion.
+     * Create a RestTemplate for communication with scoring service.
      *
      * @return Configured RestTemplate instance
      */
     public static RestTemplate createScoringRestTemplate() {
         RestTemplate restTemplate = new RestTemplate();
 
-        // Configure timeouts for better reliability
+        // for better reliability
         restTemplate.getRequestFactory();
 
         LOGGER.log(Level.INFO, "Created RestTemplate for scoring service with timeouts: connect={0}s, read={1}s",
@@ -43,14 +41,12 @@ public class ScoreServiceConfig {
      * @return Default service URL
      */
     public static String getDefaultServiceUrl() {
-        // In a more advanced setup, this could read from properties files
-        // or environment variables while maintaining the same interface
+        // Could read from properties files but not needed for this simple example
         return DEFAULT_SERVICE_URL;
     }
 
     /**
      * Validate service URL format.
-     * Provides input validation to maintain system reliability.
      *
      * @param url URL to validate
      * @return true if URL is valid
@@ -70,7 +66,6 @@ public class ScoreServiceConfig {
 
     /**
      * Create service endpoint URL.
-     * Encapsulates URL construction logic following DRY principles.
      *
      * @param baseUrl Base service URL
      * @param endpoint Endpoint path
