@@ -9,115 +9,79 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Registry for different weapons.
+ * Registry for weapons with tactical balance and distinct roles.
  */
 public class WeaponRegistry {
     private static final Logger LOGGER = Logger.getLogger(WeaponRegistry.class.getName());
     private static final WeaponRegistry INSTANCE = new WeaponRegistry();
 
-    private final Map<String, Weapon> weapon = new HashMap<>();
+    private final Map<String, Weapon> weapons = new HashMap<>();
 
-    /**
-     * Create a new weapon registry and register weapons
-     */
     private WeaponRegistry() {
         registerWeapons();
-
-        LOGGER.log(Level.INFO, "WeaponRegistry initialized with {0} weapon types",
-                weapon.size());
+        LOGGER.log(Level.INFO, "WeaponRegistry initialized with {0} weapon types", weapons.size());
     }
 
-    /**
-     * Get the singleton instance
-     *
-     * @return The WeaponRegistry instance
-     */
     public static WeaponRegistry getInstance() {
         return INSTANCE;
     }
 
     /**
-     * Register default weapons
+     * Register all weapon configurations with exact tactical specifications
      */
     private void registerWeapons() {
-        // Automatic
+        // AUTOMATIC
         registerWeapon("automatic", new Weapon.Builder()
                 .type(Weapon.FiringPattern.AUTOMATIC)
-                .damage(10.0f)
-                .projectileSpeed(8.0f)
-                .cooldownTime(10)
-                .defaultBulletType("standard")
+                .damage(1.0f)                    // 1 damage per bullet
+                .projectileSpeed(400.0f)         // Fast projectiles
+                .cooldownTime(0.15f)             // ~6.7 shots per second
+                .defaultBulletType("tiny")       // Tiny bullets (2.5f radius)
                 .build());
 
-        // Burst
+        // BURST
         registerWeapon("burst", new Weapon.Builder()
                 .type(Weapon.FiringPattern.BURST)
-                .damage(15.0f)
-                .projectileSpeed(10.0f)
-                .cooldownTime(30)
-                .burstCount(3)
-                .burstDelay(3)
-                .defaultBulletType("standard")
+                .damage(1.0f)                    // 1 damage per bullet
+                .projectileSpeed(350.0f)         // Medium speed
+                .cooldownTime(0.8f)              // Time between bursts
+                .burstCount(3)                   // 3-shot bursts
+                .burstDelay(0.08f)               // Fast burst shots
+                .defaultBulletType("standard")   // Standard bullets (4.0f radius)
                 .build());
 
-        // Heavy
+        // HEAVY
         registerWeapon("heavy", new Weapon.Builder()
                 .type(Weapon.FiringPattern.HEAVY)
-                .damage(30.0f)
-                .projectileSpeed(6.0f)
-                .cooldownTime(60)
-                .defaultBulletType("heavy")
+                .damage(2.0f)                    // 2 damage per bullet (double!)
+                .projectileSpeed(280.0f)         // Slower bullets
+                .cooldownTime(1.2f)              // Slow firing
+                .defaultBulletType("heavy")      // Large bullets (6.5f radius)
                 .build());
 
-        // Shotgun
+        // SHOTGUN
         registerWeapon("shotgun", new Weapon.Builder()
                 .type(Weapon.FiringPattern.SHOTGUN)
-                .damage(7.0f)
-                .projectileSpeed(7.0f)
-                .cooldownTime(25)
-                .shotCount(5)
-                .spreadAngle(30)
-                .defaultBulletType("standard")
+                .damage(1.0f)                    // 1 damage per pellet
+                .projectileSpeed(320.0f)         // Medium speed
+                .cooldownTime(0.9f)              // Moderate firing rate
+                .shotCount(5)                    // 5 pellets
+                .spreadAngle(35.0f)              // Wide spread
+                .defaultBulletType("standard")   // Standard size pellets
                 .build());
     }
 
-    /**
-     * Register a weapon
-     *
-     * @param name Weapon name
-     * @param type Weapon configuration
-     */
-    public void registerWeapon(String name, Weapon type) {
-        weapon.put(name.toLowerCase(), type);
-        LOGGER.log(Level.FINE, "Registered weapon type: {0}", name);
+    public void registerWeapon(String name, Weapon weapon) {
+        weapons.put(name.toLowerCase(), weapon);
+        LOGGER.log(Level.FINE, "Registered weapon: {0} with damage: {1}",
+                new Object[]{name, weapon.getDamage()});
     }
 
-    /**
-     * Get a weapon by name
-     *
-     * @param name Weapon name
-     * @return Weapon or null if not found
-     */
     public Weapon getWeapon(String name) {
-        return weapon.getOrDefault(name.toLowerCase(), weapon.get("automatic"));
+        return weapons.getOrDefault(name.toLowerCase(), weapons.get("automatic"));
     }
 
-    /**
-     * Get all available weapon type names
-     *
-     * @return Set of weapon type names
-     */
     public Set<String> getAvailableWeapons() {
-        return weapon.keySet();
-    }
-
-    /**
-     * Check if a weapon exists
-     *
-     * @param name Weapon name
-     * @return true if exists
-     */
-    public boolean hasWeapon(String name) {
-        return weapon.containsKey(name.toLowerCase());
+        return weapons.keySet();
     }
 }

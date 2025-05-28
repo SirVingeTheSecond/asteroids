@@ -1,5 +1,3 @@
-
-
 module Common {
     requires java.logging;
     requires javafx.graphics;
@@ -13,5 +11,7 @@ module Common {
     uses dk.sdu.mmmi.cbse.common.services.IPluginService;
     uses dk.sdu.mmmi.cbse.common.services.ILateUpdate;
     uses dk.sdu.mmmi.cbse.common.services.IUpdate;
+    uses dk.sdu.mmmi.cbse.common.services.IFixedUpdate;
+    uses dk.sdu.mmmi.cbse.common.services.IUIUpdate;
     uses dk.sdu.mmmi.cbse.common.services.IEventService;
 }

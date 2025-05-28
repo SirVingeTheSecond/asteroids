@@ -4,6 +4,7 @@ module Core {
     requires Common;
     requires java.logging;
     requires javafx.graphics;
+    requires CommonPlayer;
 
     uses dk.sdu.mmmi.cbse.common.services.IUpdate;
     uses dk.sdu.mmmi.cbse.common.services.IFixedUpdate;

@@ -46,9 +46,9 @@ public class CollisionLayerMatrix {
         setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.OBSTACLE, true);
         setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.BOUNDARY, true);
 
-        // Enemy collisions
+        // Enemy collisions - FIXED: Enemies don't collide with asteroids
         setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.PLAYER_PROJECTILE, true);
-        setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.OBSTACLE, true);
+        setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.OBSTACLE, false); // FIXED: No asteroid collision
         setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.BOUNDARY, true);
 
         // Asteroid-Asteroid collisions
@@ -65,9 +65,10 @@ public class CollisionLayerMatrix {
         setLayersCollide(CollisionLayer.PLAYER_PROJECTILE, CollisionLayer.BOUNDARY, false);
         setLayersCollide(CollisionLayer.ENEMY_PROJECTILE, CollisionLayer.BOUNDARY, false);
 
-        // Prevent friendly fire
+        // Prevent friendly fire - FIXED: Enemies don't damage each other
         setLayersCollide(CollisionLayer.PLAYER, CollisionLayer.PLAYER_PROJECTILE, false);
         setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.ENEMY_PROJECTILE, false);
+        setLayersCollide(CollisionLayer.ENEMY, CollisionLayer.ENEMY, false); // FIXED: No enemy-enemy collision
 
         // DEFAULT layer interactions
         for (CollisionLayer layer : CollisionLayer.values()) {
@@ -81,7 +82,7 @@ public class CollisionLayerMatrix {
             setLayersCollide(CollisionLayer.INVINCIBLE, layer, false);
         }
 
-        LOGGER.log(Level.INFO, "Collision rules defined");
+        LOGGER.log(Level.INFO, "Collision rules defined - Enemies won't collide with asteroids or each other");
     }
 
     /**

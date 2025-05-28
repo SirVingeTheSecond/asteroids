@@ -207,6 +207,9 @@ public class Game extends Application {
             case SPACE:
                 Input.setButton(Button.SPACE, pressed);
                 break;
+            case Q:
+                Input.setButton(Button.Q, pressed);
+                break;
         }
     }
 

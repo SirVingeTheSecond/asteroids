@@ -31,8 +31,8 @@ public class EnemyFactory implements IEnemySPI {
     private final EnemyRegistry enemyRegistry;
 
     // Enemy counts for spawning
-    private static final int MAX_ENEMIES = 5;
-    private static final float SPAWN_PROBABILITY = 0.01f; // ToDo: Should not be frame dependent but rather time dependent.
+    private static final int MAX_ENEMIES = 6; // Increased for more action
+    private static final float SPAWN_PROBABILITY = 0.008f; // Slightly increased spawn rate
 
     /**
      * Create a new enemy factory
@@ -77,16 +77,35 @@ public class EnemyFactory implements IEnemySPI {
                 .atPosition(x, y)
                 .withRotation(random.nextFloat() * 360)
                 .withRadius(15)
-                .withShape(-10, -10, 10, -10, 10, 10, -10, 10) // Square shape
+                .withShape(createEnemyShape(type)) // Different shapes for different types
                 .with(createEnemyComponent(config))
                 .with(createMovementComponent(config))
                 .with(createRendererComponent(type))
                 .with(createColliderComponent())
+                .with(createEnemyCollisionResponse()) // Fixed collision response
                 .with(createWeaponComponent(config))
                 .build();
 
-        LOGGER.log(Level.INFO, "Enemy created with ID: {0}", enemy.getID());
+        LOGGER.log(Level.INFO, "Enemy created with ID: {0} of type: {1}",
+                new Object[]{enemy.getID(), type});
         return enemy;
+    }
+
+    /**
+     * Create enemy-specific shapes
+     */
+    private double[] createEnemyShape(EnemyType type) {
+        switch (type) {
+            case HUNTER:
+                // Triangle shape pointing forward (aggressive looking)
+                return new double[]{-8, -8, 12, 0, -8, 8};
+            case TURRET:
+                // Octagonal shape (more defensive looking)
+                return new double[]{-8, -4, -4, -8, 4, -8, 8, -4, 8, 4, 4, 8, -4, 8, -8, 4};
+            default: // BASIC
+                // Square shape
+                return new double[]{-10, -10, 10, -10, 10, 10, -10, 10};
+        }
     }
 
     @Override
@@ -102,8 +121,16 @@ public class EnemyFactory implements IEnemySPI {
 
         // Spawn new enemies if below maximum
         if (currentEnemies < MAX_ENEMIES && random.nextFloat() < SPAWN_PROBABILITY) {
-            // Select a random enemy type
-            EnemyType type = EnemyType.values()[random.nextInt(EnemyType.values().length)];
+            // Prefer HUNTER and TURRET types over BASIC (75% chance for advanced types)
+            EnemyType type;
+            float typeRoll = random.nextFloat();
+            if (typeRoll < 0.4f) {
+                type = EnemyType.HUNTER;
+            } else if (typeRoll < 0.75f) {
+                type = EnemyType.TURRET;
+            } else {
+                type = EnemyType.BASIC;
+            }
 
             Entity enemy = createEnemy(type, gameData, world);
             world.addEntity(enemy);
@@ -138,8 +165,20 @@ public class EnemyFactory implements IEnemySPI {
 
         // Check if player is within firing range
         if (distanceSquared <= enemyComponent.getFireDistance() * enemyComponent.getFireDistance()) {
-            // Random chance to fire based on enemy type
-            return random.nextFloat() < enemyComponent.getFiringProbability();
+            // Different firing strategies based on enemy type
+            switch (enemyComponent.getType()) {
+                case HUNTER:
+                    // Hunters fire more aggressively when close
+                    float closenessBonus = Math.max(0, 1.0f - (distanceSquared / (enemyComponent.getFireDistance() * enemyComponent.getFireDistance())));
+                    return random.nextFloat() < (enemyComponent.getFiringProbability() + closenessBonus * 0.01f);
+
+                case TURRET:
+                    // Turrets fire in predictable bursts
+                    return random.nextFloat() < enemyComponent.getFiringProbability();
+
+                default:
+                    return random.nextFloat() < enemyComponent.getFiringProbability();
+            }
         }
 
         return false;
@@ -167,17 +206,21 @@ public class EnemyFactory implements IEnemySPI {
         switch (config.getType()) {
             case HUNTER:
                 movement.setPattern(MovementComponent.MovementPattern.LINEAR);
+                movement.setSpeed(config.getSpeed());
+                movement.setRotationSpeed(config.getRotationSpeed() * 2.0f);
                 break;
             case TURRET:
                 movement.setPattern(MovementComponent.MovementPattern.LINEAR);
+                movement.setSpeed(config.getSpeed() * 0.5f);
+                movement.setRotationSpeed(config.getRotationSpeed());
                 break;
             default: // BASIC
                 movement.setPattern(MovementComponent.MovementPattern.RANDOM);
+                movement.setSpeed(config.getSpeed());
+                movement.setRotationSpeed(config.getRotationSpeed());
                 break;
         }
 
-        movement.setSpeed(config.getSpeed());
-        movement.setRotationSpeed(config.getRotationSpeed());
         return movement;
     }
 
@@ -190,20 +233,23 @@ public class EnemyFactory implements IEnemySPI {
 
         switch (type) {
             case HUNTER:
-                renderer.setStrokeColor(Color.RED);
+                renderer.setStrokeColor(Color.CRIMSON);
                 renderer.setFillColor(Color.DARKRED);
+                renderer.setStrokeWidth(2.5f);
                 break;
             case TURRET:
-                renderer.setStrokeColor(Color.PURPLE);
-                renderer.setFillColor(Color.DARKVIOLET);
+                renderer.setStrokeColor(Color.BLUEVIOLET);
+                renderer.setFillColor(Color.INDIGO);
+                renderer.setStrokeWidth(2.0f);
                 break;
             default: // BASIC
                 renderer.setStrokeColor(Color.ORANGE);
                 renderer.setFillColor(Color.DARKORANGE);
+                renderer.setStrokeWidth(2.0f);
                 break;
         }
 
-        renderer.setStrokeWidth(2.0f);
+        renderer.setFilled(true);
         return renderer;
     }
 
@@ -216,21 +262,24 @@ public class EnemyFactory implements IEnemySPI {
         return collider;
     }
 
+    /**
+     * Create collision response component for enemies - FIXED
+     */
     private CollisionResponseComponent createEnemyCollisionResponse() {
         CollisionResponseComponent response = new CollisionResponseComponent();
 
-        // Enemies damage player and are destroyed on collision
+        // Enemies damage player on collision but are also destroyed
         response.addHandler(EntityType.PLAYER, (self, player, context) -> {
             CollisionResult result = CollisionHandlers.handlePlayerDamage(player, 1, context);
-            result.addRemoval(self); // Remove enemy after collision
+            result.addRemoval(self); // Enemy is destroyed when hitting player
             return result;
         });
 
-        // Enemies ignore other enemies
+        // Enemies ignore other enemies (no friendly collisions)
         response.addHandler(EntityType.ENEMY, CollisionHandlers.IGNORE_COLLISION_HANDLER);
 
-        // Enemies are destroyed by obstacles
-        response.addHandler(EntityType.OBSTACLE, CollisionHandlers.REMOVE_ON_COLLISION_HANDLER);
+        // Enemies ignore asteroids (pass through them)
+        response.addHandler(EntityType.OBSTACLE, CollisionHandlers.IGNORE_COLLISION_HANDLER);
 
         return response;
     }
@@ -246,15 +295,15 @@ public class EnemyFactory implements IEnemySPI {
                 weapon.setFiringPattern(Weapon.FiringPattern.BURST);
                 weapon.setBurstCount(3);
                 weapon.setDamage(8.0f);
-                weapon.setCooldownTime(1.5f);
-                weapon.setBurstDelay(0.05f);
+                weapon.setCooldownTime(1.2f);
+                weapon.setBurstDelay(0.04f);
                 break;
             case TURRET:
                 weapon.setFiringPattern(Weapon.FiringPattern.SHOTGUN);
                 weapon.setShotCount(3);
-                weapon.setSpreadAngle(30.0f);
-                weapon.setDamage(5.0f);
-                weapon.setCooldownTime(2.0f);
+                weapon.setSpreadAngle(25.0f);
+                weapon.setDamage(6.0f);
+                weapon.setCooldownTime(1.8f);
                 break;
             default: // BASIC
                 weapon.setFiringPattern(Weapon.FiringPattern.AUTOMATIC);
@@ -263,7 +312,7 @@ public class EnemyFactory implements IEnemySPI {
                 break;
         }
 
-        weapon.setProjectileSpeed(200.0f);
+        weapon.setProjectileSpeed(220.0f);
         weapon.setBulletType(config.getBulletType());
         return weapon;
     }
