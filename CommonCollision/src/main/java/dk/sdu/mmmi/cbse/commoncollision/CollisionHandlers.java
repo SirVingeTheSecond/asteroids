@@ -28,7 +28,7 @@ public class CollisionHandlers {
 
     // Flicker durations
     private static final float ASTEROID_DAMAGE_FLICKER_DURATION = 0.3f;
-    private static final float PLAYER_DAMAGE_FLICKER_DURATION = 1.0f;
+    private static final float PLAYER_DAMAGE_FLICKER_DURATION = 1f;
 
     private CollisionHandlers() {
 
@@ -213,6 +213,25 @@ public class CollisionHandlers {
                 physicsSPI.getAngularVelocity(asteroid2) + angularImpact2);
 
         return result;
+    };
+
+    /**
+     * Handler for bullet-bullet collisions (player vs enemy bullets)
+     */
+    public static final ICollisionHandler BULLET_BULLET_COLLISION_HANDLER = (bullet1, bullet2, context) -> {
+        BulletComponent bulletComp1 = bullet1.getComponent(BulletComponent.class);
+        BulletComponent bulletComp2 = bullet2.getComponent(BulletComponent.class);
+
+        if (bulletComp1 == null || bulletComp2 == null) {
+            return CollisionResult.none();
+        }
+
+        // Only destroy if they're from different sources (player vs enemy)
+        if (bulletComp1.getSource() != bulletComp2.getSource()) {
+            return CollisionResult.remove(bullet1, bullet2);
+        }
+
+        return CollisionResult.none();
     };
 
     /**

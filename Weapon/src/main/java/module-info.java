@@ -6,6 +6,7 @@ module Weapon {
     requires Core;
 
     uses dk.sdu.mmmi.cbse.commonbullet.IBulletSPI;
+    uses dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
 
     exports dk.sdu.mmmi.cbse.weapon;
 

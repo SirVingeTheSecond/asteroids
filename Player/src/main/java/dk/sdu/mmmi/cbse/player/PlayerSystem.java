@@ -17,6 +17,7 @@ import dk.sdu.mmmi.cbse.core.input.Button;
 import dk.sdu.mmmi.cbse.core.input.InputController;
 import dk.sdu.mmmi.cbse.core.utils.Time;
 
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,42 +43,13 @@ public class PlayerSystem implements IUpdate {
         LOGGER.log(Level.INFO, "PlayerSystem initialized");
     }
 
-    /**
-     * Stopping logic that prevents any oscillation
-     */
-    private void applySmartStopping(Entity player, Vector2D currentVelocity, float currentSpeed) {
-        if (currentSpeed < 0.1f) {
-            physicsSPI.setVelocity(player, Vector2D.zero());
-            return;
-        }
-
-        if (currentSpeed > STOP_THRESHOLD) {
-            // Apply proportional stopping force - stronger at higher speeds
-            float stopForceMultiplier = Math.min(0.8f, currentSpeed / MAX_SPEED);
-            Vector2D stopForce = currentVelocity.normalize().scale(-ACCELERATION_FORCE * stopForceMultiplier);
-            physicsSPI.applyForce(player, stopForce);
-
-            LOGGER.log(Level.FINEST, "Applied stopping force: {0} (multiplier: {1})",
-                    new Object[]{stopForce.magnitude(), stopForceMultiplier});
-        } else {
-            Vector2D dampedVelocity = currentVelocity.scale(0.85f);
-            if (dampedVelocity.magnitude() < 0.5f) {
-                dampedVelocity = Vector2D.zero(); // Complete stop
-            }
-            physicsSPI.setVelocity(player, dampedVelocity);
-
-            LOGGER.log(Level.FINEST, "Applied velocity damping: {0} -> {1}",
-                    new Object[]{currentVelocity.magnitude(), dampedVelocity.magnitude()});
-        }
-    }
-
     @Override
-    public int getPriority () {
+    public int getPriority() {
         return 80;
     }
 
     @Override
-    public void update (GameData gameData, World world){
+    public void update(GameData gameData, World world) {
         Entity player = findPlayer(world);
         if (player == null) return;
 
@@ -87,18 +59,60 @@ public class PlayerSystem implements IUpdate {
         if (transform == null) return;
 
         processMovement(player, transform);
-
         processRotation(transform);
-
         processShooting(player, gameData, world);
-
         updatePlayerState(player, playerComponent);
     }
 
     /**
-     * Movement using force
+     * Handle player shooting with proper multi-bullet support
      */
-    private void processMovement (Entity player, TransformComponent transform){
+    private void processShooting(Entity player, GameData gameData, World world) {
+        WeaponComponent weapon = player.getComponent(WeaponComponent.class);
+        if (weapon == null || weaponSPI == null) return;
+
+        boolean shootPressed = InputController.isButtonPressed(Button.SPACE) ||
+                InputController.isButtonPressed(Button.MOUSE1);
+        boolean shootJustPressed = InputController.isButtonDown(Button.SPACE) ||
+                InputController.isButtonDown(Button.MOUSE1);
+
+        weapon.setFiring(shootPressed);
+
+        boolean shouldFire = false;
+
+        switch (weapon.getFiringPattern()) {
+            case BURST:
+                // Burst weapons fire on button press (not hold)
+                if (shootJustPressed && weapon.canFire()) {
+                    weapon.triggerFire();
+                    shouldFire = true;
+                }
+                break;
+
+            case AUTOMATIC:
+            case HEAVY:
+            case SHOTGUN:
+            default:
+                // Other weapons fire while held
+                shouldFire = weapon.isFiring() && weapon.canFire();
+                break;
+        }
+
+        if (shouldFire) {
+            List<Entity> bullets = weaponSPI.shoot(player, gameData, weapon.getBulletType());
+
+            for (Entity bullet : bullets) {
+                world.addEntity(bullet);
+            }
+
+            if (!bullets.isEmpty()) {
+                LOGGER.log(Level.FINE, "Player fired {0} bullets with {1} weapon",
+                        new Object[]{bullets.size(), weapon.getFiringPattern()});
+            }
+        }
+    }
+
+    private void processMovement(Entity player, TransformComponent transform) {
         if (physicsSPI == null) {
             processDirectMovement(transform);
             return;
@@ -110,7 +124,6 @@ public class PlayerSystem implements IUpdate {
             return;
         }
 
-        // Configure physics for responsive movement
         physics.setMaxSpeed(MAX_SPEED);
         physics.setDrag(DRAG_COEFFICIENT);
 
@@ -121,21 +134,32 @@ public class PlayerSystem implements IUpdate {
         if (inputDirection.magnitudeSquared() > 0.001f) {
             Vector2D movementForce = inputDirection.scale(ACCELERATION_FORCE);
             physicsSPI.applyForce(player, movementForce);
-
-            LOGGER.log(Level.FINEST, "Applied movement force: {0}, current speed: {1}",
-                    new Object[]{movementForce.magnitude(), currentSpeed});
         } else {
-            // Stopping logic to prevent jitter
             applySmartStopping(player, currentVelocity, currentSpeed);
         }
     }
 
-    /**
-     * Fallback movement for entities without physics
-     */
-    private void processDirectMovement (TransformComponent transform){
-        Vector2D direction = getCleanInputDirection();
+    private void applySmartStopping(Entity player, Vector2D currentVelocity, float currentSpeed) {
+        if (currentSpeed < 0.1f) {
+            physicsSPI.setVelocity(player, Vector2D.zero());
+            return;
+        }
 
+        if (currentSpeed > STOP_THRESHOLD) {
+            float stopForceMultiplier = Math.min(0.8f, currentSpeed / MAX_SPEED);
+            Vector2D stopForce = currentVelocity.normalize().scale(-ACCELERATION_FORCE * stopForceMultiplier);
+            physicsSPI.applyForce(player, stopForce);
+        } else {
+            Vector2D dampedVelocity = currentVelocity.scale(0.85f);
+            if (dampedVelocity.magnitude() < 0.5f) {
+                dampedVelocity = Vector2D.zero();
+            }
+            physicsSPI.setVelocity(player, dampedVelocity);
+        }
+    }
+
+    private void processDirectMovement(TransformComponent transform) {
+        Vector2D direction = getCleanInputDirection();
         if (direction.magnitudeSquared() > 0.001f) {
             float deltaTime = Time.getDeltaTimeF();
             Vector2D velocity = direction.scale(MAX_SPEED * deltaTime);
@@ -143,10 +167,7 @@ public class PlayerSystem implements IUpdate {
         }
     }
 
-    /**
-     * Get clean, normalized input direction
-     */
-    private Vector2D getCleanInputDirection () {
+    private Vector2D getCleanInputDirection() {
         float horizontal = 0;
         float vertical = 0;
 
@@ -156,18 +177,13 @@ public class PlayerSystem implements IUpdate {
         if (InputController.isButtonPressed(Button.DOWN)) vertical += 1;
 
         Vector2D direction = new Vector2D(horizontal, vertical);
-
-        // Normalize to prevent faster diagonal movement
         if (direction.magnitudeSquared() > 0.001f) {
             return direction.normalize();
         }
         return direction;
     }
 
-    /**
-     * Handle player rotation to face mouse cursor
-     */
-    private void processRotation (TransformComponent transform){
+    private void processRotation(TransformComponent transform) {
         Vector2D mousePos = InputController.getMousePosition();
         Vector2D playerPos = transform.getPosition();
         Vector2D direction = mousePos.subtract(playerPos);
@@ -178,43 +194,15 @@ public class PlayerSystem implements IUpdate {
         }
     }
 
-    /**
-     * Handle player shooting
-     */
-    private void processShooting (Entity player, GameData gameData, World world){
-        WeaponComponent weapon = player.getComponent(WeaponComponent.class);
-        if (weapon == null || weaponSPI == null) return;
-
-        boolean shootPressed = InputController.isButtonPressed(Button.SPACE) ||
-                InputController.isButtonPressed(Button.MOUSE1);
-
-        weapon.setFiring(shootPressed);
-
-        if (weapon.isFiring() && weapon.canFire()) {
-            Entity bullet = weaponSPI.shoot(player, gameData, weapon.getBulletType());
-            if (bullet != null) {
-                world.addEntity(bullet);
-            }
-        }
-    }
-
-    /**
-     * Update player state and effects
-     */
-    private void updatePlayerState (Entity player, PlayerComponent playerComponent){
+    private void updatePlayerState(Entity player, PlayerComponent playerComponent) {
         if (playerComponent != null) {
             playerComponent.updateInvulnerability();
-
-            // Handle invulnerability visual effects
             float deltaTime = Time.getDeltaTimeF();
             dk.sdu.mmmi.cbse.common.utils.FlickerUtility.updateFlicker(player, deltaTime);
         }
     }
 
-    /**
-     * Find player entity in world
-     */
-    private Entity findPlayer (World world){
+    private Entity findPlayer(World world) {
         for (Entity entity : world.getEntities()) {
             TagComponent tag = entity.getComponent(TagComponent.class);
             if (tag != null && tag.hasType(EntityType.PLAYER)) {

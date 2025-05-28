@@ -23,7 +23,6 @@ import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 import dk.sdu.mmmi.cbse.core.input.InputController;
 import javafx.scene.paint.Color;
 
-import java.util.Random;
 import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -35,21 +34,20 @@ import java.util.logging.Logger;
 public class BulletFactory implements IBulletSPI {
     private static final Logger LOGGER = Logger.getLogger(BulletFactory.class.getName());
 
-    // Bullet size configurations (CORRECT as specified!)
-    private static final float TINY_BULLET_RADIUS = 2.5f;      // Automatic
-    private static final float STANDARD_BULLET_RADIUS = 4.0f;   // Burst/Shotgun
-    private static final float HEAVY_BULLET_RADIUS = 6.5f;      // Heavy
+    // Bullet size
+    private static final float TINY_BULLET_RADIUS = 2.5f;
+    private static final float STANDARD_BULLET_RADIUS = 4f;
+    private static final float HEAVY_BULLET_RADIUS = 6.5f;
 
     private static final float DEFAULT_SPAWN_DISTANCE = 15f;
 
-    // Recoil configuration - Updated for tactical balance
-    private static final float HEAVY_RECOIL_FORCE = 150.0f;     // Strong recoil
-    private static final float SHOTGUN_RECOIL_FORCE = 80.0f;    // Strong recoil
-    private static final float BURST_RECOIL_FORCE = 40.0f;      // Medium recoil
-    private static final float AUTO_RECOIL_FORCE = 0.0f;        // No recoil
+    // Recoil config
+    private static final float HEAVY_RECOIL_FORCE = 150f;
+    private static final float SHOTGUN_RECOIL_FORCE = 80f;
+    private static final float BURST_RECOIL_FORCE = 40f;
+    private static final float AUTO_RECOIL_FORCE = 0f;
 
     private final BulletRegistry bulletRegistry;
-    private final Random random = new Random();
     private final IPhysicsSPI physicsSPI;
 
     /**
@@ -111,8 +109,8 @@ public class BulletFactory implements IBulletSPI {
         ColliderComponent colliderComponent = new ColliderComponent();
         colliderComponent.setLayer(isPlayerBullet ? CollisionLayer.PLAYER_PROJECTILE : CollisionLayer.ENEMY_PROJECTILE);
 
-        // Rendering with size-appropriate visuals
-        RendererComponent rendererComponent = createBulletRenderer(bulletTypeConfig, bulletRadius);
+        // Rendering with colors matching shooter
+        RendererComponent rendererComponent = createBulletRenderer(shooter, bulletTypeConfig, bulletRadius);
 
         Entity bullet = EntityBuilder.create()
                 .withType(EntityType.BULLET)
@@ -185,19 +183,19 @@ public class BulletFactory implements IBulletSPI {
 
         float recoilForce = 0.0f;
 
-        // Apply recoil based on weapon pattern with exact specifications
+        // Apply recoil based on weapon pattern
         switch (weaponComponent.getFiringPattern()) {
             case AUTOMATIC:
-                recoilForce = AUTO_RECOIL_FORCE;        // No recoil for steady aim
+                recoilForce = AUTO_RECOIL_FORCE;
                 break;
             case BURST:
-                recoilForce = BURST_RECOIL_FORCE;       // Medium recoil
+                recoilForce = BURST_RECOIL_FORCE;
                 break;
             case HEAVY:
-                recoilForce = HEAVY_RECOIL_FORCE;       // Strong recoil (150 force)
+                recoilForce = HEAVY_RECOIL_FORCE;
                 break;
             case SHOTGUN:
-                recoilForce = SHOTGUN_RECOIL_FORCE;     // Strong recoil
+                recoilForce = SHOTGUN_RECOIL_FORCE;
                 break;
         }
 
@@ -216,22 +214,22 @@ public class BulletFactory implements IBulletSPI {
     }
 
     /**
-     * Get bullet radius based on bullet type with exact specifications
+     * Get bullet radius based on bullet type
      */
     private float getBulletRadius(String bulletType) {
         switch (bulletType.toLowerCase()) {
             case "tiny":
-                return TINY_BULLET_RADIUS;      // 2.5f - Automatic
+                return TINY_BULLET_RADIUS;
             case "heavy":
-                return HEAVY_BULLET_RADIUS;     // 6.5f - Heavy
+                return HEAVY_BULLET_RADIUS;
             case "standard":
             default:
-                return STANDARD_BULLET_RADIUS;  // 4.0f - Burst/Shotgun
+                return STANDARD_BULLET_RADIUS;
         }
     }
 
     /**
-     * Configure bullet component with weapon and bullet type properties
+     * Configure bullet component with weapon and bullet type
      */
     private void configureBulletComponent(BulletComponent bulletComponent,
                                           WeaponComponent weaponComponent,
@@ -253,20 +251,31 @@ public class BulletFactory implements IBulletSPI {
     }
 
     /**
-     * Create renderer component with appropriate size and colors
+     * Create renderer component with colors matching shooter
      */
-    private RendererComponent createBulletRenderer(BulletType bulletTypeConfig, float bulletRadius) {
+    private RendererComponent createBulletRenderer(Entity shooter, BulletType bulletTypeConfig, float bulletRadius) {
         RendererComponent rendererComponent = new RendererComponent();
         rendererComponent.setShapeType(RendererComponent.ShapeType.CIRCLE);
 
-        Color baseColor = bulletTypeConfig.getColor();
-        Color strokeColor = darkenColor(baseColor, 0.3f);
-        Color fillColor = lightenColor(baseColor, 0.2f);
+        // Get shooter's colors
+        RendererComponent shooterRenderer = shooter.getComponent(RendererComponent.class);
+        Color strokeColor;
+        Color fillColor;
+
+        if (shooterRenderer != null) {
+            // Use shooter's colors
+            strokeColor = shooterRenderer.getStrokeColor();
+            fillColor = shooterRenderer.getFillColor();
+        } else {
+            // Fallback to bullet type colors
+            Color baseColor = bulletTypeConfig.getColor();
+            strokeColor = darkenColor(baseColor, 0.3f);
+            fillColor = lightenColor(baseColor, 0.2f);
+        }
 
         rendererComponent.setStrokeColor(strokeColor);
         rendererComponent.setFillColor(fillColor);
 
-        // Adjust stroke width based on bullet size
         float strokeWidth = Math.max(1.0f, bulletRadius * 0.4f);
         rendererComponent.setStrokeWidth(strokeWidth);
 
@@ -285,8 +294,10 @@ public class BulletFactory implements IBulletSPI {
         if (isPlayerBullet) {
             response.addHandler(EntityType.ENEMY, CollisionHandlers.BULLET_DAMAGE_HANDLER);
             response.addHandler(EntityType.ASTEROID, CollisionHandlers.BULLET_DAMAGE_HANDLER);
+            response.addHandler(EntityType.BULLET, CollisionHandlers.BULLET_BULLET_COLLISION_HANDLER);
         } else {
             response.addHandler(EntityType.PLAYER, CollisionHandlers.BULLET_DAMAGE_HANDLER);
+            response.addHandler(EntityType.BULLET, CollisionHandlers.BULLET_BULLET_COLLISION_HANDLER);
         }
 
         response.addHandler(EntityType.OBSTACLE, CollisionHandlers.REMOVE_ON_COLLISION_HANDLER);

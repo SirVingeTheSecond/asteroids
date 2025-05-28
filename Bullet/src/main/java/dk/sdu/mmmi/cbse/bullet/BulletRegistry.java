@@ -9,7 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Registry for bullet types with distinct visual and gameplay characteristics.
+ * Registry for bullet types.
  */
 public class BulletRegistry {
     private static final Logger LOGGER = Logger.getLogger(BulletRegistry.class.getName());
@@ -27,37 +27,37 @@ public class BulletRegistry {
     }
 
     /**
-     * Register bullet types with exact visual and damage specifications
+     * Register bullet types
      */
     private void registerBulletTypes() {
-        // Tiny bullets - for automatic weapons (light blue)
+        // Tiny bullets
         registerBulletType("tiny", new BulletType.Builder()
                 .speed(400.0f)
-                .damage(1.0f)                    // 1 damage
+                .damage(1.0f)
                 .piercing(false)
                 .bouncing(false)
-                .color(Color.LIGHTBLUE)          // Light blue color
+                .color(Color.LIGHTBLUE)
                 .build());
 
-        // Standard bullets - default size (gold)
+        // Standard bullets
         registerBulletType("standard", new BulletType.Builder()
                 .speed(350.0f)
-                .damage(1.0f)                    // 1 damage
+                .damage(1.0f)
                 .piercing(false)
                 .bouncing(false)
-                .color(Color.GOLD)               // Gold color
+                .color(Color.GOLD)
                 .build());
 
-        // Heavy bullets - larger, more damage (orange-red)
+        // Heavy bullets
         registerBulletType("heavy", new BulletType.Builder()
                 .speed(280.0f)
-                .damage(2.0f)                    // 2 damage (double!)
+                .damage(2f)
                 .piercing(false)
                 .bouncing(false)
-                .color(Color.ORANGERED)          // Orange-red color
+                .color(Color.ORANGERED)
                 .build());
 
-        // Piercing bullets - for special weapons (blue)
+        // Piercing bullets
         registerBulletType("piercing", new BulletType.Builder()
                 .speed(320.0f)
                 .damage(1.0f)
@@ -67,10 +67,10 @@ public class BulletRegistry {
                 .color(Color.DODGERBLUE)
                 .build());
 
-        // Bouncing bullets - for special weapons (lime)
+        // Bouncing bullets
         registerBulletType("bouncing", new BulletType.Builder()
                 .speed(280.0f)
-                .damage(1.0f)
+                .damage(1f)
                 .piercing(false)
                 .bouncing(true)
                 .bounceCount(3)

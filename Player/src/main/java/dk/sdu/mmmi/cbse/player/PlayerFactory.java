@@ -15,9 +15,11 @@ import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionResponseComponent;
 import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
+import dk.sdu.mmmi.cbse.commonweapon.Weapon;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 import javafx.scene.paint.Color;
 
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,7 +39,7 @@ public class PlayerFactory {
 
         // Transform
         TransformComponent transform = new TransformComponent();
-        transform.setPolygonCoordinates(-7, -7, 15, 0, -7, 7); // Triangle pointing right
+        transform.setPolygonCoordinates(-7, -7, 15, 0, -7, 7); // Triangle
         transform.setPosition(new Vector2D(
                 (float) gameData.getDisplayWidth() / 2,
                 (float) gameData.getDisplayHeight() / 2
@@ -45,7 +47,7 @@ public class PlayerFactory {
         transform.setRadius(8);
         player.addComponent(transform);
 
-        // Physics - clean, responsive movement configuration
+        // Physics
         PhysicsComponent physics = new PhysicsComponent(PhysicsComponent.PhysicsType.DYNAMIC);
         physics.setMass(1.0f);
         physics.setDrag(MovementConfig.getDragCoefficient());
@@ -53,7 +55,7 @@ public class PlayerFactory {
         physics.setAngularDrag(0.98f);
         player.addComponent(physics);
 
-        // Renderer - visual appearance
+        // Renderer
         RendererComponent renderer = new RendererComponent();
         renderer.setStrokeColor(Color.LIGHTGREEN);
         renderer.setFillColor(Color.DARKGREEN);
@@ -69,11 +71,7 @@ public class PlayerFactory {
         player.addComponent(playerComponent);
 
         // Weapon
-        WeaponComponent weapon = new WeaponComponent();
-        weapon.setBulletType("standard");
-        weapon.setDamage(1.0f);
-        weapon.setProjectileSpeed(300.0f);
-        weapon.setCooldownTime(0.25f); // 4 shots per second
+        WeaponComponent weapon = createAutomaticWeapon();
         player.addComponent(weapon);
 
         // Collision
@@ -94,8 +92,38 @@ public class PlayerFactory {
         tag.addType(EntityType.PLAYER);
         player.addComponent(tag);
 
-        LOGGER.log(Level.INFO, "Player entity created: {0}", player.getID());
+        LOGGER.log(Level.INFO, "Player entity created with automatic weapon: {0}", player.getID());
         return player;
+    }
+
+    /**
+     * Create automatic weapon component for player starting weapon
+     */
+    private WeaponComponent createAutomaticWeapon() {
+        try {
+            var weaponSPIOptional = ServiceLoader.load(dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI.class).findFirst();
+            if (weaponSPIOptional.isPresent()) {
+                Weapon automaticWeapon = weaponSPIOptional.get().getWeapon("automatic");
+                if (automaticWeapon != null) {
+                    WeaponComponent weapon = new WeaponComponent(automaticWeapon);
+                    LOGGER.log(Level.INFO, "Player configured with automatic weapon from registry");
+                    return weapon;
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Could not load automatic weapon from registry, using fallback", e);
+        }
+
+        // Fallback: Create automatic weapon manually
+        WeaponComponent weapon = new WeaponComponent();
+        weapon.setFiringPattern(Weapon.FiringPattern.AUTOMATIC);
+        weapon.setBulletType("tiny");
+        weapon.setDamage(1.0f);
+        weapon.setProjectileSpeed(400.0f);
+        weapon.setCooldownTime(0.15f);
+
+        LOGGER.log(Level.INFO, "Player configured with fallback automatic weapon");
+        return weapon;
     }
 
     /**

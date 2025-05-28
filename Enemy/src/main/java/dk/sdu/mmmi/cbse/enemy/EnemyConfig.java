@@ -3,7 +3,7 @@ package dk.sdu.mmmi.cbse.enemy;
 import dk.sdu.mmmi.cbse.commonenemy.EnemyType;
 
 /**
- * Configuration class for enemy properties.
+ * Configuration class for Enemy properties.
  */
 public class EnemyConfig {
     private final EnemyType type;
@@ -16,9 +16,6 @@ public class EnemyConfig {
     private final String weaponType;
     private final String bulletType;
 
-    /**
-     * Private constructor as the purpose is to use Builder
-     */
     private EnemyConfig(Builder builder) {
         this.type = builder.type;
         this.health = builder.health;
@@ -31,65 +28,38 @@ public class EnemyConfig {
         this.bulletType = builder.bulletType;
     }
 
-    /**
-     * Get enemy type
-     */
     public EnemyType getType() {
         return type;
     }
 
-    /**
-     * Get enemy health
-     */
     public float getHealth() {
         return health;
     }
 
-    /**
-     * Get score value
-     */
     public int getScoreValue() {
         return scoreValue;
     }
 
-    /**
-     * Get movement speed
-     */
     public float getSpeed() {
         return speed;
     }
 
-    /**
-     * Get rotation speed
-     */
     public float getRotationSpeed() {
         return rotationSpeed;
     }
 
-    /**
-     * Get firing probability
-     */
     public float getFiringProbability() {
         return firingProbability;
     }
 
-    /**
-     * Get fire distance
-     */
     public float getFireDistance() {
         return fireDistance;
     }
 
-    /**
-     * Get weapon type
-     */
     public String getWeaponType() {
         return weaponType;
     }
 
-    /**
-     * Get bullet type
-     */
     public String getBulletType() {
         return bulletType;
     }
@@ -98,13 +68,13 @@ public class EnemyConfig {
      * Builder for EnemyConfig
      */
     public static class Builder {
-        private EnemyType type = EnemyType.BASIC;
-        private float health = 100.0f;
+        private EnemyType type = EnemyType.HUNTER;
+        private float health = 1f;
         private int scoreValue = 100;
-        private float speed = 80.0f;
-        private float rotationSpeed = 1.0f;
+        private float speed = 80f;
+        private float rotationSpeed = 1f;
         private float firingProbability = 0.005f;
-        private float fireDistance = 300.0f;
+        private float fireDistance = 300f;
         private String weaponType = "automatic";
         private String bulletType = "standard";
 

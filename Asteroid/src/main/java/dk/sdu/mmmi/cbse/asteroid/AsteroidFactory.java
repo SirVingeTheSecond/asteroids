@@ -41,7 +41,7 @@ public class AsteroidFactory implements IAsteroidSPI {
 
     // Split physics constants
     private static final int NUM_SPLIT_ASTEROIDS = 2;
-    private static final float SPLIT_VELOCITY_INHERITANCE = 0.6f; // Reduced for more dramatic splitting
+    private static final float SPLIT_VELOCITY_INHERITANCE = 0.6f; // Lower = dramatic splitting
     private static final float SEPARATION_IMPULSE_MIN = 120.0f;
     private static final float SEPARATION_IMPULSE_MAX = 200.0f;
     private static final float MIN_SEPARATION_DISTANCE = 30.0f;
@@ -59,7 +59,6 @@ public class AsteroidFactory implements IAsteroidSPI {
 
     @Override
     public Entity createAsteroid(GameData gameData, World world) {
-        // Create initial asteroid with random movement
         Vector2D randomVelocity = generateRandomVelocity();
         return createAsteroid(gameData, AsteroidSize.LARGE, 0, null, randomVelocity);
     }
@@ -85,7 +84,6 @@ public class AsteroidFactory implements IAsteroidSPI {
         AsteroidSize newSize = getNextSmallerSize(asteroidComponent.getSize());
         if (newSize == null) return;
 
-        // Get parent velocity for inheritance
         Vector2D parentVelocity = getAsteroidVelocity(asteroid);
 
         LOGGER.log(Level.INFO, "Splitting asteroid {0}: {1} -> {2}, creating {3} pieces",
@@ -189,14 +187,11 @@ public class AsteroidFactory implements IAsteroidSPI {
                                                    Vector2D impactPoint) {
         TransformComponent parentTransform = parent.getComponent(TransformComponent.class);
 
-        // Calculate size and position
         float radius = calculateSizeForType(size);
         Vector2D position = calculateSplitPosition(parentTransform, splitDirection, radius);
 
-        // Generate shape
         double[] shape = generateAsteroidShape(radius);
 
-        // Create the entity
         Entity asteroid = EntityBuilder.create()
                 .withType(EntityType.ASTEROID)
                 .atPosition(position)
@@ -235,7 +230,7 @@ public class AsteroidFactory implements IAsteroidSPI {
                 random.nextFloat() * (SEPARATION_IMPULSE_MAX - SEPARATION_IMPULSE_MIN);
         Vector2D trajectoryImpulse = splitDirection.scale(separationMagnitude);
 
-        // Combine velocities for dramatic splitting effect
+        // Combine velocities for splitting effect
         Vector2D totalVelocity = inheritedVelocity.add(trajectoryImpulse);
         physicsSPI.setVelocity(asteroid, totalVelocity);
 
@@ -269,14 +264,11 @@ public class AsteroidFactory implements IAsteroidSPI {
                                     Vector2D parentVelocity, Vector2D separationDirection) {
         TransformComponent parentTransform = parent.getComponent(TransformComponent.class);
 
-        // Calculate size and position
         float radius = calculateSizeForType(size);
         Vector2D position = calculateSplitPosition(parentTransform, separationDirection, radius);
 
-        // Generate shape
         double[] shape = generateAsteroidShape(radius);
 
-        // Create the entity
         Entity asteroid = EntityBuilder.create()
                 .withType(EntityType.ASTEROID)
                 .atPosition(position)
@@ -322,7 +314,7 @@ public class AsteroidFactory implements IAsteroidSPI {
             return;
         }
 
-        // Inherit parent velocity (reduced)
+        // Inherit parent velocity
         Vector2D inheritedVelocity = parentVelocity.scale(SPLIT_VELOCITY_INHERITANCE);
 
         // Add separation impulse
@@ -347,7 +339,7 @@ public class AsteroidFactory implements IAsteroidSPI {
         // Create evenly spaced directions around a circle
         double baseAngle = (2.0 * Math.PI * pieceIndex) / totalPieces;
 
-        // Add random variation (±45 degrees)
+        // Add random variation (+-45 degrees)
         double variation = (random.nextDouble() - 0.5) * Math.PI / 2.0;
         double finalAngle = baseAngle + variation;
 
@@ -395,15 +387,15 @@ public class AsteroidFactory implements IAsteroidSPI {
      */
     private PhysicsComponent createPhysicsComponent() {
         PhysicsComponent physics = new PhysicsComponent(PhysicsComponent.PhysicsType.DYNAMIC);
-        physics.setMass(1.2f); // Consistent mass for predictable collisions
-        physics.setDrag(0.99995f); // Virtually no linear drag - momentum preservation
-        physics.setAngularDrag(0.9999f); // Virtually no angular drag
-        physics.setMaxSpeed(500.0f); // High speed limit for energetic collisions
+        physics.setMass(1.2f);
+        physics.setDrag(0.9f);
+        physics.setAngularDrag(0.9f);
+        physics.setMaxSpeed(500.0f);
         return physics;
     }
 
     /**
-     * Create asteroid component for the specified size
+     * Create Asteroid component for the specified size
      */
     private AsteroidComponent createAsteroidComponent(AsteroidSize size, int splitCount) {
         AsteroidComponent component = new AsteroidComponent(size);
@@ -425,7 +417,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create renderer component for asteroid visualization
+     * Create renderer component for visualization
      */
     private RendererComponent createRendererComponent(AsteroidSize size) {
         RendererComponent renderer = new RendererComponent();
@@ -454,7 +446,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create collision component for asteroid
+     * Create collision component for Asteroid
      */
     private ColliderComponent createCollisionComponent() {
         ColliderComponent collider = new ColliderComponent();
@@ -463,7 +455,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create collision response component for asteroids
+     * Create collision response component for Asteroid
      */
     private CollisionResponseComponent createAsteroidCollisionResponse() {
         CollisionResponseComponent response = new CollisionResponseComponent();
@@ -478,7 +470,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create flicker component for damage effects
+     * Create flicker component for damage effect
      */
     private FlickerComponent createFlickerComponent() {
         FlickerComponent flicker = new FlickerComponent();
@@ -487,7 +479,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Calculate size based on asteroid type
+     * Calculate size based on Asteroid type
      */
     private float calculateSizeForType(AsteroidSize size) {
         switch (size) {
@@ -503,7 +495,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Generate asteroid shape coordinates
+     * Generate Asteroid shape coordinates
      */
     private double[] generateAsteroidShape(float size) {
         int vertices = 8;
@@ -524,7 +516,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create asteroid with specific properties (used by split system)
+     * Create Asteroid (used by split system)
      */
     private Entity createAsteroid(GameData gameData, AsteroidSize size, int splitCount,
                                   Entity parent, Vector2D initialVelocity) {

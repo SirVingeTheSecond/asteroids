@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.weapon;
 
+import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.commonbullet.IBulletSPI;
@@ -7,12 +8,15 @@ import dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
 import dk.sdu.mmmi.cbse.commonweapon.Weapon;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Service implementation for weapon functionality with proper firing pattern support.
+ * Service implementation for weapon functionality.
  */
 public class WeaponService implements IWeaponSPI {
     private static final Logger LOGGER = Logger.getLogger(WeaponService.class.getName());
@@ -26,56 +30,53 @@ public class WeaponService implements IWeaponSPI {
     }
 
     @Override
-    public Entity shoot(Entity shooter, GameData gameData, String bulletType) {
+    public List<Entity> shoot(Entity shooter, GameData gameData, String bulletType) {
         if (bulletSPI == null) {
             bulletSPI = ServiceLoader.load(IBulletSPI.class).findFirst().orElse(null);
             if (bulletSPI == null) {
                 LOGGER.log(Level.WARNING, "Cannot create bullet: BulletSPI not available");
-                return null;
+                return Collections.emptyList();
             }
         }
 
         WeaponComponent weapon = shooter.getComponent(WeaponComponent.class);
         if (weapon == null || !weapon.canFire()) {
-            return null;
+            return Collections.emptyList();
         }
-
-        Entity lastBullet = null;
 
         switch (weapon.getFiringPattern()) {
             case SHOTGUN:
-                lastBullet = handleShotgunFiring(shooter, gameData, bulletType, weapon);
-                break;
-
+                return handleShotgunFiring(shooter, gameData, bulletType, weapon);
             case BURST:
-                lastBullet = handleBurstFiring(shooter, gameData, bulletType, weapon);
-                break;
-
+                return handleBurstFiring(shooter, gameData, bulletType, weapon);
             case HEAVY:
             case AUTOMATIC:
             default:
-                // Single bullet
-                weapon.resetCooldown();
-                lastBullet = bulletSPI.createBullet(shooter, gameData, bulletType);
-                break;
+                return handleSingleFiring(shooter, gameData, bulletType, weapon);
         }
+    }
 
-        return lastBullet;
+    /**
+     * Handle single bullet firing (automatic/heavy)
+     */
+    private List<Entity> handleSingleFiring(Entity shooter, GameData gameData, String bulletType, WeaponComponent weapon) {
+        weapon.resetCooldown();
+        Entity bullet = bulletSPI.createBullet(shooter, gameData, bulletType);
+
+        return bullet != null ? List.of(bullet) : Collections.emptyList();
     }
 
     /**
      * Handle shotgun firing with proper spread
      */
-    private Entity handleShotgunFiring(Entity shooter, GameData gameData, String bulletType, WeaponComponent weapon) {
+    private List<Entity> handleShotgunFiring(Entity shooter, GameData gameData, String bulletType, WeaponComponent weapon) {
         weapon.resetCooldown();
 
-        Entity lastBullet = null;
+        List<Entity> bullets = new ArrayList<>();
         int shotCount = weapon.getShotCount();
         float spreadAngle = weapon.getSpreadAngle();
 
-        // Create bullets with even spread distribution
         for (int i = 0; i < shotCount; i++) {
-            // Calculate spread angle for this pellet
             float angleOffset = 0;
             if (shotCount > 1) {
                 float halfSpread = spreadAngle / 2.0f;
@@ -83,69 +84,50 @@ public class WeaponService implements IWeaponSPI {
                 angleOffset = -halfSpread + (angleStep * i);
             }
 
-            // Create bullet with specific spread angle
-            lastBullet = createBulletWithSpread(shooter, gameData, bulletType, angleOffset);
+            Entity bullet = createBulletWithSpread(shooter, gameData, bulletType, angleOffset);
+            if (bullet != null) {
+                bullets.add(bullet);
+            }
         }
 
         LOGGER.log(Level.FINE, "Fired shotgun: {0} pellets with {1}° spread",
-                new Object[]{shotCount, spreadAngle});
+                new Object[]{bullets.size(), spreadAngle});
 
-        return lastBullet;
+        return bullets;
     }
 
     /**
-     * Handle burst firing with proper burst mechanics
+     * Handle burst firing
      */
-    private Entity handleBurstFiring(Entity shooter, GameData gameData, String bulletType, WeaponComponent weapon) {
-        // Check if we're in the middle of a burst
-        if (weapon.getCurrentBurstCount() == 0) {
-            // Starting new burst
-            weapon.resetCooldown();
-            weapon.resetBurst();
-        }
-
+    private List<Entity> handleBurstFiring(Entity shooter, GameData gameData, String bulletType, WeaponComponent weapon) {
         // Fire one bullet in the burst
         Entity bullet = bulletSPI.createBullet(shooter, gameData, bulletType);
-        weapon.incrementBurstCount();
+        weapon.fireBurstShot();
 
         if (weapon.isBurstComplete()) {
-            // Burst finished, reset for next burst
-            weapon.resetBurst();
             LOGGER.log(Level.FINE, "Completed burst of {0} bullets", weapon.getBurstCount());
         } else {
-            // More bullets in burst, set burst delay
-            weapon.startBurstDelay();
             LOGGER.log(Level.FINE, "Burst progress: {0}/{1}",
                     new Object[]{weapon.getCurrentBurstCount(), weapon.getBurstCount()});
         }
 
-        return bullet;
+        return bullet != null ? List.of(bullet) : Collections.emptyList();
     }
 
     /**
      * Create bullet with specific spread angle for shotgun
      */
     private Entity createBulletWithSpread(Entity shooter, GameData gameData, String bulletType, float spreadAngle) {
-        // Store original rotation
-        dk.sdu.mmmi.cbse.common.components.TransformComponent transform =
-                shooter.getComponent(dk.sdu.mmmi.cbse.common.components.TransformComponent.class);
+        TransformComponent transform = shooter.getComponent(TransformComponent.class);
 
         if (transform != null) {
             float originalRotation = transform.getRotation();
-
-            // Temporarily adjust rotation for spread
             transform.setRotation(originalRotation + spreadAngle);
-
-            // Create bullet
             Entity bullet = bulletSPI.createBullet(shooter, gameData, bulletType);
-
-            // Restore original rotation
             transform.setRotation(originalRotation);
-
             return bullet;
         }
 
-        // Fallback if no transform
         return bulletSPI.createBullet(shooter, gameData, bulletType);
     }
 
