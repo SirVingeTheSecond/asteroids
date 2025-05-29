@@ -6,9 +6,6 @@ package dk.sdu.mmmi.cbse.commonui;
 public enum UIAnchor {
     TOP_LEFT,
     TOP_RIGHT,
-    TOP_CENTER,
-    CENTER,
     BOTTOM_LEFT,
-    BOTTOM_RIGHT,
-    BOTTOM_CENTER
+    BOTTOM_RIGHT
 }

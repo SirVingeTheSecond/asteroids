@@ -4,11 +4,11 @@ import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.IComponent;
 
 /**
- * Component for UI-specific properties.
+ * Component for UI.
  */
 public class UIComponent implements IComponent {
-    private UIType type = UIType.GENERIC;
-    private String text = "";
+    private UIType uiType = UIType.GENERIC;
+    private String displayText = "";
     private boolean visible = true;
     private UIAnchor anchor = UIAnchor.TOP_LEFT;
     private Vector2D offset = Vector2D.zero();
@@ -18,24 +18,29 @@ public class UIComponent implements IComponent {
     public UIComponent() {
     }
 
-    public UIComponent(UIType type) {
-        this.type = type;
+    /**
+     * Create a UI component of specific type
+     *
+     * @param uiType The type of UI element
+     */
+    public UIComponent(UIType uiType) {
+        this.uiType = uiType;
     }
 
-    public UIType getType() {
-        return type;
+    public UIType getUIType() {
+        return uiType;
     }
 
-    public void setType(UIType type) {
-        this.type = type;
+    public void setUIType(UIType uiType) {
+        this.uiType = uiType;
     }
 
-    public String getText() {
-        return text;
+    public String getDisplayText() {
+        return displayText;
     }
 
-    public void setText(String text) {
-        this.text = text;
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
     }
 
     public boolean isVisible() {

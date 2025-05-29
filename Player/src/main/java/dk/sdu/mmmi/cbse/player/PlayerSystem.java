@@ -24,7 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System handling the Player functionality.
+ * System handling the Player.
  */
 public class PlayerSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(PlayerSystem.class.getName());
@@ -34,6 +34,9 @@ public class PlayerSystem implements IUpdate {
     private static final float MAX_SPEED = 160.0f;
     private static final float DRAG_COEFFICIENT = 0.88f;
     private static final float STOP_THRESHOLD = 5.0f;
+
+    // Respawn config
+    private static final float RESPAWN_INVINCIBILITY_TIME = 3.0f;
 
     private IWeaponSPI weaponSPI;
     private IPhysicsSPI physicsSPI;

@@ -1,35 +1,25 @@
 package dk.sdu.mmmi.cbse.commonui;
 
-import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 
 /**
  * Service Provider Interface for UI functionality.
+ * Provides operations for creating and managing user interface elements.
  */
 public interface IUIService {
     /**
-     * Create the heads-up display
+     * Initialize and create the heads-up display elements
      *
      * @param gameData Current game state
-     * @param world Game world
+     * @param world Game world to add UI entities to
      */
     void createHUD(GameData gameData, World world);
 
     /**
-     * Update UI based on player state
+     * Update UI visibility state
      *
-     * @param player Player entity
+     * @param visible true to show UI, false to hide
      */
-    void updatePlayerUI(Entity player);
-
-    /**
-     * Show game over screen
-     */
-    void showGameOver();
-
-    /**
-     * Hide game over screen
-     */
-    void hideGameOver();
+    void setUIVisible(boolean visible);
 }

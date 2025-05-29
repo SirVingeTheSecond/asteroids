@@ -33,6 +33,7 @@
         <module>Weapon</module>
         <module>Score</module>
         <module>CommonUI</module>
+        <module>UI</module>
     </modules>
 
     <properties>

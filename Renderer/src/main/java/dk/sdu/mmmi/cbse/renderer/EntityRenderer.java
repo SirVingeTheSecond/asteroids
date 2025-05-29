@@ -3,7 +3,10 @@ package dk.sdu.mmmi.cbse.renderer;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
+import dk.sdu.mmmi.cbse.commonui.UIComponent;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,8 +54,10 @@ public class EntityRenderer {
                 case CIRCLE:
                     renderCircle(context, transform, renderer);
                     break;
+                case TEXT:
+                    renderText(context, entity, renderer);
+                    break;
                 case IMAGE:
-                    // Image rendering not yet implemented
                     LOGGER.log(Level.FINE, "Image rendering not implemented yet");
                     break;
             }
@@ -70,17 +75,35 @@ public class EntityRenderer {
     }
 
     /**
+     * Render text for UI elements
+     */
+    private static void renderText(GraphicsContext context, Entity entity, RendererComponent renderer) {
+        UIComponent uiComponent = entity.getComponent(UIComponent.class);
+        if (uiComponent == null || uiComponent.getDisplayText().isEmpty()) {
+            return;
+        }
+
+        // Set font size
+        context.setFont(Font.font(uiComponent.getFontSize()));
+        context.setTextAlign(TextAlignment.LEFT);
+
+        // Render text
+        if (renderer.isFilled()) {
+            context.fillText(uiComponent.getDisplayText(), 0, 0);
+        }
+        context.strokeText(uiComponent.getDisplayText(), 0, 0);
+    }
+
+    /**
      * Render a polygon shape
      */
     private static void renderPolygon(GraphicsContext context, TransformComponent transform, RendererComponent renderer) {
         double[] coordinates = transform.getPolygonCoordinates();
-        if (coordinates == null || coordinates.length < 6) { // Need at least 3 points
-            // Fall back to circle if no valid polygon
+        if (coordinates == null || coordinates.length < 6) {
             renderCircle(context, transform, renderer);
             return;
         }
 
-        // Create path for polygon
         context.beginPath();
         context.moveTo(coordinates[0], coordinates[1]);
 
@@ -88,10 +111,8 @@ public class EntityRenderer {
             context.lineTo(coordinates[i], coordinates[i + 1]);
         }
 
-        // Close the path
         context.closePath();
 
-        // Fill and stroke
         if (renderer.isFilled()) {
             context.fill();
         }
@@ -114,17 +135,14 @@ public class EntityRenderer {
      * Render debug visualization for entity
      */
     private static void renderEntityDebug(GraphicsContext context, Entity entity, TransformComponent transform) {
-        // Draw collision radius
         context.setStroke(javafx.scene.paint.Color.RED);
         context.setLineWidth(1.0);
         context.strokeOval(-transform.getRadius(), -transform.getRadius(),
                 transform.getRadius() * 2, transform.getRadius() * 2);
 
-        // Draw forward direction
         context.setStroke(javafx.scene.paint.Color.GREEN);
         context.strokeLine(0, 0, transform.getRadius(), 0);
 
-        // Draw entity ID
         context.setStroke(javafx.scene.paint.Color.WHITE);
         context.strokeText(entity.getID().substring(0, 8), 0, 0);
     }

@@ -22,14 +22,12 @@ public class RendererComponent implements IComponent {
     public enum ShapeType {
         POLYGON,    // Uses polygon coordinates from TransformComponent
         CIRCLE,     // Simple circle with radius
-        IMAGE       // Image sprite (future extension)
+        IMAGE,      // Image sprite (future extension)
+        TEXT        // Text rendering for UI elements
     }
 
-    /**
-     * Create a new renderer component with default values
-     */
     public RendererComponent() {
-        // Use default values
+
     }
 
     /**

@@ -7,6 +7,5 @@ public enum UIType {
     GENERIC,
     HEALTH_DISPLAY,
     LIVES_DISPLAY,
-    WEAPON_DISPLAY,
-    GAME_OVER_SCREEN
+    WEAPON_DISPLAY
 }
