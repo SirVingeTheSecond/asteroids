@@ -3,6 +3,7 @@ package dk.sdu.mmmi.cbse.player;
 import dk.sdu.mmmi.cbse.common.RenderLayer;
 import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.FlickerComponent;
+import dk.sdu.mmmi.cbse.common.components.RecoilComponent;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;
@@ -30,10 +31,10 @@ public class PlayerFactory {
     private static final Logger LOGGER = Logger.getLogger(PlayerFactory.class.getName());
 
     /**
-     * Create a new player entity.
+     * Create a new player entity with all their respective components.
      */
     public Entity createPlayer(GameData gameData) {
-        LOGGER.log(Level.INFO, "Creating player entity");
+        LOGGER.log(Level.INFO, "Creating player entity with recoil support");
 
         Entity player = new Entity();
 
@@ -49,10 +50,10 @@ public class PlayerFactory {
 
         // Physics
         PhysicsComponent physics = new PhysicsComponent(PhysicsComponent.PhysicsType.DYNAMIC);
-        physics.setMass(1.0f);
+        physics.setMass(0.8f);
         physics.setDrag(MovementConfig.getDragCoefficient());
         physics.setMaxSpeed(MovementConfig.getMaxSpeed());
-        physics.setAngularDrag(0.98f);
+        physics.setAngularDrag(0.95f);
         player.addComponent(physics);
 
         // Renderer
@@ -69,6 +70,10 @@ public class PlayerFactory {
         playerComponent.setLives(3);
         playerComponent.setMaxHealth(3);
         player.addComponent(playerComponent);
+
+        // Recoil
+        RecoilComponent recoil = new RecoilComponent();
+        player.addComponent(recoil);
 
         // Weapon
         WeaponComponent weapon = createAutomaticWeapon();
@@ -92,7 +97,7 @@ public class PlayerFactory {
         tag.addType(EntityType.PLAYER);
         player.addComponent(tag);
 
-        LOGGER.log(Level.INFO, "Player entity created with automatic weapon: {0}", player.getID());
+        LOGGER.log(Level.INFO, "Player entity created with recoil support and automatic weapon: {0}", player.getID());
         return player;
     }
 

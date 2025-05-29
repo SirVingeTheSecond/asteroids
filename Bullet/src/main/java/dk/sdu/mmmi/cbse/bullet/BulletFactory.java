@@ -2,10 +2,7 @@ package dk.sdu.mmmi.cbse.bullet;
 
 import dk.sdu.mmmi.cbse.common.RenderLayer;
 import dk.sdu.mmmi.cbse.common.Vector2D;
-import dk.sdu.mmmi.cbse.common.components.MovementComponent;
-import dk.sdu.mmmi.cbse.common.components.RendererComponent;
-import dk.sdu.mmmi.cbse.common.components.TagComponent;
-import dk.sdu.mmmi.cbse.common.components.TransformComponent;
+import dk.sdu.mmmi.cbse.common.components.*;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
@@ -29,7 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Factory for creating bullet entities with variable sizes and recoil effects.
+ * Factory for creating bullet entities.
  */
 public class BulletFactory implements IBulletSPI {
     private static final Logger LOGGER = Logger.getLogger(BulletFactory.class.getName());
@@ -174,42 +171,75 @@ public class BulletFactory implements IBulletSPI {
     }
 
     /**
-     * Apply recoil to the player
+     * Apply recoil to the player with satisfying kick-and-recovery mechanics
+     * Uses RecoilComponent to manage recoil state and physics override
      */
     private void applyRecoil(Entity shooter, WeaponComponent weaponComponent, float bulletDirection) {
         if (physicsSPI == null || !physicsSPI.hasPhysics(shooter)) {
             return;
         }
 
-        float recoilForce = 0.0f;
+        RecoilComponent recoil = shooter.getComponent(RecoilComponent.class);
+        if (recoil == null) {
+            LOGGER.log(Level.WARNING, "Player missing RecoilComponent for recoil effects");
+            return;
+        }
 
-        // Apply recoil based on weapon pattern
+        // Recoil configuration per weapon type
+        float recoilForce = 0.0f;
+        float recoilDuration = 0.0f;
+        float angularKick = 0.0f;
+
         switch (weaponComponent.getFiringPattern()) {
-            case AUTOMATIC:
-                recoilForce = AUTO_RECOIL_FORCE;
-                break;
-            case BURST:
-                recoilForce = BURST_RECOIL_FORCE;
-                break;
             case HEAVY:
-                recoilForce = HEAVY_RECOIL_FORCE;
+                recoilForce = 400.0f;      // Strong kick
+                recoilDuration = 0.5f;     // 500ms recovery
+                angularKick = 25.0f;       // Rotational kick
                 break;
+
             case SHOTGUN:
-                recoilForce = SHOTGUN_RECOIL_FORCE;
+                recoilForce = 280.0f;      // Moderate kick
+                recoilDuration = 0.35f;    // 350ms recovery
+                angularKick = 15.0f;       // Light rotation
+                break;
+
+            case BURST:
+                recoilForce = 120.0f;      // Light kick per shot
+                recoilDuration = 0.25f;    // 250ms recovery
+                angularKick = 8.0f;        // Minimal rotation
+                break;
+
+            case AUTOMATIC:
+            default:
+                recoilForce = 0.0f;        // No recoil for rapid fire
                 break;
         }
 
         if (recoilForce > 0) {
-            // Apply recoil in opposite direction of bullet
+            // Calculate recoil direction (opposite to bullet direction)
             float recoilAngle = bulletDirection + 180.0f;
             float radians = (float) Math.toRadians(recoilAngle);
-            Vector2D recoilDirection = new Vector2D((float) Math.cos(radians), (float) Math.sin(radians));
-            Vector2D recoilImpulse = recoilDirection.scale(recoilForce);
+            Vector2D recoilDirection = new Vector2D(
+                    (float) Math.cos(radians),
+                    (float) Math.sin(radians)
+            );
 
-            physicsSPI.applyImpulse(shooter, recoilImpulse);
+            // Apply recoil impulse
+            Vector2D recoilVelocity = recoilDirection.scale(recoilForce);
+            physicsSPI.applyImpulse(shooter, recoilVelocity);
 
-            LOGGER.log(Level.FINE, "Applied {0} recoil force {1} to player",
-                    new Object[]{weaponComponent.getFiringPattern(), recoilForce});
+            // Start recoil state management
+            recoil.startRecoil(recoilVelocity, recoilDuration);
+
+            // Apply angular kick for heavy weapons
+            if (angularKick > 0) {
+                float randomDirection = (float)(Math.random() - 0.5) * 2.0f; // -1 to 1
+                float angularImpulse = randomDirection * angularKick;
+                physicsSPI.setAngularVelocity(shooter, angularImpulse);
+            }
+
+            LOGGER.log(Level.FINE, "Applied {0} recoil: force={1}, duration={2}s, angular={3}°",
+                    new Object[]{weaponComponent.getFiringPattern(), recoilForce, recoilDuration, angularKick});
         }
     }
 

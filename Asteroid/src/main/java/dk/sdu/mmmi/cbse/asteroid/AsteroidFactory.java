@@ -383,14 +383,14 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create physics component optimized for momentum-preserving asteroid behavior
+     * Create physics component
      */
     private PhysicsComponent createPhysicsComponent() {
         PhysicsComponent physics = new PhysicsComponent(PhysicsComponent.PhysicsType.DYNAMIC);
         physics.setMass(1.2f);
-        physics.setDrag(0.9f);
-        physics.setAngularDrag(0.9f);
-        physics.setMaxSpeed(500.0f);
+        physics.setDrag(1f);
+        physics.setAngularDrag(1f);
+        physics.setMaxSpeed(500f);
         return physics;
     }
 

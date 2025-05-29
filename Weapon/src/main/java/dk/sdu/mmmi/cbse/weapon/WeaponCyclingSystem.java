@@ -25,10 +25,20 @@ public class WeaponCyclingSystem implements IUpdate {
     private final List<String> availableWeapons;
     private int currentWeaponIndex = 0;
     private boolean wasCyclePressed = false;
+    private boolean initialWeaponDetected = false;
 
     public WeaponCyclingSystem() {
         this.weaponRegistry = WeaponRegistry.getInstance();
         this.availableWeapons = List.copyOf(weaponRegistry.getAvailableWeapons());
+
+        // Set initial weapon index to "automatic" if it exists
+        int automaticIndex = availableWeapons.indexOf("automatic");
+        if (automaticIndex != -1) {
+            this.currentWeaponIndex = automaticIndex;
+            LOGGER.log(Level.INFO, "WeaponCyclingSystem initialized with automatic weapon at index {0}", automaticIndex);
+        } else {
+            LOGGER.log(Level.WARNING, "Automatic weapon not found in registry, starting at index 0");
+        }
 
         LOGGER.log(Level.INFO, "WeaponCyclingSystem initialized with {0} available weapons: {1}",
                 new Object[]{availableWeapons.size(), availableWeapons});
@@ -41,6 +51,11 @@ public class WeaponCyclingSystem implements IUpdate {
 
     @Override
     public void update(GameData gameData, World world) {
+        // Detect initial weapon if not done yet
+        if (!initialWeaponDetected) {
+            detectInitialWeapon(world);
+        }
+
         // Check for cycle key press
         boolean isCyclePressed = InputController.isButtonPressed(Button.Q);
         boolean cycleJustPressed = isCyclePressed && !wasCyclePressed;
@@ -49,6 +64,67 @@ public class WeaponCyclingSystem implements IUpdate {
         if (cycleJustPressed) {
             cyclePlayerWeapon(world);
         }
+    }
+
+    /**
+     * Detect what weapon the player currently has and sync the index
+     */
+    private void detectInitialWeapon(World world) {
+        Entity player = findPlayer(world);
+        if (player == null) {
+            return; // No player found yet
+        }
+
+        WeaponComponent weaponComponent = player.getComponent(WeaponComponent.class);
+        if (weaponComponent == null) {
+            return; // No weapon component yet
+        }
+
+        // Try to match the current weapon configuration to our registry
+        String detectedWeapon = detectWeaponType(weaponComponent);
+        if (detectedWeapon != null) {
+            int detectedIndex = availableWeapons.indexOf(detectedWeapon);
+            if (detectedIndex != -1) {
+                currentWeaponIndex = detectedIndex;
+                LOGGER.log(Level.INFO, "Detected initial weapon: {0} at index {1}",
+                        new Object[]{detectedWeapon, detectedIndex});
+            }
+        }
+
+        initialWeaponDetected = true;
+    }
+
+    /**
+     * Try to detect what weapon type the player currently has
+     */
+    private String detectWeaponType(WeaponComponent weaponComponent) {
+        Weapon.FiringPattern pattern = weaponComponent.getFiringPattern();
+        float damage = weaponComponent.getDamage();
+        float speed = weaponComponent.getProjectileSpeed();
+        float cooldown = weaponComponent.getCooldownTime();
+
+        // Match against known weapon configurations
+        for (String weaponName : availableWeapons) {
+            Weapon weapon = weaponRegistry.getWeapon(weaponName);
+            if (weapon != null && weaponMatches(weapon, pattern, damage, speed, cooldown)) {
+                return weaponName;
+            }
+        }
+
+        // Default to automatic if we can't detect
+        LOGGER.log(Level.WARNING, "Could not detect initial weapon type, defaulting to automatic");
+        return "automatic";
+    }
+
+    /**
+     * Check if a weapon configuration matches the current weapon component
+     */
+    private boolean weaponMatches(Weapon weapon, Weapon.FiringPattern pattern,
+                                  float damage, float speed, float cooldown) {
+        return weapon.getFiringPattern() == pattern &&
+                Math.abs(weapon.getDamage() - damage) < 0.1f &&
+                Math.abs(weapon.getProjectileSpeed() - speed) < 10.0f &&
+                Math.abs(weapon.getCooldownTime() - cooldown) < 0.05f;
     }
 
     /**
@@ -78,16 +154,6 @@ public class WeaponCyclingSystem implements IUpdate {
         }
 
         weaponComponent.configureFromType(newWeapon);
-
-        // just logging
-        String weaponInfo = String.format("%s: %s damage, %s speed, %s pattern",
-                newWeaponName.toUpperCase(),
-                newWeapon.getDamage() == 2.0f ? "HIGH" : "STANDARD",
-                newWeapon.getProjectileSpeed() >= 400 ? "FAST" :
-                        newWeapon.getProjectileSpeed() >= 350 ? "MEDIUM" : "SLOW",
-                newWeapon.getFiringPattern());
-
-        LOGGER.log(Level.INFO, "Player switched to: {0}", weaponInfo);
     }
 
     /**
