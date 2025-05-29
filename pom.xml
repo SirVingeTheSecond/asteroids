@@ -32,6 +32,7 @@
         <module>ScoreClient</module>
         <module>Weapon</module>
         <module>Score</module>
+        <module>CommonUI</module>
     </modules>
 
     <properties>
