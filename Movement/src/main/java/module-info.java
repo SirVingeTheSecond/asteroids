@@ -3,6 +3,7 @@ module Movement {
     requires Common;
     requires CommonPhysics;
     requires java.logging;
+    requires CommonEnemy;
 
     exports dk.sdu.mmmi.cbse.movementsystem;
 

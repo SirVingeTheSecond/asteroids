@@ -61,7 +61,6 @@ public class GameLoop extends AnimationTimer {
 	public void start() {
 		super.start();
 
-		// Schedule fixed update using centralized time constants
 		fixedProcessorScheduler.scheduleAtFixedRate(() -> {
 			try {
 				fixedUpdate();

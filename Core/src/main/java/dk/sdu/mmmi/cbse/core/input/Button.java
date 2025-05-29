@@ -8,4 +8,5 @@ public enum Button {
 	MOUSE1,
 	MOUSE2,
     SPACE,
+	Q
 }

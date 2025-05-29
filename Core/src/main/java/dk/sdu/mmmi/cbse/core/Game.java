@@ -207,6 +207,9 @@ public class Game extends Application {
             case SPACE:
                 Input.setButton(Button.SPACE, pressed);
                 break;
+            case Q:
+                Input.setButton(Button.Q, pressed);
+                break;
         }
     }
 
@@ -217,7 +220,7 @@ public class Game extends Application {
     private void startPlugins() {
         LOGGER.log(Level.INFO, "Starting {0} game plugins", plugins.size());
 
-        for (IPluginService plugin : plugins) {
+        for (IPluginService plugin : ModuleConfig.getPluginServices()) {
             try {
                 plugin.start(gameData, world);
                 LOGGER.log(Level.FINE, "Started plugin: {0}", plugin.getClass().getName());
@@ -235,7 +238,7 @@ public class Game extends Application {
     private void stopPlugins() {
         LOGGER.log(Level.INFO, "Stopping {0} game plugins", plugins.size());
 
-        for (IPluginService plugin : plugins) {
+        for (IPluginService plugin : ModuleConfig.getPluginServices()) {
             try {
                 plugin.stop(gameData, world);
                 LOGGER.log(Level.FINE, "Stopped plugin: {0}", plugin.getClass().getName());
