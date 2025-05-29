@@ -18,7 +18,7 @@ public class PlayerComponent implements IComponent {
     private static final int INVULNERABILITY_DURATION = 180; // 3 seconds at 60 FPS
 
     /**
-     * Create a new player component with default values
+     * Create a new player components with default values
      */
     public PlayerComponent() {
         // Using default values

@@ -312,7 +312,7 @@ public class CollisionHandlers {
             }
         }
 
-        // Fallback: calculate from transform and movement component
+        // Fallback: calculate from transform and movement components
         TransformComponent transform = bullet.getComponent(TransformComponent.class);
         if (transform != null) {
             Vector2D forward = transform.getForward();
@@ -320,7 +320,7 @@ public class CollisionHandlers {
             if (bulletComp != null) {
                 return forward.scale(bulletComp.getSpeed());
             }
-            // if no component
+            // if no components
             return forward.scale(300.0f);
         }
 

@@ -357,7 +357,7 @@ public class AsteroidFactory implements IAsteroidSPI {
             return physicsSPI.getVelocity(asteroid);
         }
 
-        // Fallback: estimate velocity from movement component or return default
+        // Fallback: estimate velocity from movement components or return default
         MovementComponent movement = asteroid.getComponent(MovementComponent.class);
         TransformComponent transform = asteroid.getComponent(TransformComponent.class);
 
@@ -383,7 +383,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create physics component
+     * Create physics components
      */
     private PhysicsComponent createPhysicsComponent() {
         PhysicsComponent physics = new PhysicsComponent(PhysicsComponent.PhysicsType.DYNAMIC);
@@ -395,7 +395,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create Asteroid component for the specified size
+     * Create Asteroid components for the specified size
      */
     private AsteroidComponent createAsteroidComponent(AsteroidSize size, int splitCount) {
         AsteroidComponent component = new AsteroidComponent(size);
@@ -417,7 +417,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create renderer component for visualization
+     * Create renderer components for visualization
      */
     private RendererComponent createRendererComponent(AsteroidSize size) {
         RendererComponent renderer = new RendererComponent();
@@ -446,7 +446,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create collision component for Asteroid
+     * Create collision components for Asteroid
      */
     private ColliderComponent createCollisionComponent() {
         ColliderComponent collider = new ColliderComponent();
@@ -455,7 +455,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create collision response component for Asteroid
+     * Create collision response components for Asteroid
      */
     private CollisionResponseComponent createAsteroidCollisionResponse() {
         CollisionResponseComponent response = new CollisionResponseComponent();
@@ -470,7 +470,7 @@ public class AsteroidFactory implements IAsteroidSPI {
     }
 
     /**
-     * Create flicker component for damage effect
+     * Create flicker components for damage effect
      */
     private FlickerComponent createFlickerComponent() {
         FlickerComponent flicker = new FlickerComponent();

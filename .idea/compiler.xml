@@ -16,6 +16,7 @@
         <module name="Physics" />
         <module name="Weapon" />
         <module name="CommonBullet" />
+        <module name="Tests" />
         <module name="Common" />
         <module name="CommonPlayer" />
         <module name="CommonPhysics" />

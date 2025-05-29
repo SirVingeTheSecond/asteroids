@@ -26,7 +26,7 @@ public class RendererComponent implements IComponent {
     }
 
     /**
-     * Create a new renderer component with default values
+     * Create a new renderer components with default values
      */
     public RendererComponent() {
         // Use default values

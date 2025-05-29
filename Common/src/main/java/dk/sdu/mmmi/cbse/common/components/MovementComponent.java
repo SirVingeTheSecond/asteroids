@@ -20,14 +20,14 @@ public class MovementComponent implements IComponent {
     }
 
     /**
-     * Create a movement component with default values
+     * Create a movement components with default values
      */
     public MovementComponent() {
 
     }
 
     /**
-     * Create a movement component with a specific pattern
+     * Create a movement components with a specific pattern
      *
      * @param pattern Movement pattern
      */

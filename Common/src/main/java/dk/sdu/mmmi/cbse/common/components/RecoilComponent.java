@@ -22,7 +22,7 @@ public class RecoilComponent implements IComponent {
     private static final float MIN_RECOVERY_INPUT = 0.3f;
 
     /**
-     * Create a new recoil component with default state
+     * Create a new recoil components with default state
      */
     public RecoilComponent() {
         // Default constructor

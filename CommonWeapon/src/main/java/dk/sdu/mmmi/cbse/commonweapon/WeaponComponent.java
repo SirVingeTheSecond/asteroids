@@ -32,7 +32,7 @@ public class WeaponComponent implements IComponent {
     }
 
     /**
-     * Create a weapon component from weapon type
+     * Create a weapon components from weapon type
      *
      * @param weapon Weapon type configuration
      */

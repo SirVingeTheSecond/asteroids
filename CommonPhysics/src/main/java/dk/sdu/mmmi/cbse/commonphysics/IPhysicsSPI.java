@@ -34,7 +34,7 @@ public interface IPhysicsSPI {
     /**
      * Get the current velocity of an entity
      * @param entity Entity to get velocity from
-     * @return Current velocity vector or Vector2D.zero() if no physics component
+     * @return Current velocity vector or Vector2D.zero() if no physics components
      */
     Vector2D getVelocity(Entity entity);
 

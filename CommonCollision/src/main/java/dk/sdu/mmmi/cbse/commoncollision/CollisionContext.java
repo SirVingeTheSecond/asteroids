@@ -40,7 +40,7 @@ public class CollisionContext {
      * Get the entity type of an entity
      *
      * @param entity Entity to check
-     * @return First entity type found, or null if no tag component
+     * @return First entity type found, or null if no tag components
      */
     public EntityType getEntityType(Entity entity) {
         TagComponent tag = entity.getComponent(TagComponent.class);
