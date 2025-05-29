@@ -9,6 +9,7 @@ import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IUpdate;
+import dk.sdu.mmmi.cbse.common.utils.FlickerUtility;
 import dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
 import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
@@ -62,6 +63,10 @@ public class PlayerSystem implements IUpdate {
         RecoilComponent recoil = player.getComponent(RecoilComponent.class);
 
         if (transform == null) return;
+
+        if (playerComponent != null && playerComponent.needsRespawn()) {
+            handleRespawn(player, playerComponent, gameData);
+        }
 
         processMovement(player, transform, recoil);
         processRotation(transform);
@@ -266,7 +271,7 @@ public class PlayerSystem implements IUpdate {
     }
 
     /**
-     * Update player state including recoil management
+     * Update player state
      */
     private void updatePlayerState(Entity player, PlayerComponent playerComponent, RecoilComponent recoil) {
         if (playerComponent != null) {
@@ -295,6 +300,33 @@ public class PlayerSystem implements IUpdate {
             return direction.normalize();
         }
         return direction;
+    }
+
+    /**
+     * Handle player respawn
+     */
+    private void handleRespawn(Entity player, PlayerComponent playerComponent, GameData gameData) {
+        TransformComponent transform = player.getComponent(TransformComponent.class);
+        if (transform == null) {
+            return;
+        }
+
+        // Reset position to screen center
+        float centerX = gameData.getDisplayWidth() / 2.0f;
+        float centerY = gameData.getDisplayHeight() / 2.0f;
+        transform.setPosition(new Vector2D(centerX, centerY));
+
+        // Reset velocity if physics enabled
+        if (physicsSPI != null && physicsSPI.hasPhysics(player)) {
+            physicsSPI.setVelocity(player, Vector2D.zero());
+        }
+
+        playerComponent.completeRespawn();
+
+        FlickerUtility.startInvulnerabilityFlicker(player, 3.0f);
+
+        LOGGER.log(Level.INFO, "Player respawned with {0} lives remaining",
+                playerComponent.getLives());
     }
 
     private Entity findPlayer(World world) {

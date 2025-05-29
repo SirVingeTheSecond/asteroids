@@ -3,25 +3,24 @@ package dk.sdu.mmmi.cbse.commonplayer;
 import dk.sdu.mmmi.cbse.common.components.IComponent;
 
 /**
- * Component for player-specific properties.
+ * Component for Player entity.
  */
 public class PlayerComponent implements IComponent {
     private int lives = 3;
     private int score = 0;
 
-    // Health system
     private int maxHealth = 3;
     private int currentHealth = 3;
 
     private boolean invulnerable = false;
-    private int invulnerabilityTimer = 0; // Frames of invulnerability remaining
+    private int invulnerabilityTimer = 0;
     private static final int INVULNERABILITY_DURATION = 180; // 3 seconds at 60 FPS
+    private static final int RESPAWN_INVULNERABILITY_DURATION = 180; // 3 seconds at 60 FPS
 
-    /**
-     * Create a new player component with default values
-     */
+    private boolean needsRespawn = false;
+
     public PlayerComponent() {
-        // Using default values
+
     }
 
     /**
@@ -95,9 +94,8 @@ public class PlayerComponent implements IComponent {
             lives--;
 
             if (lives > 0) {
-                // Respawn with full health and temporary invulnerability
-                currentHealth = maxHealth;
-                setInvulnerable(true);
+                // Mark for respawn instead of immediately respawning
+                needsRespawn = true;
                 return false; // Still alive
             } else {
                 return true; // Player died (no lives left)
@@ -185,6 +183,25 @@ public class PlayerComponent implements IComponent {
         if (invulnerable) {
             this.invulnerabilityTimer = INVULNERABILITY_DURATION;
         }
+    }
+
+    /**
+     * Complete the respawn process
+     */
+    public void completeRespawn() {
+        this.needsRespawn = false;
+        this.currentHealth = maxHealth;
+        this.invulnerable = true;
+        this.invulnerabilityTimer = RESPAWN_INVULNERABILITY_DURATION;
+    }
+
+    /**
+     * Check if player needs respawn
+     *
+     * @return true if respawn is needed
+     */
+    public boolean needsRespawn() {
+        return needsRespawn;
     }
 
     /**
