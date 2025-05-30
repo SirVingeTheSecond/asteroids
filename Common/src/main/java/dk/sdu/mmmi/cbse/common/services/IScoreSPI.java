@@ -2,7 +2,6 @@ package dk.sdu.mmmi.cbse.common.services;
 
 /**
  * Service Provider Interface for score functionality.
- * Provides operations for score management and retrieval following CBSE principles.
  */
 public interface IScoreSPI {
     /**

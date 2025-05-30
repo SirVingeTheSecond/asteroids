@@ -36,7 +36,6 @@ public class ScoreServiceConfig {
 
     /**
      * Get the default scoring service URL.
-     * Provides configuration abstraction following CBSE principles.
      *
      * @return Default service URL
      */

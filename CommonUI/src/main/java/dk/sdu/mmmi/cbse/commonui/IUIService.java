@@ -5,7 +5,6 @@ import dk.sdu.mmmi.cbse.common.data.World;
 
 /**
  * Service Provider Interface for UI functionality.
- * Provides operations for creating and managing user interface elements.
  */
 public interface IUIService {
     /**

@@ -51,7 +51,7 @@ public class AsteroidScoreListener implements IEventListener<AsteroidSplitEvent>
 
     /**
      * Get points awarded for splitting an asteroid of the given size.
-     * Follows the scoring strategy: larger asteroids give fewer points when split.
+     * Strategy: Larger asteroids give fewer points when split.
      *
      * @param size The size of the asteroid that was split
      * @return Points to award

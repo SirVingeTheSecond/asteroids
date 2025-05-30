@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.core.events;
 
+import dk.sdu.mmmi.cbse.common.events.IEvent;
 import dk.sdu.mmmi.cbse.common.events.IEventListener;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
 
@@ -16,12 +17,9 @@ import java.util.logging.Logger;
 public class EventService implements IEventService {
     private static final Logger LOGGER = Logger.getLogger(EventService.class.getName());
 
-    private static final Map<Class<?>, List<IEventListener<?>>> STATIC_LISTENERS = new HashMap<>();
+    private static final Map<Class<? extends IEvent>, List<IEventListener<? extends IEvent>>> STATIC_LISTENERS = new HashMap<>();
     private static int instanceCount = 0;
 
-    /**
-     * Default constructor required by ServiceLoader
-     */
     public EventService() {
         instanceCount++;
         LOGGER.log(Level.INFO, "EventService instance #{0} created (using shared static listeners)", instanceCount);
@@ -29,7 +27,7 @@ public class EventService implements IEventService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> void subscribe(Class<T> eventType, IEventListener<T> listener) {
+    public <T extends IEvent> void subscribe(Class<T> eventType, IEventListener<T> listener) {
         synchronized (STATIC_LISTENERS) {
             STATIC_LISTENERS.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>())
                     .add(listener);
@@ -42,7 +40,7 @@ public class EventService implements IEventService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> void unsubscribe(Class<T> eventType, IEventListener<T> listener) {
+    public <T extends IEvent> void unsubscribe(Class<T> eventType, IEventListener<T> listener) {
         synchronized (STATIC_LISTENERS) {
             if (STATIC_LISTENERS.containsKey(eventType)) {
                 STATIC_LISTENERS.get(eventType).remove(listener);
@@ -54,8 +52,8 @@ public class EventService implements IEventService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> void publish(T event) {
-        Class<?> eventType = event.getClass();
+    public <T extends IEvent> void publish(T event) {
+        Class<? extends IEvent> eventType = event.getClass();
 
         synchronized (STATIC_LISTENERS) {
             if (!STATIC_LISTENERS.containsKey(eventType)) {
@@ -63,11 +61,11 @@ public class EventService implements IEventService {
                 return;
             }
 
-            List<IEventListener<?>> eventListeners = STATIC_LISTENERS.get(eventType);
+            List<IEventListener<? extends IEvent>> eventListeners = STATIC_LISTENERS.get(eventType);
             LOGGER.log(Level.INFO, "Publishing event {0} to {1} listeners",
                     new Object[]{eventType.getName(), eventListeners.size()});
 
-            for (IEventListener<?> listener : eventListeners) {
+            for (IEventListener<? extends IEvent> listener : eventListeners) {
                 try {
                     LOGGER.log(Level.INFO, "Notifying listener: {0}", listener.getClass().getName());
                     ((IEventListener<T>) listener).onEvent(event);
@@ -77,22 +75,5 @@ public class EventService implements IEventService {
                 }
             }
         }
-    }
-
-    /**
-     * Get debug information about current subscriptions
-     */
-    public String getDebugInfo() {
-        StringBuilder sb = new StringBuilder("EventService Debug Info:\n");
-        synchronized (STATIC_LISTENERS) {
-            for (Map.Entry<Class<?>, List<IEventListener<?>>> entry : STATIC_LISTENERS.entrySet()) {
-                sb.append(String.format("  %s: %d listeners\n",
-                        entry.getKey().getSimpleName(), entry.getValue().size()));
-                for (IEventListener<?> listener : entry.getValue()) {
-                    sb.append(String.format("    - %s\n", listener.getClass().getName()));
-                }
-            }
-        }
-        return sb.toString();
     }
 }

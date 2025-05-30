@@ -14,17 +14,13 @@ public class Entity {
     private final UUID id = UUID.randomUUID();
     private final Map<Class<?>, IComponent> components = new ConcurrentHashMap<>();
 
-    /**
-     * Creates a new entity with no components.
-     * Components should be added explicitly by systems.
-     */
     public Entity() {
 
     }
 
     /**
-     * Get the unique identifier for this entity
-     * @return Unique ID string
+     * Get the ID for this entity
+     * @return ID string
      */
     // ToDo: Ensure this returns an UUID.
     public String getID() {

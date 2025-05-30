@@ -8,6 +8,8 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
+import dk.sdu.mmmi.cbse.common.events.GameOverEvent;
+import dk.sdu.mmmi.cbse.common.services.IEventService;
 import dk.sdu.mmmi.cbse.common.services.IScoreSPI;
 import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.common.utils.FlickerUtility;
@@ -19,7 +21,6 @@ import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 import dk.sdu.mmmi.cbse.core.input.Button;
 import dk.sdu.mmmi.cbse.core.input.InputController;
 import dk.sdu.mmmi.cbse.core.utils.Time;
-import javafx.application.Platform;
 
 import java.util.List;
 import java.util.ServiceLoader;
@@ -41,20 +42,21 @@ public class PlayerSystem implements IUpdate {
     // Respawn config
     private static final float RESPAWN_INVINCIBILITY_TIME = 3.0f;
 
-    // Game over config
-    private static final float GAME_OVER_DELAY = 2.0f;
-    private boolean gameOverTriggered = false;
-    private float gameOverTimer = 0.0f;
-
     private IWeaponSPI weaponSPI;
     private IPhysicsSPI physicsSPI;
     private IScoreSPI scoreSPI;
+    private IEventService eventService;
+
+    // Game over state tracking
+    private boolean gameOverEventSent = false;
 
     public PlayerSystem() {
         this.weaponSPI = ServiceLoader.load(IWeaponSPI.class).findFirst().orElse(null);
         this.physicsSPI = ServiceLoader.load(IPhysicsSPI.class).findFirst().orElse(null);
         this.scoreSPI = ServiceLoader.load(IScoreSPI.class).findFirst().orElse(null);
-        LOGGER.log(Level.INFO, "PlayerSystem initialized with brutal game over condition and microservice score integration");
+        this.eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
+
+        LOGGER.log(Level.INFO, "PlayerSystem initialized");
     }
 
     @Override
@@ -67,12 +69,6 @@ public class PlayerSystem implements IUpdate {
         // Refresh services if not available
         refreshServices();
 
-        // Handle game over sequence
-        if (gameOverTriggered) {
-            handleGameOverSequence(gameData);
-            return; // Don't process player when game is over
-        }
-
         Entity player = findPlayer(world);
         if (player == null) return;
 
@@ -84,8 +80,8 @@ public class PlayerSystem implements IUpdate {
 
         // Check for game over condition
         if (playerComponent != null && isPlayerDeadForGood(playerComponent)) {
-            triggerGameOver();
-            return;
+            triggerGameOverEvent(player);
+            return; // Stop processing player when game is over
         }
 
         if (playerComponent != null && playerComponent.needsRespawn()) {
@@ -98,9 +94,6 @@ public class PlayerSystem implements IUpdate {
         updatePlayerState(player, playerComponent, recoil);
     }
 
-    /**
-     * Refresh service references if they weren't available during initialization
-     */
     private void refreshServices() {
         if (scoreSPI == null) {
             scoreSPI = ServiceLoader.load(IScoreSPI.class).findFirst().orElse(null);
@@ -108,42 +101,47 @@ public class PlayerSystem implements IUpdate {
                 LOGGER.log(Level.INFO, "Score service became available: {0}", scoreSPI.getServiceInfo());
             }
         }
+
+        if (eventService == null) {
+            eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
+            if (eventService != null) {
+                LOGGER.log(Level.INFO, "Event service became available");
+            }
+        }
     }
 
-    /**
-     * Check if player is completely dead (no lives left)
-     */
     private boolean isPlayerDeadForGood(PlayerComponent playerComponent) {
         return playerComponent.getLives() <= 0 && playerComponent.getCurrentHealth() <= 0;
     }
 
-    /**
-     * Trigger the game over sequence with authoritative microservice score
-     */
-    private void triggerGameOver() {
-        if (gameOverTriggered) return; // Prevent multiple triggers
+    private void triggerGameOverEvent(Entity player) {
+        if (gameOverEventSent) return;
 
-        gameOverTriggered = true;
-        gameOverTimer = 0.0f;
+        gameOverEventSent = true;
 
-        // Get the authoritative score from microservice
         int finalScore = getFinalScore();
         String scoreSource = getScoreSourceInfo();
 
-        LOGGER.log(Level.INFO, "GAME OVER! Player is simply too bad! Final score: {0} ({1})",
+        LOGGER.log(Level.INFO, "GAME OVER! Player eliminated! Final score: {0} ({1})",
                 new Object[]{finalScore, scoreSource});
 
-        // Print brutal game over message with authoritative score
+        // lololol
         System.out.println("\n" + "=".repeat(60));
         System.out.println("                    GAME OVER!");
-        System.out.println("         You are simply too bad at this game!");
+        System.out.println("         You are simply a waste of time!");
         System.out.println("              Final Score: " + finalScore);
-        System.out.println("           Maybe try playing something easier?");
-        System.out.println("              Like... tic-tac-toe?");
+        System.out.println("           This is clearly not for you");
+        System.out.println("              Get lost, bozo...");
         System.out.println("=".repeat(60) + "\n");
 
-        // Also log to the game logger for good measure
-        LOGGER.log(Level.WARNING, "GAME OVER TRIGGERED - Player couldn't handle the difficulty!");
+        // Publish game over event for proper CBSE separation of concerns
+        if (eventService != null) {
+            GameOverEvent gameOverEvent = GameOverEvent.playerDeath(player, finalScore, scoreSource);
+            eventService.publish(gameOverEvent);
+            LOGGER.log(Level.INFO, "Published GameOverEvent - application lifecycle will be handled by Game class");
+        } else {
+            LOGGER.log(Level.SEVERE, "Cannot publish GameOverEvent - EventService not available!");
+        }
     }
 
     /**
@@ -170,34 +168,6 @@ public class PlayerSystem implements IUpdate {
             return scoreSPI.getServiceInfo();
         }
         return "No score service available";
-    }
-
-    /**
-     * Handle the game over countdown and close the game
-     */
-    private void handleGameOverSequence(GameData gameData) {
-        gameOverTimer += gameData.getDeltaTime();
-
-        if (gameOverTimer >= GAME_OVER_DELAY) {
-            LOGGER.log(Level.INFO, "Closing game due to player incompetence...");
-
-            // Close the game completely
-            Platform.runLater(() -> {
-                try {
-                    Platform.exit();
-                    System.exit(0); // Force exit if Platform.exit() doesn't work
-                } catch (Exception e) {
-                    LOGGER.log(Level.SEVERE, "Failed to close game gracefully, forcing exit", e);
-                    System.exit(1);
-                }
-            });
-        } else {
-            // Show countdown in console
-            int secondsLeft = (int) Math.ceil(GAME_OVER_DELAY - gameOverTimer);
-            if (secondsLeft != (int) Math.ceil(GAME_OVER_DELAY - (gameOverTimer - gameData.getDeltaTime()))) {
-                System.out.println("Closing game in " + secondsLeft + " second" + (secondsLeft != 1 ? "s" : "") + "...");
-            }
-        }
     }
 
     /**
@@ -403,7 +373,7 @@ public class PlayerSystem implements IUpdate {
         if (playerComponent != null) {
             playerComponent.updateInvulnerability();
             float deltaTime = Time.getDeltaTimeF();
-            dk.sdu.mmmi.cbse.common.utils.FlickerUtility.updateFlicker(player, deltaTime);
+            FlickerUtility.updateFlicker(player, deltaTime);
         }
 
         // Update recoil state
@@ -449,7 +419,7 @@ public class PlayerSystem implements IUpdate {
 
         playerComponent.completeRespawn();
 
-        FlickerUtility.startInvulnerabilityFlicker(player, 3.0f);
+        FlickerUtility.startInvulnerabilityFlicker(player, RESPAWN_INVINCIBILITY_TIME);
 
         LOGGER.log(Level.INFO, "Player respawned with {0} lives remaining",
                 playerComponent.getLives());
@@ -466,16 +436,16 @@ public class PlayerSystem implements IUpdate {
     }
 
     /**
-     * Check if game over has been triggered (for testing/debugging)
+     * Check if game over event has been sent (for testing/debugging)
      */
-    public boolean isGameOverTriggered() {
-        return gameOverTriggered;
+    public boolean isGameOverEventSent() {
+        return gameOverEventSent;
     }
 
     /**
-     * Get remaining game over time (for testing/debugging)
+     * Reset the game over state (for testing/debugging)
      */
-    public float getGameOverTimeRemaining() {
-        return Math.max(0, GAME_OVER_DELAY - gameOverTimer);
+    public void resetGameOverState() {
+        gameOverEventSent = false;
     }
 }
