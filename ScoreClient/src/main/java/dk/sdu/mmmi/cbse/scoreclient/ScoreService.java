@@ -25,7 +25,6 @@ public class ScoreService {
         this.restTemplate = ScoreServiceConfig.createScoringRestTemplate();
         this.scoringServiceUrl = ScoreServiceConfig.getDefaultServiceUrl();
 
-        // Initialize score on startup
         initializeScore();
     }
 
@@ -96,7 +95,7 @@ public class ScoreService {
      */
     private Integer getScoreFromService() {
         try {
-            String url = ScoreServiceConfig.createEndpointUrl(scoringServiceUrl, "/score/get");
+            String url = ScoreServiceConfig.createEndpointUrl(scoringServiceUrl, "/score");
             Integer score = restTemplate.getForObject(url, Integer.class);
             return score;
         } catch (RestClientException e) {

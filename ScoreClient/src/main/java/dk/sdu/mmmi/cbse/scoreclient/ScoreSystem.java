@@ -4,6 +4,7 @@ import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
 import dk.sdu.mmmi.cbse.common.services.IPluginService;
+import dk.sdu.mmmi.cbse.common.services.IScoreSPI;
 import dk.sdu.mmmi.cbse.commonasteroid.events.AsteroidSplitEvent;
 import dk.sdu.mmmi.cbse.commonenemy.events.EnemyDestroyedEvent;
 
@@ -13,9 +14,8 @@ import java.util.logging.Logger;
 
 /**
  * System that manages the player's score using Spring RestTemplate to communicate with the Score MicroService.
- * Implements IPluginService to ensure proper CBSE lifecycle integration.
  */
-public class ScoreSystem implements IPluginService {
+public class ScoreSystem implements IPluginService, IScoreSPI {
     private static final Logger LOGGER = Logger.getLogger(ScoreSystem.class.getName());
 
     private IEventService eventService;
@@ -26,12 +26,14 @@ public class ScoreSystem implements IPluginService {
     public ScoreSystem() {
         this.scoreService = new ScoreService();
 
-        // Create listeners
+        // Create listeners that use the internal score service
         this.enemyScoreListener = new EnemyScoreListener(scoreService);
         this.asteroidScoreListener = new AsteroidScoreListener(scoreService);
 
         LOGGER.log(Level.INFO, "ScoreSystem created - waiting for start() to subscribe to events");
     }
+
+    // ===== IPluginService Implementation =====
 
     @Override
     public void start(GameData gameData, World world) {
@@ -56,56 +58,71 @@ public class ScoreSystem implements IPluginService {
         }
     }
 
-    /**
-     * Get current score
-     * Delegates to the score service
-     *
-     * @return Current score
-     */
-    public int getScore() {
+    @Override
+    public int getCurrentScore() {
         return scoreService.getScore();
     }
 
-    /**
-     * Reset score to zero
-     * Delegates to the score service following composition pattern
-     */
-    public void resetScore() {
-        scoreService.resetScore();
-    }
-
-    /**
-     * Manually add score (for testing or special events)
-     * Delegates to the score service following composition pattern
-     *
-     * @param points Points to add
-     */
+    @Override
     public void addScore(int points) {
         scoreService.addScore(points);
+        LOGGER.log(Level.FINE, "Score updated via IScoreSPI: +{0}, total: {1}",
+                new Object[]{points, scoreService.getScore()});
+    }
+
+    @Override
+    public void resetScore() {
+        scoreService.resetScore();
+        LOGGER.log(Level.INFO, "Score reset via IScoreSPI to: {0}", scoreService.getScore());
+    }
+
+    @Override
+    public boolean isServiceAvailable() {
+        return scoreService.isMicroserviceAvailable();
+    }
+
+    @Override
+    public String getServiceInfo() {
+        if (scoreService.isMicroserviceAvailable()) {
+            return "Microservice: " + scoreService.getScoringServiceUrl();
+        } else {
+            return "Fallback (microservice unavailable)";
+        }
+    }
+
+    // ===== for backward compatibility =====
+
+    /**
+     * Get current score (legacy method)
+     * @deprecated Use IScoreSPI.getCurrentScore() instead
+     */
+    @Deprecated
+    public int getScore() {
+        return getCurrentScore();
     }
 
     /**
-     * Get the microservice URL for configuration purposes
-     *
-     * @return The scoring service URL
+     * Get the microservice URL (legacy method)
+     * @deprecated Use IScoreSPI.getServiceInfo() instead
      */
+    @Deprecated
     public String getScoringServiceUrl() {
         return scoreService.getScoringServiceUrl();
     }
 
     /**
-     * Check if the microservice is available
-     *
-     * @return true if the service responds to requests
+     * Check microservice availability (legacy method)
+     * @deprecated Use IScoreSPI.isServiceAvailable() instead
      */
+    @Deprecated
     public boolean isMicroserviceAvailable() {
-        return scoreService.isMicroserviceAvailable();
+        return isServiceAvailable();
     }
+
+    // ===== for testing =====
 
     /**
      * Get reference to the enemy score listener (for testing)
-     *
-     * @return The enemy score listener
      */
     public EnemyScoreListener getEnemyScoreListener() {
         return enemyScoreListener;
@@ -113,8 +130,6 @@ public class ScoreSystem implements IPluginService {
 
     /**
      * Get reference to the asteroid score listener (for testing)
-     *
-     * @return The asteroid score listener
      */
     public AsteroidScoreListener getAsteroidScoreListener() {
         return asteroidScoreListener;
@@ -122,8 +137,6 @@ public class ScoreSystem implements IPluginService {
 
     /**
      * Get reference to the score service (for testing)
-     *
-     * @return The score service
      */
     public ScoreService getScoreService() {
         return scoreService;

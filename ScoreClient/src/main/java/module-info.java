@@ -15,4 +15,7 @@ module ScoreClient {
 
     provides dk.sdu.mmmi.cbse.common.services.IPluginService
             with dk.sdu.mmmi.cbse.scoreclient.ScoreSystem;
+
+    provides dk.sdu.mmmi.cbse.common.services.IScoreSPI
+            with dk.sdu.mmmi.cbse.scoreclient.ScoreSystem;
 }

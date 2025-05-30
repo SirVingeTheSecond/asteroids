@@ -10,6 +10,7 @@ module Player {
 
     uses dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
     uses dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
+    uses dk.sdu.mmmi.cbse.common.services.IScoreSPI;
 
     exports dk.sdu.mmmi.cbse.player;
 

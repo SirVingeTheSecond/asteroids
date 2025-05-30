@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 
 /**
  * Service implementation for UI functionality.
- * Handles creation and management of UI elements.
  */
 public class UIService implements IUIService {
     private static final Logger LOGGER = Logger.getLogger(UIService.class.getName());
@@ -18,7 +17,7 @@ public class UIService implements IUIService {
 
     public UIService() {
         this.uiFactory = new UIEntityFactory();
-        LOGGER.log(Level.INFO, "UIService initialized");
+        LOGGER.log(Level.INFO, "UIService initialized with microservice score support");
     }
 
     @Override
@@ -26,8 +25,9 @@ public class UIService implements IUIService {
         world.addEntity(uiFactory.createHealthDisplay(gameData));
         world.addEntity(uiFactory.createLivesDisplay(gameData));
         world.addEntity(uiFactory.createWeaponDisplay(gameData));
+        world.addEntity(uiFactory.createScoreDisplay(gameData));
 
-        LOGGER.log(Level.INFO, "HUD created with health, lives, and weapon displays");
+        LOGGER.log(Level.INFO, "HUD created with health, lives, weapon, and microservice score displays");
     }
 
     @Override

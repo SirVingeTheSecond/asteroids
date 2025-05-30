@@ -8,6 +8,7 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
+import dk.sdu.mmmi.cbse.common.services.IScoreSPI;
 import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.common.utils.FlickerUtility;
 import dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
@@ -18,6 +19,7 @@ import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 import dk.sdu.mmmi.cbse.core.input.Button;
 import dk.sdu.mmmi.cbse.core.input.InputController;
 import dk.sdu.mmmi.cbse.core.utils.Time;
+import javafx.application.Platform;
 
 import java.util.List;
 import java.util.ServiceLoader;
@@ -39,13 +41,20 @@ public class PlayerSystem implements IUpdate {
     // Respawn config
     private static final float RESPAWN_INVINCIBILITY_TIME = 3.0f;
 
+    // Game over config
+    private static final float GAME_OVER_DELAY = 2.0f;
+    private boolean gameOverTriggered = false;
+    private float gameOverTimer = 0.0f;
+
     private IWeaponSPI weaponSPI;
     private IPhysicsSPI physicsSPI;
+    private IScoreSPI scoreSPI;
 
     public PlayerSystem() {
         this.weaponSPI = ServiceLoader.load(IWeaponSPI.class).findFirst().orElse(null);
         this.physicsSPI = ServiceLoader.load(IPhysicsSPI.class).findFirst().orElse(null);
-        LOGGER.log(Level.INFO, "PlayerSystem initialized");
+        this.scoreSPI = ServiceLoader.load(IScoreSPI.class).findFirst().orElse(null);
+        LOGGER.log(Level.INFO, "PlayerSystem initialized with brutal game over condition and microservice score integration");
     }
 
     @Override
@@ -55,6 +64,15 @@ public class PlayerSystem implements IUpdate {
 
     @Override
     public void update(GameData gameData, World world) {
+        // Refresh services if not available
+        refreshServices();
+
+        // Handle game over sequence
+        if (gameOverTriggered) {
+            handleGameOverSequence(gameData);
+            return; // Don't process player when game is over
+        }
+
         Entity player = findPlayer(world);
         if (player == null) return;
 
@@ -64,6 +82,12 @@ public class PlayerSystem implements IUpdate {
 
         if (transform == null) return;
 
+        // Check for game over condition
+        if (playerComponent != null && isPlayerDeadForGood(playerComponent)) {
+            triggerGameOver();
+            return;
+        }
+
         if (playerComponent != null && playerComponent.needsRespawn()) {
             handleRespawn(player, playerComponent, gameData);
         }
@@ -72,6 +96,108 @@ public class PlayerSystem implements IUpdate {
         processRotation(transform);
         processShooting(player, gameData, world);
         updatePlayerState(player, playerComponent, recoil);
+    }
+
+    /**
+     * Refresh service references if they weren't available during initialization
+     */
+    private void refreshServices() {
+        if (scoreSPI == null) {
+            scoreSPI = ServiceLoader.load(IScoreSPI.class).findFirst().orElse(null);
+            if (scoreSPI != null) {
+                LOGGER.log(Level.INFO, "Score service became available: {0}", scoreSPI.getServiceInfo());
+            }
+        }
+    }
+
+    /**
+     * Check if player is completely dead (no lives left)
+     */
+    private boolean isPlayerDeadForGood(PlayerComponent playerComponent) {
+        return playerComponent.getLives() <= 0 && playerComponent.getCurrentHealth() <= 0;
+    }
+
+    /**
+     * Trigger the game over sequence with authoritative microservice score
+     */
+    private void triggerGameOver() {
+        if (gameOverTriggered) return; // Prevent multiple triggers
+
+        gameOverTriggered = true;
+        gameOverTimer = 0.0f;
+
+        // Get the authoritative score from microservice
+        int finalScore = getFinalScore();
+        String scoreSource = getScoreSourceInfo();
+
+        LOGGER.log(Level.INFO, "GAME OVER! Player is simply too bad! Final score: {0} ({1})",
+                new Object[]{finalScore, scoreSource});
+
+        // Print brutal game over message with authoritative score
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("                    GAME OVER!");
+        System.out.println("         You are simply too bad at this game!");
+        System.out.println("              Final Score: " + finalScore);
+        System.out.println("           Maybe try playing something easier?");
+        System.out.println("              Like... tic-tac-toe?");
+        System.out.println("=".repeat(60) + "\n");
+
+        // Also log to the game logger for good measure
+        LOGGER.log(Level.WARNING, "GAME OVER TRIGGERED - Player couldn't handle the difficulty!");
+    }
+
+    /**
+     * Get the final score from the authoritative source (microservice)
+     */
+    private int getFinalScore() {
+        if (scoreSPI != null) {
+            try {
+                return scoreSPI.getCurrentScore();
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Failed to get final score from microservice, using fallback", e);
+                return 0; // Fallback score
+            }
+        }
+        LOGGER.log(Level.WARNING, "Score service not available for final score");
+        return 0; // Fallback when no service
+    }
+
+    /**
+     * Get information about the score source for logging
+     */
+    private String getScoreSourceInfo() {
+        if (scoreSPI != null) {
+            return scoreSPI.getServiceInfo();
+        }
+        return "No score service available";
+    }
+
+    /**
+     * Handle the game over countdown and close the game
+     */
+    private void handleGameOverSequence(GameData gameData) {
+        gameOverTimer += gameData.getDeltaTime();
+
+        if (gameOverTimer >= GAME_OVER_DELAY) {
+            LOGGER.log(Level.INFO, "Closing game due to player incompetence...");
+
+            // Close the game completely
+            Platform.runLater(() -> {
+                try {
+                    Platform.exit();
+                    System.exit(0); // Force exit if Platform.exit() doesn't work
+                } catch (Exception e) {
+                    LOGGER.log(Level.SEVERE, "Failed to close game gracefully, forcing exit", e);
+                    System.exit(1);
+                }
+            });
+        } else {
+            // Show countdown in console
+            int secondsLeft = (int) Math.ceil(GAME_OVER_DELAY - gameOverTimer);
+            if (secondsLeft != (int) Math.ceil(GAME_OVER_DELAY - (gameOverTimer - gameData.getDeltaTime()))) {
+                System.out.println("Closing game in " + secondsLeft + " second" + (secondsLeft != 1 ? "s" : "") + "...");
+            }
+        }
     }
 
     /**
@@ -337,5 +463,19 @@ public class PlayerSystem implements IUpdate {
             }
         }
         return null;
+    }
+
+    /**
+     * Check if game over has been triggered (for testing/debugging)
+     */
+    public boolean isGameOverTriggered() {
+        return gameOverTriggered;
+    }
+
+    /**
+     * Get remaining game over time (for testing/debugging)
+     */
+    public float getGameOverTimeRemaining() {
+        return Math.max(0, GAME_OVER_DELAY - gameOverTimer);
     }
 }

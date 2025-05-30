@@ -7,6 +7,7 @@ module UI {
     requires javafx.graphics;
 
     uses dk.sdu.mmmi.cbse.commonui.IUIService;
+    uses dk.sdu.mmmi.cbse.common.services.IScoreSPI;
 
     exports dk.sdu.mmmi.cbse.ui;
 

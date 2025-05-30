@@ -14,6 +14,7 @@ import javafx.scene.paint.Color;
 
 /**
  * Factory for creating UI entities with proper positioning and styling.
+ * Includes score display using microservice integration.
  */
 public class UIEntityFactory {
 
@@ -68,6 +69,29 @@ public class UIEntityFactory {
         uiComponent.setDisplayText("Weapon: STANDARD");
 
         RendererComponent renderer = createUIRenderer(Color.WHITE);
+
+        return EntityBuilder.create()
+                .withType(EntityType.OBSTACLE)
+                .atPosition(position)
+                .with(uiComponent)
+                .with(renderer)
+                .build();
+    }
+
+    /**
+     * Create score display
+     */
+    public Entity createScoreDisplay(GameData gameData) {
+        Vector2D position = calculateAnchoredPosition(UIAnchor.TOP_RIGHT,
+                new Vector2D(-150, 60), gameData);
+
+        UIComponent uiComponent = new UIComponent(UIType.SCORE_DISPLAY);
+        uiComponent.setAnchor(UIAnchor.TOP_RIGHT);
+        uiComponent.setOffset(new Vector2D(-150, 60));
+        uiComponent.setFontSize(20);
+        uiComponent.setDisplayText("Score: 0 ★"); // ★ = microservice, ⚠ = fallback
+
+        RendererComponent renderer = createUIRenderer(Color.GOLD);
 
         return EntityBuilder.create()
                 .withType(EntityType.OBSTACLE)

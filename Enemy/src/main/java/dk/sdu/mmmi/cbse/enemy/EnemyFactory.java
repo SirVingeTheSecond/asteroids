@@ -11,6 +11,7 @@ import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
 import dk.sdu.mmmi.cbse.common.utils.EntityBuilder;
 import dk.sdu.mmmi.cbse.commoncollision.*;
+import dk.sdu.mmmi.cbse.commondifficulty.IDifficultyService;
 import dk.sdu.mmmi.cbse.commonenemy.EnemyComponent;
 import dk.sdu.mmmi.cbse.commonenemy.EnemyType;
 import dk.sdu.mmmi.cbse.commonenemy.IEnemySPI;
@@ -19,26 +20,42 @@ import dk.sdu.mmmi.cbse.commonweapon.Weapon;
 import javafx.scene.paint.Color;
 
 import java.util.Random;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Factory for creating Enemies with different behaviors.
+ * Factory for creating Enemies with difficulty-based scaling.
+ * Integrates with IDifficultyService for dynamic spawn rates and enemy distribution.
  */
 public class EnemyFactory implements IEnemySPI {
     private static final Logger LOGGER = Logger.getLogger(EnemyFactory.class.getName());
     private final Random random = new Random();
     private final EnemyRegistry enemyRegistry;
+    private IDifficultyService difficultyService;
 
-    // Spawn config
-    private static final int MAX_ENEMIES = 5;
-    private static final float SPAWN_PROBABILITY = 0.006f;
+    // Fallback configuration when difficulty service unavailable
+    private static final int FALLBACK_MAX_ENEMIES = 3;
+    private static final float FALLBACK_SPAWN_PROBABILITY = 0.004f;
+    private static final float FALLBACK_TURRET_CHANCE = 0.2f; // 20% turrets
+
+    // Spawn position configuration
     private static final float EDGE_SPAWN_MARGIN = 60.0f;   // Outside screen for HUNTERS
     private static final float BOUNDARY_MARGIN = 120.0f;    // Inside screen for TURRETS
 
+    // Difficulty-based turret spawning
+    private static final float MIN_TURRET_CHANCE = 0.1f;    // 10% at difficulty 0.0
+    private static final float MAX_TURRET_CHANCE = 0.5f;    // 50% at difficulty 2.0+
+
     public EnemyFactory() {
         this.enemyRegistry = EnemyRegistry.getInstance();
-        LOGGER.log(Level.INFO, "EnemyFactory initialized for HUNTER and TURRET enemies");
+        this.difficultyService = ServiceLoader.load(IDifficultyService.class).findFirst().orElse(null);
+
+        if (difficultyService == null) {
+            LOGGER.log(Level.WARNING, "IDifficultyService not available - using fallback enemy spawning");
+        }
+
+        LOGGER.log(Level.INFO, "EnemyFactory initialized with difficulty scaling support");
     }
 
     @Override
@@ -68,17 +85,23 @@ public class EnemyFactory implements IEnemySPI {
 
     @Override
     public void spawnEnemies(GameData gameData, World world) {
-        int currentEnemies = countCurrentEnemies(world);
+        // Refresh difficulty service if not available
+        if (difficultyService == null) {
+            difficultyService = ServiceLoader.load(IDifficultyService.class).findFirst().orElse(null);
+        }
 
-        if (currentEnemies < MAX_ENEMIES && random.nextFloat() < SPAWN_PROBABILITY) {
-            // 60% HUNTER, 40% TURRET
-            EnemyType type = random.nextFloat() < 0.6f ? EnemyType.HUNTER : EnemyType.TURRET;
+        int currentEnemies = countCurrentEnemies(world);
+        int maxEnemies = getMaxEnemyCount();
+        float spawnProbability = getSpawnProbability();
+
+        if (currentEnemies < maxEnemies && random.nextFloat() < spawnProbability) {
+            EnemyType type = selectEnemyType();
 
             Entity enemy = createEnemy(type, gameData, world);
             world.addEntity(enemy);
 
-            LOGGER.log(Level.INFO, "Spawned {0} enemy ({1} total enemies)",
-                    new Object[]{type, currentEnemies + 1});
+            LOGGER.log(Level.INFO, "Spawned {0} enemy ({1}/{2} enemies) at difficulty {3}",
+                    new Object[]{type, currentEnemies + 1, maxEnemies, getCurrentDifficulty()});
         }
     }
 
@@ -101,17 +124,101 @@ public class EnemyFactory implements IEnemySPI {
             return false;
         }
 
+        // Apply difficulty-based firing rate modifier
+        float baseProbability = enemyComp.getFiringProbability();
+        float difficultyModifier = getDifficultyFiringRateModifier();
+        float adjustedProbability = baseProbability * difficultyModifier;
+
         switch (enemyComp.getType()) {
             case HUNTER:
                 float proximityBonus = Math.max(0, 1.0f - (distance / enemyComp.getFireDistance()));
-                return random.nextFloat() < (enemyComp.getFiringProbability() + proximityBonus * 0.008f);
+                return random.nextFloat() < (adjustedProbability + proximityBonus * 0.008f);
 
             case TURRET:
-                return random.nextFloat() < enemyComp.getFiringProbability();
+                return random.nextFloat() < adjustedProbability;
 
             default:
                 return false;
         }
+    }
+
+    /**
+     * Get maximum enemy count based on difficulty
+     */
+    private int getMaxEnemyCount() {
+        if (difficultyService != null) {
+            return difficultyService.getMaxEnemyCount();
+        }
+        return FALLBACK_MAX_ENEMIES;
+    }
+
+    /**
+     * Get spawn probability with difficulty scaling
+     */
+    private float getSpawnProbability() {
+        if (difficultyService != null) {
+            float baseRate = 0.004f; // Base spawn rate
+            float multiplier = difficultyService.getEnemySpawnMultiplier();
+            return baseRate * multiplier;
+        }
+        return FALLBACK_SPAWN_PROBABILITY;
+    }
+
+    /**
+     * Get current difficulty level for logging
+     */
+    private float getCurrentDifficulty() {
+        if (difficultyService != null) {
+            return difficultyService.getCurrentDifficulty();
+        }
+        return 0.0f;
+    }
+
+    /**
+     * Get difficulty-based firing rate modifier
+     */
+    private float getDifficultyFiringRateModifier() {
+        if (difficultyService != null) {
+            // Invert the firing rate multiplier: higher difficulty = more frequent firing
+            // DifficultyService returns intervals, we want frequency
+            float intervalMultiplier = difficultyService.getHunterFiringRateMultiplier();
+            return 1.0f / Math.max(0.1f, intervalMultiplier);
+        }
+        return 1.0f;
+    }
+
+    /**
+     * Select enemy type based on difficulty scaling
+     */
+    private EnemyType selectEnemyType() {
+        float turretChance = calculateTurretChance();
+
+        if (random.nextFloat() < turretChance) {
+            LOGGER.log(Level.FINE, "Selected TURRET (chance: {0})", turretChance);
+            return EnemyType.TURRET;
+        } else {
+            LOGGER.log(Level.FINE, "Selected HUNTER (turret chance was: {0})", turretChance);
+            return EnemyType.HUNTER;
+        }
+    }
+
+    /**
+     * Calculate turret spawn chance based on difficulty
+     */
+    private float calculateTurretChance() {
+        if (difficultyService != null) {
+            float difficulty = difficultyService.getCurrentDifficulty();
+            // Linear scaling from MIN_TURRET_CHANCE to MAX_TURRET_CHANCE over difficulty 0.0 to 2.0
+            float progress = Math.min(difficulty / 2.0f, 1.0f);
+            float turretChance = MIN_TURRET_CHANCE + (progress * (MAX_TURRET_CHANCE - MIN_TURRET_CHANCE));
+
+            LOGGER.log(Level.FINEST, "Difficulty {0} -> Turret chance: {1}",
+                    new Object[]{difficulty, turretChance});
+
+            return turretChance;
+        }
+
+        return FALLBACK_TURRET_CHANCE;
     }
 
     /**
