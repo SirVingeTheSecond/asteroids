@@ -25,7 +25,6 @@
         <module>Core</module>
         <module>Enemy</module>
         <module>Movement</module>
-        <module>Particles</module>
         <module>Physics</module>
         <module>Player</module>
         <module>Renderer</module>
