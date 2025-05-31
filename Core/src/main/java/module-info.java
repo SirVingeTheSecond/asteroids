@@ -23,6 +23,10 @@ module Core {
     exports dk.sdu.mmmi.cbse.core.config;
     exports dk.sdu.mmmi.cbse.core.services;
 
+    // Hotfix
+    provides dk.sdu.mmmi.cbse.common.services.IEventService
+            with dk.sdu.mmmi.cbse.core.events.EventService;
+
     // Open packages to Spring for reflection
     opens dk.sdu.mmmi.cbse.core.config to spring.core, spring.beans, spring.context;
     opens dk.sdu.mmmi.cbse.core.services to spring.core, spring.beans, spring.context;
