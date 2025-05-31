@@ -19,22 +19,23 @@
         <module>CommonBullet</module>
         <module>CommonCollision</module>
         <module>CommonEnemy</module>
+        <module>CommonDifficulty</module>
+        <module>CommonMovement</module>
         <module>CommonPhysics</module>
         <module>CommonPlayer</module>
+        <module>CommonUI</module>
         <module>CommonWeapon</module>
         <module>Core</module>
+        <module>Difficulty</module>
         <module>Enemy</module>
         <module>Movement</module>
         <module>Physics</module>
         <module>Player</module>
         <module>Renderer</module>
-        <module>ScoreClient</module>
-        <module>Weapon</module>
         <module>Score</module>
-        <module>CommonUI</module>
+        <module>ScoreClient</module>
         <module>UI</module>
-        <module>CommonDifficulty</module>
-        <module>Difficulty</module>
+        <module>Weapon</module>
     </modules>
 
     <properties>
