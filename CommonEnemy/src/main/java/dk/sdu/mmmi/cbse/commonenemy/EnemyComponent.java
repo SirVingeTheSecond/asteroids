@@ -3,7 +3,7 @@ package dk.sdu.mmmi.cbse.commonenemy;
 import dk.sdu.mmmi.cbse.common.components.IComponent;
 
 /**
- * Component for enemy properties.
+ * Component for Enemy properties.
  */
 public class EnemyComponent implements IComponent {
     private float health = 100.0f;
@@ -12,27 +12,16 @@ public class EnemyComponent implements IComponent {
     private float fireDistance = 300.0f;
     private boolean canFire = true;
 
-    private EnemyType type = EnemyType.BASIC;
+    private EnemyType type;
 
     public EnemyComponent() {
 
     }
 
-    /**
-     * Create a new enemy component with specific type
-     *
-     * @param type The enemy type
-     */
     public EnemyComponent(EnemyType type) {
         this.type = type;
 
-        // Configure based on type
         switch (type) {
-            case BASIC:
-                health = 100.0f;
-                scoreValue = 100;
-                firingProbability = 0.005f;
-                break;
             case HUNTER:
                 health = 150.0f;
                 scoreValue = 200;
@@ -56,12 +45,6 @@ public class EnemyComponent implements IComponent {
         this.health = health;
     }
 
-    /**
-     * Apply damage to the enemy
-     *
-     * @param amount Damage amount
-     * @return true if enemy died
-     */
     public boolean damage(float amount) {
         health -= amount;
         return health <= 0;

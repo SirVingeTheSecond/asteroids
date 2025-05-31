@@ -4,6 +4,7 @@ import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
+import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.utils.FlickerUtility;
 import dk.sdu.mmmi.cbse.commonasteroid.AsteroidComponent;
 import dk.sdu.mmmi.cbse.commonasteroid.events.AsteroidSplitEvent;
@@ -28,7 +29,7 @@ public class CollisionHandlers {
 
     // Flicker durations
     private static final float ASTEROID_DAMAGE_FLICKER_DURATION = 0.3f;
-    private static final float PLAYER_DAMAGE_FLICKER_DURATION = 1.0f;
+    private static final float PLAYER_DAMAGE_FLICKER_DURATION = 1f;
 
     private CollisionHandlers() {
 
@@ -213,6 +214,70 @@ public class CollisionHandlers {
                 physicsSPI.getAngularVelocity(asteroid2) + angularImpact2);
 
         return result;
+    };
+
+    /**
+     * Handler for bullet-bullet collisions (player vs enemy bullets)
+     */
+    public static final ICollisionHandler BULLET_BULLET_COLLISION_HANDLER = (bullet1, bullet2, context) -> {
+        BulletComponent bulletComp1 = bullet1.getComponent(BulletComponent.class);
+        BulletComponent bulletComp2 = bullet2.getComponent(BulletComponent.class);
+
+        if (bulletComp1 == null || bulletComp2 == null) {
+            return CollisionResult.none();
+        }
+
+        // Only destroy if they're from different sources (player vs enemy)
+        if (bulletComp1.getSource() != bulletComp2.getSource()) {
+            return CollisionResult.remove(bullet1, bullet2);
+        }
+
+        return CollisionResult.none();
+    };
+
+    /**
+     * Handler for boundary collisions - stops entities at screen edges
+     * This responds to collisions already detected by CollisionSystem
+     */
+    public static final ICollisionHandler BOUNDARY_COLLISION_HANDLER = (entity, boundary, context) -> {
+        TransformComponent entityTransform = entity.getComponent(TransformComponent.class);
+        TransformComponent boundaryTransform = boundary.getComponent(TransformComponent.class);
+
+        if (entityTransform == null || boundaryTransform == null) {
+            return CollisionResult.none();
+        }
+
+        // Get physics service to adjust velocity
+        IPhysicsSPI physicsSPI = ServiceLoader.load(IPhysicsSPI.class).findFirst().orElse(null);
+        if (physicsSPI != null && physicsSPI.hasPhysics(entity)) {
+
+            // Calculate collision normal (from boundary center to entity center)
+            Vector2D entityPos = entityTransform.getPosition();
+            Vector2D boundaryPos = boundaryTransform.getPosition();
+            Vector2D collisionNormal = entityPos.subtract(boundaryPos);
+
+            if (collisionNormal.magnitudeSquared() > 0.001f) {
+                collisionNormal = collisionNormal.normalize();
+
+                // Get current velocity
+                Vector2D velocity = physicsSPI.getVelocity(entity);
+
+                // Remove velocity component in the direction of the boundary
+                float velocityInNormal = velocity.dot(collisionNormal);
+                if (velocityInNormal < 0) { // Moving into boundary
+                    Vector2D velocityCorrection = collisionNormal.scale(velocityInNormal);
+                    Vector2D newVelocity = velocity.subtract(velocityCorrection);
+                    physicsSPI.setVelocity(entity, newVelocity);
+                }
+
+                // Push entity slightly away from boundary to prevent sticking
+                float pushDistance = entityTransform.getRadius() + 2.0f;
+                Vector2D correctedPosition = boundaryPos.add(collisionNormal.scale(pushDistance));
+                entityTransform.setPosition(correctedPosition);
+            }
+        }
+
+        return CollisionResult.none(); // Don't remove anything
     };
 
     /**

@@ -82,7 +82,7 @@ public class CollisionResolver {
             }
         }
 
-        // Handle entity2's response to entity1 (if not already stopped)
+        // Handle entity2's response to entity1
         CollisionResponseComponent response2 = entity2.getComponent(CollisionResponseComponent.class);
         if (response2 != null) {
             CollisionResult result2 = response2.handleCollision(entity2, entity1, context);

@@ -18,8 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System that handles entity movement for non-physics entities.
- * Physics entities are handled by PhysicsSystem for consistent behavior.
+ * Movement system that handles all entities with MovementComponent.
  */
 public class MovementSystem implements IUpdate, IFixedUpdate {
     private static final Logger LOGGER = Logger.getLogger(MovementSystem.class.getName());
@@ -39,62 +38,60 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
 
         for (Entity entity : world.getEntities()) {
             TransformComponent transform = entity.getComponent(TransformComponent.class);
-            if (transform == null) continue;
+            if (transform == null || !entity.hasComponent(MovementComponent.class)) {
+                continue;
+            }
 
             TagComponent tag = entity.getComponent(TagComponent.class);
 
-            // Skip bullets - they're handled in fixedUpdate for smooth movement
+            // Skip bullets - handled in fixedUpdate
             if (tag != null && tag.hasType(EntityType.BULLET)) {
                 continue;
             }
 
-            // Skip entities with physics components - they're handled by PhysicsSystem
+            // Skip entities with physics - handled by PhysicsSystem
             if (entity.hasComponent(PhysicsComponent.class)) {
                 continue;
             }
 
-            // Only process entities that have MovementComponent but no PhysicsComponent
-            if (entity.hasComponent(MovementComponent.class)) {
-                moveEntity(entity, transform, deltaTime);
-            } else if (tag != null && tag.hasType(EntityType.ASTEROID)) {
-                // Fallback: if asteroid doesn't have MovementComponent but no physics, basic movement!
-                handleAsteroidFallback(entity, transform);
+            // Skip player entities with physics
+            if (tag != null && tag.hasType(EntityType.PLAYER) &&
+                    entity.hasComponent(PhysicsComponent.class)) {
+                continue;
             }
+
+            moveEntity(entity, transform, deltaTime);
         }
     }
 
     @Override
     public void fixedUpdate(GameData gameData, World world) {
+        // Handle bullet movement at fixed rate for smoothness
         for (Entity entity : world.getEntities()) {
             TransformComponent transform = entity.getComponent(TransformComponent.class);
-            if (transform == null) continue;
+            if (transform == null || !entity.hasComponent(MovementComponent.class)) {
+                continue;
+            }
 
             TagComponent tag = entity.getComponent(TagComponent.class);
 
-            // Only process bullets in fixed update (and only if they don't have physics)
+            // Only process bullets without physics
             if (tag != null && tag.hasType(EntityType.BULLET) &&
                     !entity.hasComponent(PhysicsComponent.class)) {
-                if (entity.hasComponent(MovementComponent.class)) {
-                    moveEntity(entity, transform, FIXED_DELTA_TIME);
-                }
+                moveEntity(entity, transform, FIXED_DELTA_TIME);
             }
         }
     }
 
     /**
-     * Handle movement for entities without physics components.
+     * Handle movement for entities with MovementComponent
      */
     private void moveEntity(Entity entity, TransformComponent transform, float deltaTime) {
         MovementComponent movement = entity.getComponent(MovementComponent.class);
-
-        // Skip player entities with physics (handled by PhysicsSystem)
-        TagComponent tag = entity.getComponent(TagComponent.class);
-        if (tag != null && tag.hasType(EntityType.PLAYER) &&
-                entity.hasComponent(PhysicsComponent.class)) {
+        if (movement == null) {
             return;
         }
 
-        // Process based on movement pattern
         switch (movement.getPattern()) {
             case LINEAR:
                 processLinearMovement(transform, movement, deltaTime);
@@ -103,36 +100,13 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
                 processRandomMovement(transform, movement, deltaTime);
                 break;
             case PLAYER:
-                // Player movement with physics is handled by PlayerSystem + PhysicsSystem
-                // Player movement without physics is handled by PlayerSystem directly
+                // Player movement handled by PlayerSystem
                 break;
         }
 
-        // Apply rotation if specified
         if (Math.abs(movement.getRotationSpeed()) > 0.0001f) {
             transform.rotate(movement.getRotationSpeed() * deltaTime);
         }
-    }
-
-    /**
-     * Fallback movement for asteroids without MovementComponent or PhysicsComponent
-     */
-    private void handleAsteroidFallback(Entity entity, TransformComponent transform) {
-        LOGGER.log(Level.WARNING, "Asteroid {0} has no MovementComponent or PhysicsComponent, applying fallback movement",
-                entity.getID());
-
-        MovementComponent movement = new MovementComponent(MovementComponent.MovementPattern.LINEAR);
-        movement.setSpeed(80.0f + random.nextFloat() * 40.0f); // Random speed between 80-120
-        movement.setRotationSpeed(random.nextFloat() * 60.0f - 30.0f); // Random rotation ±30°/s
-        entity.addComponent(movement);
-
-        // Set random initial rotation if not set
-        if (transform.getRotation() == 0) {
-            transform.setRotation(random.nextFloat() * 360.0f);
-        }
-
-        LOGGER.log(Level.INFO, "Added fallback MovementComponent to asteroid {0} with speed {1}",
-                new Object[]{entity.getID(), movement.getSpeed()});
     }
 
     /**
@@ -149,22 +123,21 @@ public class MovementSystem implements IUpdate, IFixedUpdate {
     }
 
     /**
-     * Process random movement pattern
+     * Process random movement pattern (for asteroids)
      */
     private void processRandomMovement(TransformComponent transform, MovementComponent movement, float deltaTime) {
+        long currentTime = System.currentTimeMillis();
         long lastChange = movement.getLastDirectionChange();
-        long currentTime = System.currentTimeMillis(); // ToDo: Should use Time.getTime()
 
-        if (currentTime - lastChange > DIRECTION_CHANGE_DELAY) {
-            if (random.nextFloat() < 0.2f) {
-                float rotation = transform.getRotation();
-                rotation += (random.nextFloat() * 60 - 30); // +/- 30 degrees
-                transform.setRotation(rotation);
-                movement.setLastDirectionChange(currentTime);
+        // Occasionally change direction
+        if (currentTime - lastChange > DIRECTION_CHANGE_DELAY && random.nextFloat() < 0.2f) {
+            float currentRotation = transform.getRotation();
+            float newRotation = currentRotation + (random.nextFloat() * 60 - 30); // +-30 degrees
+            transform.setRotation(newRotation);
+            movement.setLastDirectionChange(currentTime);
 
-                LOGGER.log(Level.FINE, "Entity at {0} changed direction to {1}°",
-                        new Object[]{transform.getPosition(), rotation});
-            }
+            LOGGER.log(Level.FINE, "Entity at {0} changed direction to {1}°",
+                    new Object[]{transform.getPosition(), newRotation});
         }
 
         processLinearMovement(transform, movement, deltaTime);

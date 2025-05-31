@@ -1,4 +1,5 @@
 module Bullet {
+    uses dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
     requires Core;
     requires Common;
     requires CommonBullet;
@@ -6,6 +7,7 @@ module Bullet {
     requires CommonWeapon;
     requires java.logging;
     requires javafx.graphics;
+    requires CommonPhysics;
 
     exports dk.sdu.mmmi.cbse.bullet;
 
