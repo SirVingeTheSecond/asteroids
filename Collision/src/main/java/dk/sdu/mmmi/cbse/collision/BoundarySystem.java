@@ -1,15 +1,19 @@
 package dk.sdu.mmmi.cbse.collision;
 
 import dk.sdu.mmmi.cbse.common.RenderLayer;
+import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.RendererComponent;
+import dk.sdu.mmmi.cbse.common.components.TransformComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
+import dk.sdu.mmmi.cbse.common.services.ILateUpdate;
 import dk.sdu.mmmi.cbse.common.services.IPluginService;
 import dk.sdu.mmmi.cbse.common.utils.EntityBuilder;
 import dk.sdu.mmmi.cbse.commoncollision.ColliderComponent;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
+import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
@@ -18,23 +22,39 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System that creates boundary walls around screen edges.
+ * System that creates boundary walls and enforces boundary collision.
+ * Runs as both a plugin (for wall creation) and late update (for collision enforcement).
  */
-public class BoundarySystem implements IPluginService {
+public class BoundarySystem implements IPluginService, ILateUpdate {
     private static final Logger LOGGER = Logger.getLogger(BoundarySystem.class.getName());
 
     private final List<Entity> boundaryWalls = new ArrayList<>();
     private static final float WALL_THICKNESS = 100.0f;
     private static final float WALL_EXTENSION = 50.0f;
-    private static final boolean DEBUG_VISIBLE = false; // ToDo: Not here?
+    private static final boolean DEBUG_VISIBLE = false;
+
+    @Override
+    public int getPriority() {
+        return 150; // Run after physics but before rendering
+    }
+
+    @Override
+    public void process(GameData gameData, World world) {
+        // Enforce boundary collision for entities that should be contained
+        for (Entity entity : world.getEntities()) {
+            if (shouldEnforceBoundaryCollision(entity)) {
+                enforceBoundaryCollision(entity, gameData);
+            }
+        }
+    }
 
     @Override
     public void start(GameData gameData, World world) {
-        LOGGER.log(Level.INFO, "BoundarySystem starting - creating boundary walls that only affect entities");
+        LOGGER.log(Level.INFO, "BoundarySystem starting - creating boundary walls and enabling collision enforcement");
 
         createBoundaryWalls(gameData, world);
 
-        LOGGER.log(Level.INFO, "BoundarySystem created {0} boundary walls using BOUNDARY layer",
+        LOGGER.log(Level.INFO, "BoundarySystem created {0} boundary walls and will enforce boundary collision",
                 boundaryWalls.size());
     }
 
@@ -51,7 +71,72 @@ public class BoundarySystem implements IPluginService {
     }
 
     /**
-     * Create boundary walls that only affect entities (player, enemies), not projectiles
+     * Determine if an entity should be constrained by boundaries
+     */
+    private boolean shouldEnforceBoundaryCollision(Entity entity) {
+        if (!entity.hasComponent(ColliderComponent.class) ||
+                !entity.hasComponent(TransformComponent.class) ||
+                !entity.hasComponent(PhysicsComponent.class)) {
+            return false;
+        }
+
+        ColliderComponent collider = entity.getComponent(ColliderComponent.class);
+        CollisionLayer layer = collider.getLayer();
+
+        return layer == CollisionLayer.PLAYER || layer == CollisionLayer.ENEMY;
+        // INVINCIBLE (hunters) and OBSTACLE (asteroids) are not constrained
+    }
+
+    /**
+     * Enforce boundary collision
+     */
+    private void enforceBoundaryCollision(Entity entity, GameData gameData) {
+        TransformComponent transform = entity.getComponent(TransformComponent.class);
+        PhysicsComponent physics = entity.getComponent(PhysicsComponent.class);
+
+        if (transform == null || physics == null) {
+            return;
+        }
+
+        Vector2D currentPosition = transform.getPosition();
+        float radius = transform.getRadius();
+
+        // Calculate screen boundaries
+        float minX = radius;
+        float maxX = gameData.getDisplayWidth() - radius;
+        float minY = radius;
+        float maxY = gameData.getDisplayHeight() - radius;
+
+        // Clamp position to boundaries
+        float clampedX = Math.max(minX, Math.min(maxX, currentPosition.x()));
+        float clampedY = Math.max(minY, Math.min(maxY, currentPosition.y()));
+        Vector2D clampedPosition = new Vector2D(clampedX, clampedY);
+
+        // If position was clamped, adjust velocity to prevent accumulation against walls
+        if (!clampedPosition.equals(currentPosition)) {
+            transform.setPosition(clampedPosition);
+
+            Vector2D velocity = physics.getVelocity();
+            float newVelX = velocity.x();
+            float newVelY = velocity.y();
+
+            // Zero out velocity components that would push into the boundary
+            if (clampedX != currentPosition.x()) {
+                newVelX = 0; // Hit horizontal boundary
+            }
+            if (clampedY != currentPosition.y()) {
+                newVelY = 0; // Hit vertical boundary
+            }
+
+            physics.setVelocity(new Vector2D(newVelX, newVelY));
+
+            LOGGER.log(Level.FINE, "Entity {0} hit boundary - position clamped and velocity adjusted",
+                    entity.getID());
+        }
+    }
+
+    /**
+     * Create boundary walls
      */
     private void createBoundaryWalls(GameData gameData, World world) {
         float screenWidth = gameData.getDisplayWidth();
@@ -94,12 +179,12 @@ public class BoundarySystem implements IPluginService {
             world.addEntity(wall);
             boundaryWalls.add(wall);
 
-            LOGGER.log(Level.FINE, "Added boundary wall: {0} using BOUNDARY collision layer", wall.getID());
+            LOGGER.log(Level.FINE, "Added boundary wall: {0}", wall.getID());
         }
     }
 
     /**
-     * Create a single boundary wall entity using BOUNDARY collision layer
+     * Create a single boundary wall entity
      */
     private Entity createBoundaryWall(String name, float x, float y, float width, float height) {
         // Create rectangular shape coordinates

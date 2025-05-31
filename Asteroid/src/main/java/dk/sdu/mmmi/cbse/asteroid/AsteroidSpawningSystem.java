@@ -11,6 +11,7 @@ import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.commonasteroid.IAsteroidSPI;
 import dk.sdu.mmmi.cbse.commondifficulty.IDifficultyService;
 import dk.sdu.mmmi.cbse.commondifficulty.events.DifficultyChangedEvent;
+import dk.sdu.mmmi.cbse.core.utils.Time;
 
 import java.util.ServiceLoader;
 import java.util.logging.Level;
@@ -18,7 +19,7 @@ import java.util.logging.Logger;
 
 /**
  * System responsible for maintaining asteroid population based on difficulty scaling.
- * Dynamically spawns asteroids to maintain target count as difficulty increases.
+ * Spawns asteroids to maintain target count as difficulty increases.
  */
 public class AsteroidSpawningSystem implements IUpdate, IEventListener<DifficultyChangedEvent> {
     private static final Logger LOGGER = Logger.getLogger(AsteroidSpawningSystem.class.getName());
@@ -36,7 +37,7 @@ public class AsteroidSpawningSystem implements IUpdate, IEventListener<Difficult
     private float lastSpawnTime = 0.0f;
     private static final float MIN_SPAWN_INTERVAL = 1.0f; // Minimum 1 second between spawns
 
-    // Current target (cached for performance)
+    // Current target
     private int targetAsteroidCount = FALLBACK_TARGET_ASTEROIDS;
     private float currentDifficulty = 0.0f;
 
@@ -60,18 +61,20 @@ public class AsteroidSpawningSystem implements IUpdate, IEventListener<Difficult
     private void initializeDifficultySystem() {
         if (difficultyService != null) {
             updateTargetAsteroidCount();
-            LOGGER.log(Level.INFO, "AsteroidSpawningSystem using difficulty scaling - target: {0} asteroids",
-                    targetAsteroidCount);
+            LOGGER.log(Level.INFO, "AsteroidSpawningSystem using difficulty scaling - target: {0} asteroids at difficulty {1}",
+                    new Object[]{targetAsteroidCount, currentDifficulty});
         } else {
             targetAsteroidCount = FALLBACK_TARGET_ASTEROIDS;
             LOGGER.log(Level.WARNING, "IDifficultyService not available - using fallback target: {0} asteroids",
                     FALLBACK_TARGET_ASTEROIDS);
         }
 
-        // Subscribe to difficulty change events
+        // CRITICAL FIX: Subscribe to events even without difficulty service initially
         if (eventService != null) {
             eventService.subscribe(DifficultyChangedEvent.class, this);
             LOGGER.log(Level.INFO, "AsteroidSpawningSystem subscribed to DifficultyChangedEvent");
+        } else {
+            LOGGER.log(Level.SEVERE, "EventService not available - difficulty scaling disabled!");
         }
     }
 
@@ -82,21 +85,21 @@ public class AsteroidSpawningSystem implements IUpdate, IEventListener<Difficult
 
     @Override
     public void update(GameData gameData, World world) {
-        // Refresh services if not available
         refreshServices();
 
-        float deltaTime = gameData.getDeltaTime();
+        float deltaTime = Time.getDeltaTimeF();
         timeSinceLastSpawnCheck += deltaTime;
 
-        // Only check spawn conditions periodically to avoid excessive entity counting
-        if (timeSinceLastSpawnCheck >= SPAWN_CHECK_INTERVAL) {
+        float currentCheckInterval = (Time.getTime() < 60.0) ? 1.0f : SPAWN_CHECK_INTERVAL;
+
+        if (timeSinceLastSpawnCheck >= currentCheckInterval) {
             timeSinceLastSpawnCheck = 0.0f;
             checkAndSpawnAsteroids(gameData, world);
         }
     }
 
     /**
-     * Handle difficulty change events for real-time scaling
+     * Handle difficulty change events
      */
     @Override
     public void onEvent(DifficultyChangedEvent event) {
@@ -138,20 +141,27 @@ public class AsteroidSpawningSystem implements IUpdate, IEventListener<Difficult
      */
     private void checkAndSpawnAsteroids(GameData gameData, World world) {
         if (asteroidFactory == null) {
+            LOGGER.log(Level.WARNING, "AsteroidFactory is null - cannot spawn asteroids");
             return;
         }
 
         int currentAsteroidCount = countAsteroids(world);
         int neededAsteroids = targetAsteroidCount - currentAsteroidCount;
 
+        LOGGER.log(Level.INFO, "Asteroid Check - Current: {0}, Target: {1}, Needed: {2}, Difficulty: {3}",
+                new Object[]{currentAsteroidCount, targetAsteroidCount, neededAsteroids, currentDifficulty});
+
         if (neededAsteroids > 0) {
-            // Respect minimum spawn interval to prevent flooding
-            float currentTime = (float) dk.sdu.mmmi.cbse.core.utils.Time.getTime();
-            if (currentTime - lastSpawnTime < MIN_SPAWN_INTERVAL) {
+            float currentTime = (float) Time.getTime();
+
+            float dynamicInterval = Math.max(0.5f, MIN_SPAWN_INTERVAL - (currentDifficulty * 0.2f));
+
+            if (currentTime - lastSpawnTime < dynamicInterval) {
+                LOGGER.log(Level.FINE, "Spawn interval not met - waiting {0}s more",
+                        (dynamicInterval - (currentTime - lastSpawnTime)));
                 return;
             }
 
-            // Spawn only one asteroid per check to maintain steady flow
             Entity newAsteroid = asteroidFactory.createAsteroid(gameData, world);
             if (newAsteroid != null) {
                 world.addEntity(newAsteroid);
@@ -160,16 +170,8 @@ public class AsteroidSpawningSystem implements IUpdate, IEventListener<Difficult
                 LOGGER.log(Level.INFO, "Spawned asteroid - Current: {0}/{1}, Difficulty: {2}",
                         new Object[]{currentAsteroidCount + 1, targetAsteroidCount, currentDifficulty});
             } else {
-                LOGGER.log(Level.WARNING, "Failed to create asteroid via IAsteroidSPI");
+                LOGGER.log(Level.SEVERE, "CRITICAL: Asteroid factory returned null!");
             }
-        } else if (neededAsteroids < 0) {
-            // Too many asteroids (difficulty decreased)
-            LOGGER.log(Level.FINE, "Asteroid count above target: {0}/{1} (will naturally decrease)",
-                    new Object[]{currentAsteroidCount, targetAsteroidCount});
-        } else {
-            // Perfect count
-            LOGGER.log(Level.FINEST, "Asteroid count optimal: {0}/{1}",
-                    new Object[]{currentAsteroidCount, targetAsteroidCount});
         }
     }
 

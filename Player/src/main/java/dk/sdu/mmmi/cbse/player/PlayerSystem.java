@@ -13,6 +13,7 @@ import dk.sdu.mmmi.cbse.common.services.IEventService;
 import dk.sdu.mmmi.cbse.common.services.IScoreSPI;
 import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.common.utils.FlickerUtility;
+import dk.sdu.mmmi.cbse.commonmovement.IMovementSPI;
 import dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
 import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
@@ -44,6 +45,7 @@ public class PlayerSystem implements IUpdate {
 
     private IWeaponSPI weaponSPI;
     private IPhysicsSPI physicsSPI;
+    private IMovementSPI movementSPI;
     private IScoreSPI scoreSPI;
     private IEventService eventService;
 
@@ -53,6 +55,7 @@ public class PlayerSystem implements IUpdate {
     public PlayerSystem() {
         this.weaponSPI = ServiceLoader.load(IWeaponSPI.class).findFirst().orElse(null);
         this.physicsSPI = ServiceLoader.load(IPhysicsSPI.class).findFirst().orElse(null);
+        this.movementSPI = ServiceLoader.load(IMovementSPI.class).findFirst().orElse(null);  // Load movement service
         this.scoreSPI = ServiceLoader.load(IScoreSPI.class).findFirst().orElse(null);
         this.eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
 
@@ -106,6 +109,21 @@ public class PlayerSystem implements IUpdate {
             eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
             if (eventService != null) {
                 LOGGER.log(Level.INFO, "Event service became available");
+            }
+        }
+
+        // Refresh movement services if not available
+        if (physicsSPI == null) {
+            physicsSPI = ServiceLoader.load(IPhysicsSPI.class).findFirst().orElse(null);
+            if (physicsSPI != null) {
+                LOGGER.log(Level.INFO, "Physics service became available - switching to physics-based movement");
+            }
+        }
+
+        if (movementSPI == null) {
+            movementSPI = ServiceLoader.load(IMovementSPI.class).findFirst().orElse(null);
+            if (movementSPI != null) {
+                LOGGER.log(Level.INFO, "Movement service became available - enabling fallback movement");
             }
         }
     }
@@ -171,17 +189,41 @@ public class PlayerSystem implements IUpdate {
     }
 
     /**
-     * Handle player movement
+     * Handle player movement using service hierarchy:
+     * 1. Physics-based movement (if available)
+     * 2. Direct movement service (if available)
+     * 3. No movement (if neither available)
      */
     private void processMovement(Entity player, TransformComponent transform, RecoilComponent recoil) {
-        if (physicsSPI == null) {
-            processDirectMovement(transform, recoil);
+        Vector2D inputDirection = getCleanInputDirection();
+
+        // No input = no movement
+        if (inputDirection.magnitudeSquared() <= 0.001f) {
             return;
         }
 
+        // First priority: Physics-based movement
+        if (physicsSPI != null && player.hasComponent(PhysicsComponent.class)) {
+            processPhysicsMovement(player, inputDirection, recoil);
+            return;
+        }
+
+        // Second priority: Movement service
+        if (movementSPI != null && movementSPI.canMove(player)) {
+            processServiceMovement(player, inputDirection, recoil);
+            return;
+        }
+
+        // No movement services available
+        LOGGER.log(Level.FINEST, "No movement services available for player");
+    }
+
+    /**
+     * Process physics-based movement
+     */
+    private void processPhysicsMovement(Entity player, Vector2D inputDirection, RecoilComponent recoil) {
         PhysicsComponent physics = player.getComponent(PhysicsComponent.class);
         if (physics == null) {
-            processDirectMovement(transform, recoil);
             return;
         }
 
@@ -189,55 +231,56 @@ public class PlayerSystem implements IUpdate {
         physics.setMaxSpeed(MAX_SPEED);
 
         if (recoil != null && recoil.isInRecoil()) {
-            processRecoilMovement(player, physics, recoil);
+            processRecoilMovement(player, physics, recoil, inputDirection);
         } else {
-            processNormalMovement(player, physics);
+            processNormalMovement(player, physics, inputDirection);
         }
+
+        LOGGER.log(Level.FINEST, "Using physics-based movement");
     }
 
     /**
-     * Process movement during recoil
+     * Process movement service-based movement
      */
-    private void processRecoilMovement(Entity player, PhysicsComponent physics, RecoilComponent recoil) {
+    private void processServiceMovement(Entity player, Vector2D inputDirection, RecoilComponent recoil) {
+        float speedMultiplier = 1.0f;
+
+        // Apply recoil effects to movement speed
+        if (recoil != null && recoil.isInRecoil()) {
+            speedMultiplier = recoil.getInputStrength();
+        }
+
+        float deltaTime = Time.getDeltaTimeF();
+        movementSPI.moveEntity(player, inputDirection, MAX_SPEED, speedMultiplier, deltaTime);
+
+        LOGGER.log(Level.FINEST, "Using movement service (speed multiplier: {0})", speedMultiplier);
+    }
+
+    /**
+     * Process movement during recoil using physics
+     */
+    private void processRecoilMovement(Entity player, PhysicsComponent physics, RecoilComponent recoil, Vector2D inputDirection) {
         // Apply recoil-modified drag
         float recoilDrag = recoil.getRecoilDrag(DRAG_COEFFICIENT);
         physics.setDrag(recoilDrag);
 
-        // Get input with reduced strength
-        Vector2D inputDirection = getCleanInputDirection();
-        Vector2D currentVelocity = physics.getVelocity();
-        float currentSpeed = currentVelocity.magnitude();
+        // Apply input with recoil-modified strength
+        float inputStrength = recoil.getInputStrength();
+        Vector2D recoilModifiedForce = inputDirection.scale(ACCELERATION_FORCE * inputStrength);
+        physicsSPI.applyForce(player, recoilModifiedForce);
 
-        if (inputDirection.magnitudeSquared() > 0.001f) {
-            // Apply input with recoil-modified strength
-            float inputStrength = recoil.getInputStrength();
-            Vector2D recoilModifiedForce = inputDirection.scale(ACCELERATION_FORCE * inputStrength);
-            physicsSPI.applyForce(player, recoilModifiedForce);
-
-            LOGGER.log(Level.FINEST, "Recoil movement - Phase: {0}, InputStrength: {1}, Drag: {2}",
-                    new Object[]{recoil.getRecoilPhase(), inputStrength, recoilDrag});
-        } else {
-            // Apply smart stopping during recoil
-            applyRecoilStopping(player, currentVelocity, currentSpeed, recoil);
-        }
+        LOGGER.log(Level.FINEST, "Recoil movement - Phase: {0}, InputStrength: {1}, Drag: {2}",
+                new Object[]{recoil.getRecoilPhase(), inputStrength, recoilDrag});
     }
 
     /**
-     * Process normal movement when not in recoil
+     * Process normal movement when not in recoil using physics
      */
-    private void processNormalMovement(Entity player, PhysicsComponent physics) {
+    private void processNormalMovement(Entity player, PhysicsComponent physics, Vector2D inputDirection) {
         physics.setDrag(DRAG_COEFFICIENT);
 
-        Vector2D inputDirection = getCleanInputDirection();
-        Vector2D currentVelocity = physics.getVelocity();
-        float currentSpeed = currentVelocity.magnitude();
-
-        if (inputDirection.magnitudeSquared() > 0.001f) {
-            Vector2D movementForce = inputDirection.scale(ACCELERATION_FORCE);
-            physicsSPI.applyForce(player, movementForce);
-        } else {
-            applySmartStopping(player, currentVelocity, currentSpeed);
-        }
+        Vector2D movementForce = inputDirection.scale(ACCELERATION_FORCE);
+        physicsSPI.applyForce(player, movementForce);
     }
 
     /**

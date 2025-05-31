@@ -144,7 +144,7 @@ public class PlayerFactory {
         // Player takes damage from enemy bullets
         response.addHandler(EntityType.BULLET, CollisionHandlers.ENEMY_BULLET_HANDLER);
 
-        // Player ignores obstacles (boundary system handles collision)
+        // Player ignores obstacles
         response.addHandler(EntityType.OBSTACLE, CollisionHandlers.IGNORE_COLLISION_HANDLER);
 
         return response;

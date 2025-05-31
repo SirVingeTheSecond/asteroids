@@ -10,6 +10,7 @@ import dk.sdu.mmmi.cbse.core.utils.Time;
 import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.GraphicsContext;
 
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +25,12 @@ public class GameLoop extends AnimationTimer {
 
 	private final GameData gameData;
 	private final World world;
+	private final GraphicsContext context;
+
+	// Injected services from Spring DI
+	private final List<IUpdate> updateServices;
+	private final List<IFixedUpdate> fixedUpdateServices;
+	private final List<ILateUpdate> lateUpdateServices;
 
 	// for fixed-interval processing
 	private final ScheduledExecutorService fixedProcessorScheduler;
@@ -31,15 +38,24 @@ public class GameLoop extends AnimationTimer {
 	private long lastTime = 0;
 
 	/**
-	 * Create a new game loop.
+	 * Create a new game loop with injected services.
 	 *
 	 * @param gameData Game state data
 	 * @param world Game world with entities
 	 * @param context Graphics context for rendering
+	 * @param updateServices List of update services from Spring DI
+	 * @param fixedUpdateServices List of fixed update services from Spring DI
+	 * @param lateUpdateServices List of late update services from Spring DI
 	 */
-	public GameLoop(GameData gameData, World world, GraphicsContext context) {
+	public GameLoop(GameData gameData, World world, GraphicsContext context,
+					List<IUpdate> updateServices, List<IFixedUpdate> fixedUpdateServices,
+					List<ILateUpdate> lateUpdateServices) {
 		this.gameData = gameData;
 		this.world = world;
+		this.context = context;
+		this.updateServices = updateServices;
+		this.fixedUpdateServices = fixedUpdateServices;
+		this.lateUpdateServices = lateUpdateServices;
 
 		// Initialize fixed update thread
 		fixedProcessorScheduler = Executors.newScheduledThreadPool(1, r -> {
@@ -48,8 +64,9 @@ public class GameLoop extends AnimationTimer {
 			return t;
 		});
 
-		LOGGER.log(Level.INFO, "GameLoop initialized with fixed update rate: {0}Hz ({1}ms intervals)",
-				new Object[]{Time.FIXED_UPDATE_RATE, Time.FIXED_UPDATE_INTERVAL_MS});
+		LOGGER.log(Level.INFO, "GameLoop initialized with Spring DI - Updates: {0}, FixedUpdates: {1}, LateUpdates: {2}, FixedRate: {3}Hz ({4}ms intervals)",
+				new Object[]{updateServices.size(), fixedUpdateServices.size(), lateUpdateServices.size(),
+						Time.FIXED_UPDATE_RATE, Time.FIXED_UPDATE_INTERVAL_MS});
 	}
 
 	/**
@@ -59,6 +76,7 @@ public class GameLoop extends AnimationTimer {
 	public void start() {
 		super.start();
 
+		// Schedule fixed update
 		fixedProcessorScheduler.scheduleAtFixedRate(() -> {
 			try {
 				fixedUpdate();
@@ -142,7 +160,7 @@ public class GameLoop extends AnimationTimer {
 	 */
 	private void processUpdateSystems() {
 		try {
-			for (IUpdate processor : ModuleConfig.getUpdateServices()) {
+			for (IUpdate processor : updateServices) {
 				processor.update(gameData, world);
 			}
 		} catch (Exception e) {
@@ -156,7 +174,7 @@ public class GameLoop extends AnimationTimer {
 	 */
 	private void processFixedUpdateSystems() {
 		try {
-			for (IFixedUpdate processor : ModuleConfig.getFixedUpdateServices()) {
+			for (IFixedUpdate processor : fixedUpdateServices) {
 				processor.fixedUpdate(gameData, world);
 			}
 		} catch (Exception e) {
@@ -169,7 +187,7 @@ public class GameLoop extends AnimationTimer {
 	 */
 	private void processLateUpdateSystems() {
 		try {
-			for (ILateUpdate postProcessor : ModuleConfig.getLateUpdateServices()) {
+			for (ILateUpdate postProcessor : lateUpdateServices) {
 				postProcessor.process(gameData, world);
 			}
 		} catch (Exception e) {

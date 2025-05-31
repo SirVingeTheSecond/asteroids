@@ -80,6 +80,11 @@ public class ScoreService {
      * @return Current score or fallback score if service unavailable
      */
     public int getScore() {
+        /*
+            Microservice down -> accumulate fallbackScore = 500 locally
+            Microservice comes back online -> returns 0
+            Code overwrites fallbackScore = 0 -> 500 points lost
+         */
         Integer serviceScore = getScoreFromService();
         if (serviceScore != null) {
             fallbackScore = serviceScore;
@@ -150,7 +155,7 @@ public class ScoreService {
     }
 
     /**
-     * Get the current fallback score (useful for testing)
+     * Get the current fallback score (for testing)
      *
      * @return The fallback score value
      */

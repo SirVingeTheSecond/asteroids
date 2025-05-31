@@ -26,7 +26,6 @@ public class ScoreSystem implements IPluginService, IScoreSPI {
     public ScoreSystem() {
         this.scoreService = new ScoreService();
 
-        // Create listeners that use the internal score service
         this.enemyScoreListener = new EnemyScoreListener(scoreService);
         this.asteroidScoreListener = new AsteroidScoreListener(scoreService);
 
