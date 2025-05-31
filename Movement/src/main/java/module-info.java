@@ -2,7 +2,9 @@ module Movement {
     requires Core;
     requires Common;
     requires CommonPhysics;
+    requires CommonMovement;
     requires java.logging;
+    requires CommonEnemy;
 
     exports dk.sdu.mmmi.cbse.movementsystem;
 
@@ -14,4 +16,7 @@ module Movement {
 
     provides dk.sdu.mmmi.cbse.common.services.ILateUpdate with
             dk.sdu.mmmi.cbse.movementsystem.ScreenWrapSystem;
+
+    provides dk.sdu.mmmi.cbse.commonmovement.IMovementSPI with
+            dk.sdu.mmmi.cbse.movementsystem.MovementService;
 }

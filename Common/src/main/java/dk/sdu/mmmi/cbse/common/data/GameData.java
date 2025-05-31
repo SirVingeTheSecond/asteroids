@@ -10,7 +10,6 @@ public class GameData {
     private int displayHeight = 600;
 
     private float deltaTime;
-    private float interpolationFactor = 0.0f;
 
     private boolean debugMode = false;
 

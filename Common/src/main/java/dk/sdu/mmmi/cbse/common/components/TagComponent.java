@@ -7,7 +7,6 @@ import java.util.Set;
 
 /**
  * Component that stores entity types for categorization.
- * Uses enum-based approach for type safety.
  */
 public class TagComponent implements IComponent {
     private final EnumSet<EntityType> types;

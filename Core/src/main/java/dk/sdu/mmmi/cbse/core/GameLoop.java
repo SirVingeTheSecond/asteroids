@@ -24,7 +24,6 @@ public class GameLoop extends AnimationTimer {
 
 	private final GameData gameData;
 	private final World world;
-	private final GraphicsContext context;
 
 	// for fixed-interval processing
 	private final ScheduledExecutorService fixedProcessorScheduler;
@@ -41,7 +40,6 @@ public class GameLoop extends AnimationTimer {
 	public GameLoop(GameData gameData, World world, GraphicsContext context) {
 		this.gameData = gameData;
 		this.world = world;
-		this.context = context;
 
 		// Initialize fixed update thread
 		fixedProcessorScheduler = Executors.newScheduledThreadPool(1, r -> {
@@ -61,7 +59,6 @@ public class GameLoop extends AnimationTimer {
 	public void start() {
 		super.start();
 
-		// Schedule fixed update using centralized time constants
 		fixedProcessorScheduler.scheduleAtFixedRate(() -> {
 			try {
 				fixedUpdate();

@@ -9,7 +9,7 @@ public class FlickerComponent implements IComponent {
     private boolean flickering = false;
     private float flickerTimer = 0.0f;
     private float flickerDuration = 0.0f;
-    private float flickerRate = 10.0f; // Hz - how fast the flickering occurs
+    private float flickerRate = 10.0f; // Hz
 
     // Original colors to restore after flickering
     private Color originalStrokeColor;

@@ -9,7 +9,6 @@ import dk.sdu.mmmi.cbse.common.data.EntityType;
 
 /**
  * Builder utility for standardized entity creation.
- * Ensures consistent entity construction across the application.
  */
 public class EntityBuilder {
     private final Entity entity;

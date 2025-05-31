@@ -1,8 +1,6 @@
 package dk.sdu.mmmi.cbse.common.data;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,19 +27,6 @@ public class World {
 
     public Collection<Entity> getEntities() {
         return entityMap.values();
-    }
-
-    @SafeVarargs
-    public final <E extends Entity> List<Entity> getEntities(Class<E>... entityTypes) {
-        List<Entity> r = new ArrayList<>();
-        for (Entity e : getEntities()) {
-            for (Class<E> entityType : entityTypes) {
-                if (entityType.equals(e.getClass())) {
-                    r.add(e);
-                }
-            }
-        }
-        return r;
     }
 
     public Entity getEntity(String ID) {
