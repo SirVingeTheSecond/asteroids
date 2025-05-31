@@ -3,6 +3,7 @@ package dk.sdu.mmmi.cbse.core;
 import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
+import dk.sdu.mmmi.cbse.common.services.*;
 import dk.sdu.mmmi.cbse.common.events.GameOverEvent;
 import dk.sdu.mmmi.cbse.common.events.IEventListener;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
@@ -22,8 +23,8 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import org.springframework.context.ApplicationContext;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,7 +48,12 @@ public class Game extends Application implements IEventListener<GameOverEvent> {
     private boolean paused = false;
     private double previousTimeScale = 1.0;
 
-    private final List<IPluginService> plugins = new ArrayList<>();
+    // Spring-injected dependencies
+    private List<IPluginService> pluginServices;
+    private List<IUpdate> updateServices;
+    private List<IFixedUpdate> fixedUpdateServices;
+    private List<ILateUpdate> lateUpdateServices;
+    private List<IRenderingContext> renderingContexts;
     private IEventService eventService;
 
     // Game over
@@ -56,26 +62,33 @@ public class Game extends Application implements IEventListener<GameOverEvent> {
     private float gameOverTimer = 0.0f;
 
     /**
+     * Default constructor required by JavaFX
+     */
+    public Game() {
+        instance = this;
+        LOGGER.log(Level.INFO, "Game instance created by JavaFX");
+    }
+
+    /**
      * Get singleton instance
      */
     public static Game getInstance() {
         return instance;
     }
 
-    public Game() {
-        instance = this;
-    }
-
     @Override
     public void start(Stage primaryStage) {
         try {
+            LOGGER.log(Level.INFO, "Initializing game with Spring dependencies from ApplicationContext");
             LOGGER.log(Level.INFO, "Initializing game with event-driven architecture");
 
-            initializeMainServices();
+            injectSpringDependencies();
+
             createGameWindow(primaryStage);
             setupInputHandling(canvas.getScene());
 
-            gameLoop = new GameLoop(gameData, world, graphicsContext);
+            gameLoop = new GameLoop(gameData, world, graphicsContext,
+                    updateServices, fixedUpdateServices, lateUpdateServices);
 
             subscribeToGameEvents();
 
@@ -84,6 +97,7 @@ public class Game extends Application implements IEventListener<GameOverEvent> {
             primaryStage.show();
             gameLoop.start();
 
+            LOGGER.log(Level.INFO, "Game initialized and running with Spring DI");
             LOGGER.log(Level.INFO, "Game initialized");
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error starting game", e);
@@ -92,16 +106,27 @@ public class Game extends Application implements IEventListener<GameOverEvent> {
     }
 
     /**
-     * Initialize core services like event system
+     * Inject Spring dependencies from the ApplicationContext
      */
-    private void initializeMainServices() {
-        // Create and register the EventService
-        eventService = new EventService();
+    @SuppressWarnings("unchecked")
+    private void injectSpringDependencies() {
+        ApplicationContext context = Main.getApplicationContext();
 
-        // Load all plugins
-        ServiceLoader.load(IPluginService.class).forEach(plugins::add);
+        if (context == null) {
+            throw new IllegalStateException("Spring ApplicationContext not available");
+        }
 
-        LOGGER.log(Level.INFO, "Main services initialized with {0} plugins", plugins.size());
+        // Get all dependencies from Spring context
+        this.pluginServices = context.getBean("pluginServices", List.class);
+        this.updateServices = context.getBean("updateServices", List.class);
+        this.fixedUpdateServices = context.getBean("fixedUpdateServices", List.class);
+        this.lateUpdateServices = context.getBean("lateUpdateServices", List.class);
+        this.renderingContexts = context.getBean("renderingContexts", List.class);
+        this.eventService = context.getBean(IEventService.class);
+
+        LOGGER.log(Level.INFO, "Spring dependencies injected - Plugins: {0}, Updates: {1}, FixedUpdates: {2}, LateUpdates: {3}, RenderingContexts: {4}",
+                new Object[]{pluginServices.size(), updateServices.size(), fixedUpdateServices.size(),
+                        lateUpdateServices.size(), renderingContexts.size()});
     }
 
     /**
@@ -225,21 +250,13 @@ public class Game extends Application implements IEventListener<GameOverEvent> {
         primaryStage.setTitle("Astrostrike");
         primaryStage.setResizable(false);
 
-        // Set close request handler for proper cleanup
-        primaryStage.setOnCloseRequest(event -> {
-            LOGGER.log(Level.INFO, "Window close requested");
-            if (!gameOverTriggered.get()) {
-                // User manually closed window
-                shutdownApplication();
-            }
-        });
-
-        for (IRenderingContext context : ModuleConfig.getRenderingContexts()) {
+        // Set graphics context on all injected rendering contexts
+        for (IRenderingContext context : renderingContexts) {
             context.setGraphicsContext(graphicsContext);
-            LOGGER.log(Level.INFO, "GraphicsContext set on {0}", context.getClass().getName());
+            LOGGER.log(Level.INFO, "GraphicsContext set on injected {0}", context.getClass().getName());
         }
 
-        LOGGER.log(Level.INFO, "Rendering system initialized");
+        LOGGER.log(Level.INFO, "Rendering system initialized with {0} contexts", renderingContexts.size());
     }
 
     /**
@@ -321,36 +338,34 @@ public class Game extends Application implements IEventListener<GameOverEvent> {
 
     /**
      * Start all game plugins.
-     * Loads and initializes all registered plugin services.
      */
     private void startPlugins() {
-        LOGGER.log(Level.INFO, "Starting {0} game plugins", plugins.size());
+        LOGGER.log(Level.INFO, "Starting {0} Spring-injected game plugins", pluginServices.size());
 
-        for (IPluginService plugin : ModuleConfig.getPluginServices()) {
+        for (IPluginService plugin : pluginServices) {
             try {
                 plugin.start(gameData, world);
-                LOGGER.log(Level.FINE, "Started plugin: {0}", plugin.getClass().getName());
+                LOGGER.log(Level.FINE, "Started injected plugin: {0}", plugin.getClass().getName());
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE,
-                        "Error starting plugin: " + plugin.getClass().getName(), e);
+                        "Error starting injected plugin: " + plugin.getClass().getName(), e);
             }
         }
     }
 
     /**
      * Stop all game plugins.
-     * Shuts down all registered plugin services.
      */
     private void stopPlugins() {
-        LOGGER.log(Level.INFO, "Stopping {0} game plugins", plugins.size());
+        LOGGER.log(Level.INFO, "Stopping {0} Spring-injected game plugins", pluginServices.size());
 
-        for (IPluginService plugin : ModuleConfig.getPluginServices()) {
+        for (IPluginService plugin : pluginServices) {
             try {
                 plugin.stop(gameData, world);
-                LOGGER.log(Level.FINE, "Stopped plugin: {0}", plugin.getClass().getName());
+                LOGGER.log(Level.FINE, "Stopped injected plugin: {0}", plugin.getClass().getName());
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE,
-                        "Error stopping plugin: " + plugin.getClass().getName(), e);
+                        "Error stopping injected plugin: " + plugin.getClass().getName(), e);
             }
         }
     }
@@ -386,7 +401,7 @@ public class Game extends Application implements IEventListener<GameOverEvent> {
     }
 
     /**
-     * Restart the game with a fresh state
+     * Restart the game.
      */
     public void restart() {
         // Stop current game loop
@@ -405,15 +420,15 @@ public class Game extends Application implements IEventListener<GameOverEvent> {
         stopPlugins();
         startPlugins();
 
-        // Create new game loop
-        gameLoop = new GameLoop(gameData, world, graphicsContext);
+        gameLoop = new GameLoop(gameData, world, graphicsContext,
+                updateServices, fixedUpdateServices, lateUpdateServices);
         gameLoop.start();
 
         // Reset time scale
         Time.setTimeScale(1.0);
         paused = false;
 
-        LOGGER.log(Level.INFO, "Game restarted");
+        LOGGER.log(Level.INFO, "Game restarted with Spring DI");
     }
 
     /**
