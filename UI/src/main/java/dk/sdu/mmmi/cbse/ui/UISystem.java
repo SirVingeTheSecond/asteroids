@@ -140,8 +140,7 @@ public class UISystem implements IUpdate {
         if (scoreSPI != null) {
             try {
                 int currentScore = scoreSPI.getCurrentScore();
-                String serviceStatus = scoreSPI.isServiceAvailable() ? "★" : "⚠";
-                String scoreText = String.format("Score: %d %s", currentScore, serviceStatus);
+                String scoreText = String.format("Score: %d", currentScore);
                 uiComponent.setDisplayText(scoreText);
 
                 LOGGER.log(Level.FINEST, "Score updated from microservice: {0}", currentScore);
@@ -150,7 +149,7 @@ public class UISystem implements IUpdate {
                 LOGGER.log(Level.WARNING, "Failed to get score from microservice", e);
             }
         } else {
-            uiComponent.setDisplayText("Score: Service Unavailable");
+            uiComponent.setDisplayText("Score: NA");
             LOGGER.log(Level.FINE, "Score service not available for UI update");
         }
     }
