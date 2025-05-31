@@ -7,7 +7,6 @@ import dk.sdu.mmmi.cbse.common.components.IComponent;
  */
 public class PlayerComponent implements IComponent {
     private int lives = 3;
-    private int score = 0;
 
     private int maxHealth = 3;
     private int currentHealth = 3;
@@ -107,14 +106,6 @@ public class PlayerComponent implements IComponent {
         }
     }
 
-    /**
-     * Damage player (backward compatibility - defaults to 1 damage)
-     *
-     * @return true if player died
-     */
-    public boolean damage() {
-        return takeDamage(1);
-    }
 
     /**
      * Get health percentage (0.0 to 1.0)
@@ -137,32 +128,6 @@ public class PlayerComponent implements IComponent {
         return currentHealth >= maxHealth;
     }
 
-    /**
-     * Get player score
-     *
-     * @return Current score
-     */
-    public int getScore() {
-        return score;
-    }
-
-    /**
-     * Set player score
-     *
-     * @param score Score to set
-     */
-    public void setScore(int score) {
-        this.score = score;
-    }
-
-    /**
-     * Add points to player score
-     *
-     * @param points Points to add
-     */
-    public void addScore(int points) {
-        this.score += points;
-    }
 
     /**
      * Check if player is invulnerable
@@ -215,23 +180,5 @@ public class PlayerComponent implements IComponent {
                 invulnerable = false;
             }
         }
-    }
-
-    /**
-     * Get invulnerability timer
-     *
-     * @return Frames of invulnerability remaining
-     */
-    public int getInvulnerabilityTimer() {
-        return invulnerabilityTimer;
-    }
-
-    /**
-     * Set invulnerability timer
-     *
-     * @param invulnerabilityTimer Frames of invulnerability
-     */
-    public void setInvulnerabilityTimer(int invulnerabilityTimer) {
-        this.invulnerabilityTimer = invulnerabilityTimer;
     }
 }

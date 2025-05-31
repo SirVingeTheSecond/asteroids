@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 /**
  * Main entity rendering implementation.
- * Handles the actual drawing of entities based on their components.
+ * Handles the drawing of entities based on their components.
  */
 public class EntityRenderer {
     private static final Logger LOGGER = Logger.getLogger(EntityRenderer.class.getName());

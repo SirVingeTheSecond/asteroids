@@ -3,7 +3,7 @@ package dk.sdu.mmmi.cbse.common.components;
 import dk.sdu.mmmi.cbse.common.Vector2D;
 
 /**
- * Component for tracking recoil state and providing smooth recoil.
+ * Component for tracking recoil state and providing recoil.
  * Manages the recoil phases: peak recoil with minimal control, then gradual recovery.
  */
 public class RecoilComponent implements IComponent {
@@ -21,11 +21,8 @@ public class RecoilComponent implements IComponent {
     private static final float PEAK_INPUT_STRENGTH = 0.2f;
     private static final float MIN_RECOVERY_INPUT = 0.3f;
 
-    /**
-     * Create a new recoil component with default state
-     */
     public RecoilComponent() {
-        // Default constructor
+
     }
 
     /**
@@ -152,7 +149,6 @@ public class RecoilComponent implements IComponent {
         return MIN_RECOVERY_INPUT + (recoveryStrength * (1.0f - MIN_RECOVERY_INPUT));
     }
 
-    // Getters and setters
     public boolean isInRecoil() {
         return inRecoil;
     }

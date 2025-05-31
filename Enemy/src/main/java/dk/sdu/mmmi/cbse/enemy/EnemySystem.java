@@ -36,17 +36,17 @@ public class EnemySystem implements IUpdate, IEventListener<DifficultyChangedEve
     private IDifficultyService difficultyService;
     private IEventService eventService;
 
-    // Base enemy configuration (before difficulty scaling)
+    // Base enemy config
     private static final float BASE_HUNTER_MIN_DISTANCE = 70.0f;
     private static final float BASE_HUNTER_SPEED = 90.0f;
     private static final float BASE_HUNTER_ROTATION_SPEED = 150.0f;
     private static final float BASE_TURRET_ROTATION_SPEED = 80.0f;
 
-    // Fallback configuration when difficulty service unavailable
-    private static final float FALLBACK_HUNTER_SPEED_MULTIPLIER = 0.8f; // Slightly slower
-    private static final float FALLBACK_HUNTER_FIRING_MULTIPLIER = 1.2f; // Slightly slower firing
+    // Fallback config when difficulty service unavailable
+    private static final float FALLBACK_HUNTER_SPEED_MULTIPLIER = 0.8f;
+    private static final float FALLBACK_HUNTER_FIRING_MULTIPLIER = 1.2f;
 
-    // Current difficulty multipliers (cached for performance)
+    // Current difficulty multipliers
     private float hunterSpeedMultiplier = 1.0f;
     private float hunterFiringRateMultiplier = 1.0f;
     private float currentDifficulty = 0.0f;

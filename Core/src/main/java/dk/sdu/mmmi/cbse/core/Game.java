@@ -50,7 +50,7 @@ public class Game extends Application implements IEventListener<GameOverEvent> {
     private final List<IPluginService> plugins = new ArrayList<>();
     private IEventService eventService;
 
-    // Game over handling
+    // Game over
     private final AtomicBoolean gameOverTriggered = new AtomicBoolean(false);
     private static final float GAME_OVER_DELAY = 2.0f;
     private float gameOverTimer = 0.0f;

@@ -17,7 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System responsible for maintaining proper asteroid population based on difficulty scaling.
+ * System responsible for maintaining asteroid population based on difficulty scaling.
  * Dynamically spawns asteroids to maintain target count as difficulty increases.
  */
 public class AsteroidSpawningSystem implements IUpdate, IEventListener<DifficultyChangedEvent> {
@@ -185,26 +185,5 @@ public class AsteroidSpawningSystem implements IUpdate, IEventListener<Difficult
             }
         }
         return count;
-    }
-
-    /**
-     * Get current target asteroid count (for debugging/monitoring)
-     */
-    public int getTargetAsteroidCount() {
-        return targetAsteroidCount;
-    }
-
-    /**
-     * Get current difficulty level (for debugging/monitoring)
-     */
-    public float getCurrentDifficulty() {
-        return currentDifficulty;
-    }
-
-    /**
-     * Check if the spawning system is properly initialized
-     */
-    public boolean isInitialized() {
-        return asteroidFactory != null;
     }
 }

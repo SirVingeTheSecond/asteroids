@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 
 /**
  * System that wraps specific entities around screen edges.
- * Only asteroids wrap - other entities use boundary collision system.
+ * Only asteroids wrap as other entities use boundary collision system.
  */
 public class ScreenWrapSystem implements ILateUpdate {
     private static final Logger LOGGER = Logger.getLogger(ScreenWrapSystem.class.getName());

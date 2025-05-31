@@ -16,11 +16,11 @@ public class Weapon {
     private final float projectileSpeed;
     private final float cooldownTime; // Seconds between shots
 
-    // Burst configuration
+    // Burst
     private final int burstCount;
     private final float burstDelay; // Seconds between burst shots
 
-    // Shotgun configuration
+    // Shotgun
     private final int shotCount;
     private final float spreadAngle;
 

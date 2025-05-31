@@ -76,14 +76,6 @@ public class Entity {
         return components.containsKey(componentType);
     }
 
-    /**
-     * Get the number of components this entity has
-     * @return The component count
-     */
-    public int getComponentCount() {
-        return components.size();
-    }
-
     // Not needed?
     @Override
     public boolean equals(Object o) {

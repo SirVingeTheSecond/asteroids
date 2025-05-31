@@ -25,7 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Factory for creating Enemies with difficulty-based scaling.
+ * Factory for creating Enemies.
  * Integrates with IDifficultyService for dynamic spawn rates and enemy distribution.
  */
 public class EnemyFactory implements IEnemySPI {
