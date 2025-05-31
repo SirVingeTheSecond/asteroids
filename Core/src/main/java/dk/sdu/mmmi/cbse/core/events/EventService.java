@@ -53,6 +53,11 @@ public class EventService implements IEventService {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends IEvent> void publish(T event) {
+        if (event == null) {
+            LOGGER.log(Level.WARNING, "Attempted to publish null event - ignoring");
+            return;
+        }
+
         Class<? extends IEvent> eventType = event.getClass();
 
         synchronized (STATIC_LISTENERS) {
