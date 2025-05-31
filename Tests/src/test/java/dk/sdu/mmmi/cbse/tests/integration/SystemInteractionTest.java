@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Integration tests showing how systems work together following CBSE principles.
  */
 @DisplayName("System Interaction Integration Tests")
-class SystemInteractionTest {
+public class SystemInteractionTest {
 
     private GameData gameData;
     private World world;

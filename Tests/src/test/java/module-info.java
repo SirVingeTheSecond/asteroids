@@ -1,4 +1,6 @@
 module Tests {
+    uses dk.sdu.mmmi.cbse.commondifficulty.IDifficultyService;
+    uses dk.sdu.mmmi.cbse.common.services.IEventService;
     requires org.junit.jupiter.api;
     requires org.junit.platform.suite.api;
     requires org.mockito;
@@ -18,6 +20,9 @@ module Tests {
     requires Core;
     requires javafx.graphics;
     requires java.logging;
+    requires CommonDifficulty;
+    requires Enemy;
+    requires spring.context;
 
     exports dk.sdu.mmmi.cbse.tests.utils;
 

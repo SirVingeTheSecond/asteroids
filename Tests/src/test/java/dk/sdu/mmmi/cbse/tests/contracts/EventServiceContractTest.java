@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Event Service Contract Tests")
-class EventServiceContractTest {
+public class EventServiceContractTest {
 
     @Mock
     private IEventListener<AsteroidSplitEvent> mockListener;

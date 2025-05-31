@@ -31,7 +31,7 @@
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite-engine</artifactId>
             <version>1.10.1</version>
-            <scope>compile</scope>
+            <scope>test</scope>
         </dependency>
 
         <!-- JUnit 5 Jupiter -->
@@ -132,6 +132,18 @@
         <dependency>
             <groupId>dk.sdu.mmmi.cbse</groupId>
             <artifactId>Core</artifactId>
+            <version>1.0.1-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>dk.sdu.mmmi.cbse</groupId>
+            <artifactId>CommonDifficulty</artifactId>
+            <version>1.0.1-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>dk.sdu.mmmi.cbse</groupId>
+            <artifactId>Enemy</artifactId>
             <version>1.0.1-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
