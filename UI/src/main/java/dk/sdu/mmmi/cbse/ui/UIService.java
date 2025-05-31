@@ -17,7 +17,7 @@ public class UIService implements IUIService {
 
     public UIService() {
         this.uiFactory = new UIEntityFactory();
-        LOGGER.log(Level.INFO, "UIService initialized with microservice score support");
+        LOGGER.log(Level.INFO, "UIService initialized");
     }
 
     @Override
@@ -27,7 +27,7 @@ public class UIService implements IUIService {
         world.addEntity(uiFactory.createWeaponDisplay(gameData));
         world.addEntity(uiFactory.createScoreDisplay(gameData));
 
-        LOGGER.log(Level.INFO, "HUD created with health, lives, weapon, and microservice score displays");
+        LOGGER.log(Level.INFO, "HUD created!");
     }
 
     @Override

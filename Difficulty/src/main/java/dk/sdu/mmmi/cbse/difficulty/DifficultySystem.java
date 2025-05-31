@@ -7,6 +7,7 @@ import dk.sdu.mmmi.cbse.common.services.IUpdate;
 import dk.sdu.mmmi.cbse.commondifficulty.DifficultyParameters;
 import dk.sdu.mmmi.cbse.commondifficulty.IDifficultyService;
 import dk.sdu.mmmi.cbse.commondifficulty.events.DifficultyChangedEvent;
+import dk.sdu.mmmi.cbse.core.utils.Time;
 
 import java.util.ServiceLoader;
 import java.util.logging.Level;
@@ -18,7 +19,7 @@ import java.util.logging.Logger;
 public class DifficultySystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(DifficultySystem.class.getName());
 
-    private static final float DIFFICULTY_CHECK_INTERVAL = 30.0f; // Check every 30 seconds
+    private static final float DIFFICULTY_CHECK_INTERVAL = 5.0f;
 
     private IDifficultyService difficultyService;
     private IEventService eventService;
@@ -48,8 +49,8 @@ public class DifficultySystem implements IUpdate {
             service.updateDifficulty(gameData);
         }
 
-        float currentTime = gameData.getDeltaTime(); // Use frame time for consistency
-        lastDifficultyCheck += currentTime;
+        float deltaTime = Time.getDeltaTimeF();
+        lastDifficultyCheck += deltaTime;
 
         if (lastDifficultyCheck >= DIFFICULTY_CHECK_INTERVAL) {
             checkForDifficultyChange();
