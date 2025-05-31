@@ -150,7 +150,7 @@ public class BoundarySystem implements IPluginService {
             if (renderer != null) {
                 renderer.setVisible(visible);
                 if (visible) {
-                    renderer.setStrokeColor(Color.BLUE);  // Blue for boundaries
+                    renderer.setStrokeColor(Color.BLUE);
                     renderer.setFillColor(Color.TRANSPARENT);
                     renderer.setStrokeWidth(2.0f);
                     renderer.setRenderLayer(RenderLayer.UI);
@@ -158,19 +158,5 @@ public class BoundarySystem implements IPluginService {
             }
         }
         LOGGER.log(Level.INFO, "Boundary debug visualization: {0}", visible ? "enabled" : "disabled");
-    }
-
-    /**
-     * Get the number of boundary walls created
-     */
-    public int getBoundaryWallCount() {
-        return boundaryWalls.size();
-    }
-
-    /**
-     * Check if boundary system has been initialized
-     */
-    public boolean isInitialized() {
-        return !boundaryWalls.isEmpty();
     }
 }

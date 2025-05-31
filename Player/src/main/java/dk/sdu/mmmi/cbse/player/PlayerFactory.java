@@ -51,8 +51,8 @@ public class PlayerFactory {
         // Physics
         PhysicsComponent physics = new PhysicsComponent(PhysicsComponent.PhysicsType.DYNAMIC);
         physics.setMass(0.8f);
-        physics.setDrag(MovementConfig.getDragCoefficient());
-        physics.setMaxSpeed(MovementConfig.getMaxSpeed());
+        physics.setDrag(0.9f);
+        physics.setMaxSpeed(150f);
         physics.setAngularDrag(0.95f);
         player.addComponent(physics);
 

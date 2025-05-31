@@ -9,8 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Dedicated event listener for asteroid split events.
- * Follows CBSE single responsibility principle by handling only asteroid-related scoring.
+ * Event listener for asteroid split events.
  */
 public class AsteroidScoreListener implements IEventListener<AsteroidSplitEvent> {
     private static final Logger LOGGER = Logger.getLogger(AsteroidScoreListener.class.getName());
@@ -52,7 +51,7 @@ public class AsteroidScoreListener implements IEventListener<AsteroidSplitEvent>
 
     /**
      * Get points awarded for splitting an asteroid of the given size.
-     * Follows the scoring strategy: larger asteroids give fewer points when split.
+     * Strategy: Larger asteroids give fewer points when split.
      *
      * @param size The size of the asteroid that was split
      * @return Points to award

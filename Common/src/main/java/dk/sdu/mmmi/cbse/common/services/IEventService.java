@@ -1,34 +1,36 @@
 package dk.sdu.mmmi.cbse.common.services;
 
+import dk.sdu.mmmi.cbse.common.events.IEvent;
 import dk.sdu.mmmi.cbse.common.events.IEventListener;
 
 /**
- * Service interface for event management.
+ * Service Provider Interface for event management.
  */
 public interface IEventService {
+
+    /**
+     * Publish an event to all registered listeners
+     *
+     * @param event Event to publish
+     * @param <T> Type of event
+     */
+    <T extends IEvent> void publish(T event);
+
     /**
      * Subscribe to events of a specific type
      *
-     * @param eventType Class of the event to subscribe to
-     * @param listener Listener that will receive events
-     * @param <T> Event type
+     * @param eventType Class of event to listen for
+     * @param listener Listener to receive events
+     * @param <T> Type of event
      */
-    <T> void subscribe(Class<T> eventType, IEventListener<T> listener);
+    <T extends IEvent> void subscribe(Class<T> eventType, IEventListener<T> listener);
 
     /**
      * Unsubscribe from events of a specific type
      *
-     * @param eventType Class of the event to unsubscribe from
+     * @param eventType Class of event to stop listening for
      * @param listener Listener to remove
-     * @param <T> Event type
+     * @param <T> Type of event
      */
-    <T> void unsubscribe(Class<T> eventType, IEventListener<T> listener);
-
-    /**
-     * Publish an event to all subscribers
-     *
-     * @param event Event to publish
-     * @param <T> Event type
-     */
-    <T> void publish(T event);
+    <T extends IEvent> void unsubscribe(Class<T> eventType, IEventListener<T> listener);
 }

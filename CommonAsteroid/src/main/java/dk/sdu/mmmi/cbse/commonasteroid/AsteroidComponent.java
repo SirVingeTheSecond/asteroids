@@ -12,12 +12,11 @@ public class AsteroidComponent implements IComponent {
     private int scoreValue = 100;
     private AsteroidSize size = AsteroidSize.LARGE;
 
-    // Health system
+    // Health
     private int maxHealth;
     private int currentHealth;
 
     public AsteroidComponent() {
-        // Set default health based on large size
         setHealthForSize(AsteroidSize.LARGE);
     }
 
@@ -105,7 +104,6 @@ public class AsteroidComponent implements IComponent {
         currentHealth = maxHealth;
     }
 
-    // Existing getters and setters
     public int getSplitCount() {
         return splitCount;
     }
@@ -147,7 +145,6 @@ public class AsteroidComponent implements IComponent {
         setHealthForSize(size); // Update health when size changes
     }
 
-    // Health getters and setters
     public int getMaxHealth() {
         return maxHealth;
     }

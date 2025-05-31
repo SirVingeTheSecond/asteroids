@@ -112,6 +112,7 @@ public class PhysicsService implements IPhysicsSPI {
         return physics.getAngularVelocity();
     }
 
+    // Not used
     @Override
     public void wakeUp(Entity entity) {
         PhysicsComponent physics = entity.getComponent(PhysicsComponent.class);

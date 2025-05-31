@@ -25,13 +25,16 @@
         <module>Core</module>
         <module>Enemy</module>
         <module>Movement</module>
-        <module>Particles</module>
         <module>Physics</module>
         <module>Player</module>
         <module>Renderer</module>
         <module>ScoreClient</module>
         <module>Weapon</module>
         <module>Score</module>
+        <module>CommonUI</module>
+        <module>UI</module>
+        <module>CommonDifficulty</module>
+        <module>Difficulty</module>
     </modules>
 
     <properties>

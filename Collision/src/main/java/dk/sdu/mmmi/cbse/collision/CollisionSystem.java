@@ -56,6 +56,8 @@ public class CollisionSystem implements ILateUpdate, ICollisionSPI {
         }
     }
 
+    // === NOT USED ===
+
     @Override
     public List<Pair<Entity, Entity>> detectCollisions(GameData gameData, World world) {
         return detector.detectCollisions(gameData, world);

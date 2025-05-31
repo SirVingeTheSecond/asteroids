@@ -3,6 +3,8 @@ package dk.sdu.mmmi.cbse.core;
 import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
+import dk.sdu.mmmi.cbse.common.events.GameOverEvent;
+import dk.sdu.mmmi.cbse.common.events.IEventListener;
 import dk.sdu.mmmi.cbse.common.services.IEventService;
 import dk.sdu.mmmi.cbse.common.services.IPluginService;
 import dk.sdu.mmmi.cbse.common.services.IRenderingContext;
@@ -11,6 +13,7 @@ import dk.sdu.mmmi.cbse.core.input.Button;
 import dk.sdu.mmmi.cbse.core.input.Input;
 import dk.sdu.mmmi.cbse.core.utils.Time;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -23,13 +26,14 @@ import javafx.stage.Stage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Main game application class.
  */
-public class Game extends Application {
+public class Game extends Application implements IEventListener<GameOverEvent> {
     private static final Logger LOGGER = Logger.getLogger(Game.class.getName());
 
     private static Game instance;
@@ -46,6 +50,11 @@ public class Game extends Application {
     private final List<IPluginService> plugins = new ArrayList<>();
     private IEventService eventService;
 
+    // Game over
+    private final AtomicBoolean gameOverTriggered = new AtomicBoolean(false);
+    private static final float GAME_OVER_DELAY = 2.0f;
+    private float gameOverTimer = 0.0f;
+
     /**
      * Get singleton instance
      */
@@ -60,7 +69,7 @@ public class Game extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            LOGGER.log(Level.INFO, "Initializing game");
+            LOGGER.log(Level.INFO, "Initializing game with event-driven architecture");
 
             initializeMainServices();
             createGameWindow(primaryStage);
@@ -68,12 +77,14 @@ public class Game extends Application {
 
             gameLoop = new GameLoop(gameData, world, graphicsContext);
 
+            subscribeToGameEvents();
+
             startPlugins();
 
             primaryStage.show();
             gameLoop.start();
 
-            LOGGER.log(Level.INFO, "Game initialized and running");
+            LOGGER.log(Level.INFO, "Game initialized");
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error starting game", e);
             throw new RuntimeException("Failed to start game", e);
@@ -93,9 +104,99 @@ public class Game extends Application {
         LOGGER.log(Level.INFO, "Main services initialized with {0} plugins", plugins.size());
     }
 
+    /**
+     * Subscribe to game events
+     */
+    private void subscribeToGameEvents() {
+        if (eventService != null) {
+            eventService.subscribe(GameOverEvent.class, this);
+            LOGGER.log(Level.INFO, "Game class subscribed to GameOverEvent");
+        } else {
+            LOGGER.log(Level.WARNING, "EventService not available - game over events won't be handled");
+        }
+    }
+
+    /**
+     * Handle game over event.
+     */
+    @Override
+    public void onEvent(GameOverEvent event) {
+        if (gameOverTriggered.compareAndSet(false, true)) {
+            LOGGER.log(Level.INFO, "Received GameOverEvent - initiating shutdown sequence");
+            LOGGER.log(Level.INFO, "Reason: {0}, Final Score: {1}, Source: {2}",
+                    new Object[]{event.reason(), event.finalScore(), event.scoreSource()});
+
+            Platform.runLater(this::startGameOverCountdown);
+        }
+    }
+
+    /**
+     * Start the game over countdown and shutdown sequence
+     */
+    private void startGameOverCountdown() {
+        // Create a timeline for countdown
+        gameOverTimer = 0.0f;
+
+        // Use AnimationTimer for countdown to ensure proper thread management
+        javafx.animation.AnimationTimer countdownTimer = new javafx.animation.AnimationTimer() {
+            private long lastUpdate = 0;
+
+            @Override
+            public void handle(long now) {
+                if (lastUpdate == 0) {
+                    lastUpdate = now;
+                    return;
+                }
+
+                double deltaTime = (now - lastUpdate) / 1_000_000_000.0;
+                lastUpdate = now;
+                gameOverTimer += deltaTime;
+
+                if (gameOverTimer >= GAME_OVER_DELAY) {
+                    this.stop();
+                    shutdownApplication();
+                } else {
+                    // Show countdown
+                    int secondsLeft = (int) Math.ceil(GAME_OVER_DELAY - gameOverTimer);
+                    System.out.println("Closing game in " + secondsLeft + " second" + (secondsLeft != 1 ? "s" : "") + "...");
+                }
+            }
+        };
+
+        countdownTimer.start();
+    }
+
+    private void shutdownApplication() {
+        LOGGER.log(Level.INFO, "Starting application shutdown sequence");
+
+        try {
+            // Stop game loop first
+            if (gameLoop != null) {
+                gameLoop.stop();
+                LOGGER.log(Level.INFO, "Game loop stopped");
+            }
+
+            // Stop all plugins
+            stopPlugins();
+
+            // Clear world
+            world.getEntities().clear();
+
+            // Platform exit - this should work now that everything is cleaned up
+            Platform.exit();
+
+            LOGGER.log(Level.INFO, "Application shutdown completed");
+
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error during shutdown, forcing exit", e);
+            // Force exit if graceful shutdown fails
+            System.exit(1);
+        }
+    }
+
     @Override
     public void stop() {
-        LOGGER.log(Level.INFO, "Stopping game");
+        LOGGER.log(Level.INFO, "Application stop() called");
 
         if (gameLoop != null) {
             gameLoop.stop();
@@ -123,6 +224,15 @@ public class Game extends Application {
         primaryStage.setScene(scene);
         primaryStage.setTitle("Astrostrike");
         primaryStage.setResizable(false);
+
+        // Set close request handler for proper cleanup
+        primaryStage.setOnCloseRequest(event -> {
+            LOGGER.log(Level.INFO, "Window close requested");
+            if (!gameOverTriggered.get()) {
+                // User manually closed window
+                shutdownApplication();
+            }
+        });
 
         for (IRenderingContext context : ModuleConfig.getRenderingContexts()) {
             context.setGraphicsContext(graphicsContext);
@@ -185,22 +295,18 @@ public class Game extends Application {
     private void handleKeyPress(KeyCode code, boolean pressed) {
         switch (code) {
             case W:
-                Input.setButton(Button.UP, pressed);
             case UP:
                 Input.setButton(Button.UP, pressed);
                 break;
             case S:
-                Input.setButton(Button.DOWN, pressed);
             case DOWN:
                 Input.setButton(Button.DOWN, pressed);
                 break;
             case A:
-                Input.setButton(Button.LEFT, pressed);
             case LEFT:
                 Input.setButton(Button.LEFT, pressed);
                 break;
             case D:
-                Input.setButton(Button.RIGHT, pressed);
             case RIGHT:
                 Input.setButton(Button.RIGHT, pressed);
                 break;
@@ -288,6 +394,10 @@ public class Game extends Application {
             gameLoop.stop();
         }
 
+        // Reset game over state
+        gameOverTriggered.set(false);
+        gameOverTimer = 0.0f;
+
         // Reset world
         world.getEntities().clear();
 
@@ -304,13 +414,6 @@ public class Game extends Application {
         paused = false;
 
         LOGGER.log(Level.INFO, "Game restarted");
-    }
-
-    /**
-     * Get the event service
-     */
-    public IEventService getEventService() {
-        return eventService;
     }
 
     /**

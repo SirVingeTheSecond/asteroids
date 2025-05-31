@@ -7,8 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Dedicated event listener for enemy destruction events.
- * Follows CBSE single responsibility principle by handling only enemy-related scoring.
+ * Event listener for enemy destruction events.
  */
 public class EnemyScoreListener implements IEventListener<EnemyDestroyedEvent> {
     private static final Logger LOGGER = Logger.getLogger(EnemyScoreListener.class.getName());

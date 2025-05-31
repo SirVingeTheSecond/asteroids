@@ -3,7 +3,7 @@ package dk.sdu.mmmi.cbse.commonweapon;
 import dk.sdu.mmmi.cbse.common.components.IComponent;
 
 /**
- * Component for weapon properties with proper burst state management.
+ * Component for weapon properties.
  */
 public class WeaponComponent implements IComponent {
     private Weapon.FiringPattern firingPattern = Weapon.FiringPattern.AUTOMATIC;

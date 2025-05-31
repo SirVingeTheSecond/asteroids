@@ -1,5 +1,6 @@
 module Renderer {
     requires Common;
+    requires CommonUI;
     requires java.logging;
     requires javafx.graphics;
 
