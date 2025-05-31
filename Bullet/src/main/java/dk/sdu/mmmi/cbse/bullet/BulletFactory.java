@@ -39,9 +39,9 @@ public class BulletFactory implements IBulletSPI {
     private static final float DEFAULT_SPAWN_DISTANCE = 15f;
 
     // Recoil config
-    private static final float HEAVY_RECOIL_FORCE = 150f;
-    private static final float SHOTGUN_RECOIL_FORCE = 80f;
-    private static final float BURST_RECOIL_FORCE = 40f;
+    private static final float HEAVY_RECOIL_FORCE = 400;
+    private static final float SHOTGUN_RECOIL_FORCE = 280f;
+    private static final float BURST_RECOIL_FORCE = 120f;
     private static final float AUTO_RECOIL_FORCE = 0f;
 
     private final BulletRegistry bulletRegistry;
@@ -185,33 +185,34 @@ public class BulletFactory implements IBulletSPI {
             return;
         }
 
-        // Recoil configuration per weapon type
-        float recoilForce = 0.0f;
+        // Recoil config per weapon type
+        float recoilForce;
         float recoilDuration = 0.0f;
         float angularKick = 0.0f;
 
         switch (weaponComponent.getFiringPattern()) {
+            // ToDo: Make all these variables
             case HEAVY:
-                recoilForce = 400.0f;      // Strong kick
-                recoilDuration = 0.5f;     // 500ms recovery
-                angularKick = 25.0f;       // Rotational kick
+                recoilForce = HEAVY_RECOIL_FORCE;
+                recoilDuration = 0.5f; // 500ms recovery
+                angularKick = 25.0f;
                 break;
 
             case SHOTGUN:
-                recoilForce = 280.0f;      // Moderate kick
-                recoilDuration = 0.35f;    // 350ms recovery
-                angularKick = 15.0f;       // Light rotation
+                recoilForce = SHOTGUN_RECOIL_FORCE;
+                recoilDuration = 0.35f; // 350ms recovery
+                angularKick = 15.0f;
                 break;
 
             case BURST:
-                recoilForce = 120.0f;      // Light kick per shot
-                recoilDuration = 0.25f;    // 250ms recovery
-                angularKick = 8.0f;        // Minimal rotation
+                recoilForce = BURST_RECOIL_FORCE;
+                recoilDuration = 0.25f; // 250ms recovery
+                angularKick = 8.0f;
                 break;
 
             case AUTOMATIC:
             default:
-                recoilForce = 0.0f;        // No recoil for rapid fire
+                recoilForce = 0.0f;
                 break;
         }
 

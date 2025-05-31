@@ -51,8 +51,8 @@ public class PlayerFactory {
         // Physics
         PhysicsComponent physics = new PhysicsComponent(PhysicsComponent.PhysicsType.DYNAMIC);
         physics.setMass(0.8f);
-        physics.setDrag(MovementConfig.getDragCoefficient());
-        physics.setMaxSpeed(MovementConfig.getMaxSpeed());
+        physics.setDrag(0.9f);
+        physics.setMaxSpeed(150f);
         physics.setAngularDrag(0.95f);
         player.addComponent(physics);
 
@@ -144,7 +144,7 @@ public class PlayerFactory {
         // Player takes damage from enemy bullets
         response.addHandler(EntityType.BULLET, CollisionHandlers.ENEMY_BULLET_HANDLER);
 
-        // Player ignores obstacles (boundary system handles collision)
+        // Player ignores obstacles
         response.addHandler(EntityType.OBSTACLE, CollisionHandlers.IGNORE_COLLISION_HANDLER);
 
         return response;

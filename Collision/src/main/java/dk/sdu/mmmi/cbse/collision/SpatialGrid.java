@@ -131,31 +131,4 @@ public class SpatialGrid {
     private int getCellKey(int gridX, int gridY) {
         return gridY * gridWidth + gridX;
     }
-
-    /**
-     * Get statistics about the current grid state (for debugging)
-     *
-     * @return Map containing grid statistics
-     */
-    public Map<String, Object> getStatistics() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("totalCells", grid.size());
-        stats.put("gridWidth", gridWidth);
-        stats.put("gridHeight", gridHeight);
-        stats.put("cellSize", cellSize);
-
-        int totalEntities = 0;
-        int maxEntitiesPerCell = 0;
-
-        for (List<Entity> cell : grid.values()) {
-            totalEntities += cell.size();
-            maxEntitiesPerCell = Math.max(maxEntitiesPerCell, cell.size());
-        }
-
-        stats.put("totalEntityPlacements", totalEntities);
-        stats.put("maxEntitiesPerCell", maxEntitiesPerCell);
-        stats.put("averageEntitiesPerCell", grid.isEmpty() ? 0.0 : (double) totalEntities / grid.size());
-
-        return stats;
-    }
 }

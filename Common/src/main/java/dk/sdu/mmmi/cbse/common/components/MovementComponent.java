@@ -27,15 +27,6 @@ public class MovementComponent implements IComponent {
     }
 
     /**
-     * Create a movement components with a specific pattern
-     *
-     * @param pattern Movement pattern
-     */
-    public MovementComponent(MovementPattern pattern) {
-        this.pattern = pattern;
-    }
-
-    /**
      * Get movement pattern
      *
      * @return Movement pattern

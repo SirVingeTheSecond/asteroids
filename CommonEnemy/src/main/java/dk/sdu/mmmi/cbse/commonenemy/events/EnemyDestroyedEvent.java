@@ -14,7 +14,7 @@ public record EnemyDestroyedEvent(Entity source, DestructionCause cause, int sco
         PLAYER_BULLET,      // Destroyed by player's projectile
         PLAYER_COLLISION,   // Destroyed by collision with player
         ASTEROID,           // Destroyed by hitting an Asteroid
-        OTHER               // Should not be used
+        OTHER               // I mean, what is even the point?
     }
 
     /**

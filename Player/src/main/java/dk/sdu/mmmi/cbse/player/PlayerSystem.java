@@ -8,7 +8,12 @@ import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
 import dk.sdu.mmmi.cbse.common.data.GameData;
 import dk.sdu.mmmi.cbse.common.data.World;
+import dk.sdu.mmmi.cbse.common.events.GameOverEvent;
+import dk.sdu.mmmi.cbse.common.services.IEventService;
+import dk.sdu.mmmi.cbse.common.services.IScoreSPI;
 import dk.sdu.mmmi.cbse.common.services.IUpdate;
+import dk.sdu.mmmi.cbse.common.utils.FlickerUtility;
+import dk.sdu.mmmi.cbse.commonmovement.IMovementSPI;
 import dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
 import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
@@ -24,7 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System handling the Player functionality.
+ * System handling the Player.
  */
 public class PlayerSystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(PlayerSystem.class.getName());
@@ -35,12 +40,25 @@ public class PlayerSystem implements IUpdate {
     private static final float DRAG_COEFFICIENT = 0.88f;
     private static final float STOP_THRESHOLD = 5.0f;
 
+    // Respawn config
+    private static final float RESPAWN_INVINCIBILITY_TIME = 3.0f;
+
     private IWeaponSPI weaponSPI;
     private IPhysicsSPI physicsSPI;
+    private IMovementSPI movementSPI;
+    private IScoreSPI scoreSPI;
+    private IEventService eventService;
+
+    // Game over state tracking
+    private boolean gameOverEventSent = false;
 
     public PlayerSystem() {
         this.weaponSPI = ServiceLoader.load(IWeaponSPI.class).findFirst().orElse(null);
         this.physicsSPI = ServiceLoader.load(IPhysicsSPI.class).findFirst().orElse(null);
+        this.movementSPI = ServiceLoader.load(IMovementSPI.class).findFirst().orElse(null);  // Load movement service
+        this.scoreSPI = ServiceLoader.load(IScoreSPI.class).findFirst().orElse(null);
+        this.eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
+
         LOGGER.log(Level.INFO, "PlayerSystem initialized");
     }
 
@@ -51,6 +69,9 @@ public class PlayerSystem implements IUpdate {
 
     @Override
     public void update(GameData gameData, World world) {
+        // Refresh services if not available
+        refreshServices();
+
         Entity player = findPlayer(world);
         if (player == null) return;
 
@@ -60,24 +81,149 @@ public class PlayerSystem implements IUpdate {
 
         if (transform == null) return;
 
+        // Check for game over condition
+        if (playerComponent != null && isPlayerDeadForGood(playerComponent)) {
+            triggerGameOverEvent(player);
+            return; // Stop processing player when game is over
+        }
+
+        if (playerComponent != null && playerComponent.needsRespawn()) {
+            handleRespawn(player, playerComponent, gameData);
+        }
+
         processMovement(player, transform, recoil);
         processRotation(transform);
         processShooting(player, gameData, world);
         updatePlayerState(player, playerComponent, recoil);
     }
 
+    private void refreshServices() {
+        if (scoreSPI == null) {
+            scoreSPI = ServiceLoader.load(IScoreSPI.class).findFirst().orElse(null);
+            if (scoreSPI != null) {
+                LOGGER.log(Level.INFO, "Score service became available: {0}", scoreSPI.getServiceInfo());
+            }
+        }
+
+        if (eventService == null) {
+            eventService = ServiceLoader.load(IEventService.class).findFirst().orElse(null);
+            if (eventService != null) {
+                LOGGER.log(Level.INFO, "Event service became available");
+            }
+        }
+
+        // Refresh movement services if not available
+        if (physicsSPI == null) {
+            physicsSPI = ServiceLoader.load(IPhysicsSPI.class).findFirst().orElse(null);
+            if (physicsSPI != null) {
+                LOGGER.log(Level.INFO, "Physics service became available - switching to physics-based movement");
+            }
+        }
+
+        if (movementSPI == null) {
+            movementSPI = ServiceLoader.load(IMovementSPI.class).findFirst().orElse(null);
+            if (movementSPI != null) {
+                LOGGER.log(Level.INFO, "Movement service became available - enabling fallback movement");
+            }
+        }
+    }
+
+    private boolean isPlayerDeadForGood(PlayerComponent playerComponent) {
+        return playerComponent.getLives() <= 0 && playerComponent.getCurrentHealth() <= 0;
+    }
+
+    private void triggerGameOverEvent(Entity player) {
+        if (gameOverEventSent) return;
+
+        gameOverEventSent = true;
+
+        int finalScore = getFinalScore();
+        String scoreSource = getScoreSourceInfo();
+
+        LOGGER.log(Level.INFO, "GAME OVER! Player eliminated! Final score: {0} ({1})",
+                new Object[]{finalScore, scoreSource});
+
+        // lololol
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("                    GAME OVER!");
+        System.out.println("         You are simply a waste of time!");
+        System.out.println("              Final Score: " + finalScore);
+        System.out.println("           This is clearly not for you");
+        System.out.println("              Get lost, bozo...");
+        System.out.println("=".repeat(60) + "\n");
+
+        // Publish game over event for proper CBSE separation of concerns
+        if (eventService != null) {
+            GameOverEvent gameOverEvent = GameOverEvent.playerDeath(player, finalScore, scoreSource);
+            eventService.publish(gameOverEvent);
+            LOGGER.log(Level.INFO, "Published GameOverEvent - application lifecycle will be handled by Game class");
+        } else {
+            LOGGER.log(Level.SEVERE, "Cannot publish GameOverEvent - EventService not available!");
+        }
+    }
+
     /**
-     * Handle player movement
+     * Get the final score from the authoritative source (microservice)
+     */
+    private int getFinalScore() {
+        if (scoreSPI != null) {
+            try {
+                return scoreSPI.getCurrentScore();
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Failed to get final score from microservice, using fallback", e);
+                return 0; // Fallback score
+            }
+        }
+        LOGGER.log(Level.WARNING, "Score service not available for final score");
+        return 0; // Fallback when no service
+    }
+
+    /**
+     * Get information about the score source for logging
+     */
+    private String getScoreSourceInfo() {
+        if (scoreSPI != null) {
+            return scoreSPI.getServiceInfo();
+        }
+        return "No score service available";
+    }
+
+    /**
+     * Handle player movement using service hierarchy:
+     * 1. Physics-based movement (if available)
+     * 2. Direct movement service (if available)
+     * 3. No movement (if neither available)
      */
     private void processMovement(Entity player, TransformComponent transform, RecoilComponent recoil) {
-        if (physicsSPI == null) {
-            processDirectMovement(transform, recoil);
+        Vector2D inputDirection = getCleanInputDirection();
+
+        // No input = no movement
+        if (inputDirection.magnitudeSquared() <= 0.001f) {
             return;
         }
 
+        // First priority: Physics-based movement
+        if (physicsSPI != null && player.hasComponent(PhysicsComponent.class)) {
+            processPhysicsMovement(player, inputDirection, recoil);
+            return;
+        }
+
+        // Second priority: Movement service
+        if (movementSPI != null && movementSPI.canMove(player)) {
+            processServiceMovement(player, inputDirection, recoil);
+            return;
+        }
+
+        // No movement services available
+        LOGGER.log(Level.FINEST, "No movement services available for player");
+    }
+
+    /**
+     * Process physics-based movement
+     */
+    private void processPhysicsMovement(Entity player, Vector2D inputDirection, RecoilComponent recoil) {
         PhysicsComponent physics = player.getComponent(PhysicsComponent.class);
         if (physics == null) {
-            processDirectMovement(transform, recoil);
             return;
         }
 
@@ -85,55 +231,56 @@ public class PlayerSystem implements IUpdate {
         physics.setMaxSpeed(MAX_SPEED);
 
         if (recoil != null && recoil.isInRecoil()) {
-            processRecoilMovement(player, physics, recoil);
+            processRecoilMovement(player, physics, recoil, inputDirection);
         } else {
-            processNormalMovement(player, physics);
+            processNormalMovement(player, physics, inputDirection);
         }
+
+        LOGGER.log(Level.FINEST, "Using physics-based movement");
     }
 
     /**
-     * Process movement during recoil
+     * Process movement service-based movement
      */
-    private void processRecoilMovement(Entity player, PhysicsComponent physics, RecoilComponent recoil) {
+    private void processServiceMovement(Entity player, Vector2D inputDirection, RecoilComponent recoil) {
+        float speedMultiplier = 1.0f;
+
+        // Apply recoil effects to movement speed
+        if (recoil != null && recoil.isInRecoil()) {
+            speedMultiplier = recoil.getInputStrength();
+        }
+
+        float deltaTime = Time.getDeltaTimeF();
+        movementSPI.moveEntity(player, inputDirection, MAX_SPEED, speedMultiplier, deltaTime);
+
+        LOGGER.log(Level.FINEST, "Using movement service (speed multiplier: {0})", speedMultiplier);
+    }
+
+    /**
+     * Process movement during recoil using physics
+     */
+    private void processRecoilMovement(Entity player, PhysicsComponent physics, RecoilComponent recoil, Vector2D inputDirection) {
         // Apply recoil-modified drag
         float recoilDrag = recoil.getRecoilDrag(DRAG_COEFFICIENT);
         physics.setDrag(recoilDrag);
 
-        // Get input with reduced strength
-        Vector2D inputDirection = getCleanInputDirection();
-        Vector2D currentVelocity = physics.getVelocity();
-        float currentSpeed = currentVelocity.magnitude();
+        // Apply input with recoil-modified strength
+        float inputStrength = recoil.getInputStrength();
+        Vector2D recoilModifiedForce = inputDirection.scale(ACCELERATION_FORCE * inputStrength);
+        physicsSPI.applyForce(player, recoilModifiedForce);
 
-        if (inputDirection.magnitudeSquared() > 0.001f) {
-            // Apply input with recoil-modified strength
-            float inputStrength = recoil.getInputStrength();
-            Vector2D recoilModifiedForce = inputDirection.scale(ACCELERATION_FORCE * inputStrength);
-            physicsSPI.applyForce(player, recoilModifiedForce);
-
-            LOGGER.log(Level.FINEST, "Recoil movement - Phase: {0}, InputStrength: {1}, Drag: {2}",
-                    new Object[]{recoil.getRecoilPhase(), inputStrength, recoilDrag});
-        } else {
-            // Apply smart stopping during recoil
-            applyRecoilStopping(player, currentVelocity, currentSpeed, recoil);
-        }
+        LOGGER.log(Level.FINEST, "Recoil movement - Phase: {0}, InputStrength: {1}, Drag: {2}",
+                new Object[]{recoil.getRecoilPhase(), inputStrength, recoilDrag});
     }
 
     /**
-     * Process normal movement when not in recoil
+     * Process normal movement when not in recoil using physics
      */
-    private void processNormalMovement(Entity player, PhysicsComponent physics) {
+    private void processNormalMovement(Entity player, PhysicsComponent physics, Vector2D inputDirection) {
         physics.setDrag(DRAG_COEFFICIENT);
 
-        Vector2D inputDirection = getCleanInputDirection();
-        Vector2D currentVelocity = physics.getVelocity();
-        float currentSpeed = currentVelocity.magnitude();
-
-        if (inputDirection.magnitudeSquared() > 0.001f) {
-            Vector2D movementForce = inputDirection.scale(ACCELERATION_FORCE);
-            physicsSPI.applyForce(player, movementForce);
-        } else {
-            applySmartStopping(player, currentVelocity, currentSpeed);
-        }
+        Vector2D movementForce = inputDirection.scale(ACCELERATION_FORCE);
+        physicsSPI.applyForce(player, movementForce);
     }
 
     /**
@@ -263,13 +410,13 @@ public class PlayerSystem implements IUpdate {
     }
 
     /**
-     * Update player state including recoil management
+     * Update player state
      */
     private void updatePlayerState(Entity player, PlayerComponent playerComponent, RecoilComponent recoil) {
         if (playerComponent != null) {
             playerComponent.updateInvulnerability();
             float deltaTime = Time.getDeltaTimeF();
-            dk.sdu.mmmi.cbse.common.utils.FlickerUtility.updateFlicker(player, deltaTime);
+            FlickerUtility.updateFlicker(player, deltaTime);
         }
 
         // Update recoil state
@@ -294,6 +441,33 @@ public class PlayerSystem implements IUpdate {
         return direction;
     }
 
+    /**
+     * Handle player respawn
+     */
+    private void handleRespawn(Entity player, PlayerComponent playerComponent, GameData gameData) {
+        TransformComponent transform = player.getComponent(TransformComponent.class);
+        if (transform == null) {
+            return;
+        }
+
+        // Reset position to screen center
+        float centerX = gameData.getDisplayWidth() / 2.0f;
+        float centerY = gameData.getDisplayHeight() / 2.0f;
+        transform.setPosition(new Vector2D(centerX, centerY));
+
+        // Reset velocity if physics enabled
+        if (physicsSPI != null && physicsSPI.hasPhysics(player)) {
+            physicsSPI.setVelocity(player, Vector2D.zero());
+        }
+
+        playerComponent.completeRespawn();
+
+        FlickerUtility.startInvulnerabilityFlicker(player, RESPAWN_INVINCIBILITY_TIME);
+
+        LOGGER.log(Level.INFO, "Player respawned with {0} lives remaining",
+                playerComponent.getLives());
+    }
+
     private Entity findPlayer(World world) {
         for (Entity entity : world.getEntities()) {
             TagComponent tag = entity.getComponent(TagComponent.class);
@@ -302,5 +476,19 @@ public class PlayerSystem implements IUpdate {
             }
         }
         return null;
+    }
+
+    /**
+     * Check if game over event has been sent (for testing/debugging)
+     */
+    public boolean isGameOverEventSent() {
+        return gameOverEventSent;
+    }
+
+    /**
+     * Reset the game over state (for testing/debugging)
+     */
+    public void resetGameOverState() {
+        gameOverEventSent = false;
     }
 }

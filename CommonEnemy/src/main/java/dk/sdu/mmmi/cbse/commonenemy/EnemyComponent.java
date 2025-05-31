@@ -21,7 +21,6 @@ public class EnemyComponent implements IComponent {
     public EnemyComponent(EnemyType type) {
         this.type = type;
 
-        // Configure based on type
         switch (type) {
             case HUNTER:
                 health = 150.0f;

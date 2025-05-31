@@ -2,10 +2,14 @@ module Enemy {
     uses dk.sdu.mmmi.cbse.commonenemy.IEnemySPI;
     uses dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
     uses dk.sdu.mmmi.cbse.commonphysics.IPhysicsSPI;
+    uses dk.sdu.mmmi.cbse.commondifficulty.IDifficultyService;
+    uses dk.sdu.mmmi.cbse.common.services.IEventService;
+
     requires Common;
     requires CommonEnemy;
     requires CommonWeapon;
     requires CommonCollision;
+    requires CommonDifficulty;
 
     requires java.logging;
     requires javafx.graphics;
