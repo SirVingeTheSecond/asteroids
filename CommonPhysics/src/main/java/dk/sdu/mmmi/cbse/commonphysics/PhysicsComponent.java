@@ -34,14 +34,14 @@ public class PhysicsComponent implements IComponent {
     }
 
     /**
-     * Create a physics component with default values
+     * Create a physics components with default values
      */
     public PhysicsComponent() {
         // Using default values
     }
 
     /**
-     * Create a physics component with specific physics type
+     * Create a physics components with specific physics type
      * @param physicsType The physics simulation type
      */
     public PhysicsComponent(PhysicsType physicsType) {
@@ -82,8 +82,8 @@ public class PhysicsComponent implements IComponent {
 
     /**
      * Set velocity using separate x,y components
-     * @param x X velocity component
-     * @param y Y velocity component
+     * @param x X velocity components
+     * @param y Y velocity components
      */
     public void setVelocity(float x, float y) {
         setVelocity(new Vector2D(x, y));

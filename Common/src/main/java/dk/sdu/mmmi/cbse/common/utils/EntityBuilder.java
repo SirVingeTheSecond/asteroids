@@ -37,8 +37,8 @@ public class EntityBuilder {
     }
 
     /**
-     * Add a component to the entity
-     * @param component The component to add
+     * Add a components to the entity
+     * @param component The components to add
      * @return This builder for method chaining
      */
     public EntityBuilder with(IComponent component) {

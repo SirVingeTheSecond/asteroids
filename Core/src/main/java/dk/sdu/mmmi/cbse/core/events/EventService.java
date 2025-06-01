@@ -29,13 +29,19 @@ public class EventService implements IEventService {
     @SuppressWarnings("unchecked")
     public <T extends IEvent> void subscribe(Class<T> eventType, IEventListener<T> listener) {
         synchronized (STATIC_LISTENERS) {
-            STATIC_LISTENERS.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>())
-                    .add(listener);
-        }
+            List<IEventListener<? extends IEvent>> listeners =
+                    STATIC_LISTENERS.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>());
 
-        LOGGER.log(Level.INFO, "Subscribed {0} to {1} (total listeners: {2})",
-                new Object[]{listener.getClass().getName(), eventType.getName(),
-                        STATIC_LISTENERS.get(eventType).size()});
+            // Prevent duplicate subscriptions - only add if not already present
+            if (!listeners.contains(listener)) {
+                listeners.add(listener);
+                LOGGER.log(Level.INFO, "Subscribed {0} to {1} (total listeners: {2})",
+                        new Object[]{listener.getClass().getName(), eventType.getName(), listeners.size()});
+            } else {
+                LOGGER.log(Level.FINE, "Listener {0} already subscribed to {1}, skipping duplicate",
+                        new Object[]{listener.getClass().getName(), eventType.getName()});
+            }
+        }
     }
 
     @Override
@@ -53,6 +59,11 @@ public class EventService implements IEventService {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends IEvent> void publish(T event) {
+        if (event == null) {
+            LOGGER.log(Level.WARNING, "Attempted to publish null event - ignoring");
+            return;
+        }
+
         Class<? extends IEvent> eventType = event.getClass();
 
         synchronized (STATIC_LISTENERS) {

@@ -260,7 +260,7 @@ public class BulletFactory implements IBulletSPI {
     }
 
     /**
-     * Configure bullet component with weapon and bullet type
+     * Configure bullet components with weapon and bullet type
      */
     private void configureBulletComponent(BulletComponent bulletComponent,
                                           WeaponComponent weaponComponent,
@@ -282,7 +282,7 @@ public class BulletFactory implements IBulletSPI {
     }
 
     /**
-     * Create renderer component with colors matching shooter
+     * Create renderer components with colors matching shooter
      */
     private RendererComponent createBulletRenderer(Entity shooter, BulletType bulletTypeConfig, float bulletRadius) {
         RendererComponent rendererComponent = new RendererComponent();

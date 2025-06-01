@@ -77,7 +77,7 @@ public class WeaponCyclingSystem implements IUpdate {
 
         WeaponComponent weaponComponent = player.getComponent(WeaponComponent.class);
         if (weaponComponent == null) {
-            return; // No weapon component yet
+            return; // No weapon components yet
         }
 
         // Try to match the current weapon configuration to our registry
@@ -117,7 +117,7 @@ public class WeaponCyclingSystem implements IUpdate {
     }
 
     /**
-     * Check if a weapon configuration matches the current weapon component
+     * Check if a weapon configuration matches the current weapon components
      */
     private boolean weaponMatches(Weapon weapon, Weapon.FiringPattern pattern,
                                   float damage, float speed, float cooldown) {
