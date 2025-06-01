@@ -132,7 +132,6 @@ class EventServiceTest {
 
     @Test
     @DisplayName("Should support multiple subscriptions of same listener")
-    // ToDo: EventServiceTest.shouldSupportMultipleSubscriptionsOfSameListener:144
     // Wanted 1 time, but was 2 times
     void shouldSupportMultipleSubscriptionsOfSameListener() {
         // Subscribe same listener multiple times (shouldn't duplicate)
