@@ -36,7 +36,7 @@ public class CollisionHandlers {
     }
 
     /**
-     * Handler for bullets hitting damageable entities (asteroids, enemies, players)
+     * Handler for bullets hitting damageable entities
      */
     public static final ICollisionHandler BULLET_DAMAGE_HANDLER = (bullet, target, context) -> {
         BulletComponent bulletComponent = bullet.getComponent(BulletComponent.class);
@@ -53,8 +53,9 @@ public class CollisionHandlers {
         CollisionResult result = new CollisionResult();
 
         // Apply damage based on target type
+        // This is so ugly
         if (context.hasType(target, EntityType.ASTEROID)) {
-            result.combine(handleAsteroidDamageFromBullet(target, 1, bullet, context));
+            result.combine(handleAsteroidDamageFromBullet(target, (int)bulletComponent.getDamage(), bullet, context));
         } else if (context.hasType(target, EntityType.ENEMY)) {
             result.combine(handleEnemyDamage(target, bulletComponent.getDamage(), bulletComponent.getSource(), context));
         } else if (context.hasType(target, EntityType.PLAYER)) {
