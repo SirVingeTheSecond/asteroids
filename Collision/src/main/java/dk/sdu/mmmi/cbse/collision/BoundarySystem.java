@@ -197,11 +197,11 @@ public class BoundarySystem implements IPluginService, ILateUpdate {
                 -halfWidth,  halfHeight   // Top-left
         };
 
-        // Create collider component
+        // Create collider components
         ColliderComponent collider = new ColliderComponent();
         collider.setLayer(CollisionLayer.BOUNDARY);
 
-        // Create renderer component
+        // Create renderer components
         RendererComponent renderer = new RendererComponent();
         renderer.setVisible(DEBUG_VISIBLE);
         if (DEBUG_VISIBLE) {

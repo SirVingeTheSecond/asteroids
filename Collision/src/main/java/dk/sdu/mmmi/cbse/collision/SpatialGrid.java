@@ -89,7 +89,7 @@ public class SpatialGrid {
     /**
      * Calculate which grid cells an entity occupies based on its position and radius
      *
-     * @param transform Entity's transform component
+     * @param transform Entity's transform components
      * @return Set of cell keys that the entity occupies
      */
     private Set<Integer> getCellKeysForEntity(TransformComponent transform) {

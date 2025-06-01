@@ -8,7 +8,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Base entity class for the component-based design.
+ * Base entity class for the components-based design.
  */
 public class Entity {
     private final UUID id = UUID.randomUUID();
@@ -28,10 +28,10 @@ public class Entity {
     }
 
     /**
-     * Add a component to this entity.
-     * @param component The component to add
-     * @param <T> Type of component extending Component interface
-     * @throws NullPointerException if component is null
+     * Add a components to this entity.
+     * @param component The components to add
+     * @param <T> Type of components extending Component interface
+     * @throws NullPointerException if components is null
      */
     public <T extends IComponent> void addComponent(T component) {
         Objects.requireNonNull(component, "Component cannot be null");
@@ -40,10 +40,10 @@ public class Entity {
     }
 
     /**
-     * Get a component by type.
-     * @param componentType The class of the component to get
+     * Get a components by type.
+     * @param componentType The class of the components to get
      * @param <T> Component type
-     * @return The component if present, null otherwise
+     * @return The components if present, null otherwise
      * @throws NullPointerException if componentType is null
      */
     @SuppressWarnings("unchecked")
@@ -53,8 +53,8 @@ public class Entity {
     }
 
     /**
-     * Remove a component by type.
-     * @param componentType The class of the component to remove
+     * Remove a components by type.
+     * @param componentType The class of the components to remove
      * @param <T> Component type
      * @return True if removed, false if not present
      * @throws NullPointerException if componentType is null
@@ -65,15 +65,23 @@ public class Entity {
     }
 
     /**
-     * Check if this entity has a component of the specified type.
-     * @param componentType The class of the component to check
+     * Check if this entity has a components of the specified type.
+     * @param componentType The class of the components to check
      * @param <T> Component type
-     * @return true if the entity has the component, false otherwise
+     * @return true if the entity has the components, false otherwise
      * @throws NullPointerException if componentType is null
      */
     public <T extends IComponent> boolean hasComponent(Class<T> componentType) {
         Objects.requireNonNull(componentType, "Component type cannot be null");
         return components.containsKey(componentType);
+    }
+
+    /**
+     * Get the number of components this entity has
+     * @return The components count
+     */
+    public int getComponentCount() {
+        return components.size();
     }
 
     // Not needed?

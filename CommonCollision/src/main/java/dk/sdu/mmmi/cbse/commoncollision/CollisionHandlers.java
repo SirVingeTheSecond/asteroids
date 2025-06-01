@@ -156,7 +156,13 @@ public class CollisionHandlers {
         float vel2Tangent = vel2.dot(tangent);
 
         // Calculate new normal velocities using elastic collision formula
-        // ToDo: Show formula here.
+            // For elastic collision between two objects:
+            // v1' = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2)
+            // v2' = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2)
+            // Where:
+            //   v1', v2' = final velocities
+            //   v1, v2 = initial velocities (normal components)
+            //   m1, m2 = masses of the objects
         float mass1 = physics1.getMass();
         float mass2 = physics2.getMass();
         float totalMass = mass1 + mass2;
@@ -358,7 +364,7 @@ public class CollisionHandlers {
             }
         }
 
-        // Fallback: calculate from transform and movement component
+        // Fallback: calculate from transform and movement components
         TransformComponent transform = bullet.getComponent(TransformComponent.class);
         if (transform != null) {
             Vector2D forward = transform.getForward();
@@ -366,7 +372,7 @@ public class CollisionHandlers {
             if (bulletComp != null) {
                 return forward.scale(bulletComp.getSpeed());
             }
-            // if no component
+            // if no components
             return forward.scale(300.0f);
         }
 

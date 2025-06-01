@@ -31,7 +31,7 @@ public class BulletComponent implements IComponent {
     }
 
     /**
-     * Create a bullet component
+     * Create a bullet components
      *
      * @param shooterID ID of the shooter
      * @param source Bullet source

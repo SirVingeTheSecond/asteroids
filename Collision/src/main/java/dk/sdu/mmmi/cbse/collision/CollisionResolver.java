@@ -30,7 +30,7 @@ public class CollisionResolver {
     }
 
     /**
-     * Resolve all collisions using a generic, component-based approach
+     * Resolve all collisions using a generic, components-based approach
      */
     public List<Entity> resolveCollisions(List<Pair<Entity, Entity>> collisions, GameData gameData, World world) {
         List<Entity> entitiesToRemove = new ArrayList<>();

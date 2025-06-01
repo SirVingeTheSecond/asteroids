@@ -20,6 +20,11 @@ public class PhysicsService implements IPhysicsSPI {
 
     @Override
     public void applyForce(Entity entity, Vector2D force) {
+        if (entity == null) {
+            LOGGER.log(Level.WARNING, "Cannot apply force to null entity");
+            return;
+        }
+
         PhysicsComponent physics = entity.getComponent(PhysicsComponent.class);
         if (physics == null) {
             LOGGER.log(Level.WARNING, "Cannot apply force to entity {0}: no PhysicsComponent",

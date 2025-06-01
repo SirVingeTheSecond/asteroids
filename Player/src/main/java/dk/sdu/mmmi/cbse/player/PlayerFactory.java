@@ -102,7 +102,7 @@ public class PlayerFactory {
     }
 
     /**
-     * Create automatic weapon component for player starting weapon
+     * Create automatic weapon components for player starting weapon
      */
     private WeaponComponent createAutomaticWeapon() {
         try {
@@ -132,7 +132,7 @@ public class PlayerFactory {
     }
 
     /**
-     * Create collision response component for player interactions
+     * Create collision response components for player interactions
      */
     private CollisionResponseComponent createPlayerCollisionResponse() {
         CollisionResponseComponent response = new CollisionResponseComponent();

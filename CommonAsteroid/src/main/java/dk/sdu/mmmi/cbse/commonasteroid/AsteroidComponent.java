@@ -21,7 +21,7 @@ public class AsteroidComponent implements IComponent {
     }
 
     /**
-     * Create asteroid component with specific size
+     * Create asteroid components with specific size
      *
      * @param size Asteroid size
      */
