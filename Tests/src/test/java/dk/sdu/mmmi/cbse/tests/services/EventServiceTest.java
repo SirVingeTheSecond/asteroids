@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.*;
 
 /**
@@ -90,14 +91,13 @@ class EventServiceTest {
 
     @Test
     @DisplayName("Should handle null events gracefully")
-    // ToDo: NullPointer Cannot invoke "dk.sdu.mmmi.cbse.common.events.IEvent.getClass()" because "event" is null
     void shouldHandleNullEventsGracefully() {
         eventService.subscribe(TestEvent.class, mockListener1);
 
-        // Should not crash when publishing null
-        eventService.publish(null);
+        // Should not crash when publishing null - EventService should log warning and return early
+        assertDoesNotThrow(() -> eventService.publish(null));
 
-        // Listener should not be called
+        // Listener should not be called since null events are filtered out
         verify(mockListener1, never()).onEvent(any());
     }
 
@@ -132,6 +132,8 @@ class EventServiceTest {
 
     @Test
     @DisplayName("Should support multiple subscriptions of same listener")
+    // ToDo: EventServiceTest.shouldSupportMultipleSubscriptionsOfSameListener:144
+    // Wanted 1 time, but was 2 times
     void shouldSupportMultipleSubscriptionsOfSameListener() {
         // Subscribe same listener multiple times (shouldn't duplicate)
         eventService.subscribe(TestEvent.class, mockListener1);

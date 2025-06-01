@@ -4,7 +4,7 @@ package dk.sdu.mmmi.cbse.core.utils;
  * Global time class for ensuring consistent behavior across all systems.
  *
  * Uses temporal anti-aliasing for smooth movement: smaller delta time
- * steps than actual update frequency to reduce visual stepping artifacts.
+ * steps than actual update frequency to reduce visual stepping.
  */
 public final class Time {
 	// Fixed update rate configuration
@@ -12,7 +12,7 @@ public final class Time {
 	public static final float FIXED_DELTA_TIME = 1.0f / FIXED_UPDATE_RATE; // 0.01666 seconds
 	public static final int FIXED_UPDATE_INTERVAL_MS = 1000 / FIXED_UPDATE_RATE; // 16 milliseconds
 
-	// Delta time for bullet movement (I should probably explain WHAT and HOW this is temporal anti-aliasing?)
+	// Delta time for bullet movement
 	public static final int BULLET_UPDATE_RATE = 120; // Hz
 	public static final float BULLET_DELTA_TIME = 1.0f / BULLET_UPDATE_RATE; // 0.0083 seconds
 

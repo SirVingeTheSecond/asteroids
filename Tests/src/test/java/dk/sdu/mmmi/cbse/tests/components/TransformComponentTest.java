@@ -72,7 +72,7 @@ class TransformComponentTest {
 
         // Test right vector (perpendicular to forward)
         Vector2D right = transform.getRight();
-        assertEquals(-1f, right.x(), 0.001f);
+        assertEquals( 1f, right.x(), 0.001f);
         assertEquals(0f, right.y(), 0.001f);
     }
 
@@ -91,20 +91,31 @@ class TransformComponentTest {
 
     @Test
     @DisplayName("Should handle movement in local directions")
-    // ToDo: expected: <-3.0> but was: <3.0>
     void shouldHandleMoveForwardAndRight() {
         transform.setPosition(new Vector2D(0, 0));
         transform.setRotation(0); // Facing right
 
+        // Verify initial direction vectors
+        Vector2D forward = transform.getForward();
+        Vector2D right = transform.getRight();
+
+        // When rotation = 0, forward should point right (1, 0)
+        assertEquals(1f, forward.x(), 0.001f, "Forward X should be 1 when facing right");
+        assertEquals(0f, forward.y(), 0.001f, "Forward Y should be 0 when facing right");
+
+        // When rotation = 0, right should point down in math coordinates (0, -1)
+        assertEquals(0f, right.x(), 0.001f, "Right X should be 0 when facing right");
+        assertEquals(-1f, right.y(), 0.001f, "Right Y should be -1 when facing right");
+
         // Move forward (should move right)
         transform.moveForward(5f);
-        assertEquals(5f, transform.getX(), 0.001f);
-        assertEquals(0f, transform.getY(), 0.001f);
+        assertEquals(5f, transform.getX(), 0.001f, "X should be 5 after moving forward");
+        assertEquals(0f, transform.getY(), 0.001f, "Y should be 0 after moving forward");
 
-        // Move right (should move down when facing right)
+        // Move right (should move down when facing right in math coordinates)
         transform.moveRight(3f);
-        assertEquals(5f, transform.getX(), 0.001f);
-        assertEquals(-3f, transform.getY(), 0.001f);
+        assertEquals(5f, transform.getX(), 0.001f, "X should remain 5 after moving right");
+        assertEquals(-3f, transform.getY(), 0.001f, "Y should be -3 after moving right (down in math coordinates)");
     }
 
     @Test
