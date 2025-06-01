@@ -90,6 +90,7 @@ class EventServiceTest {
 
     @Test
     @DisplayName("Should handle null events gracefully")
+    // ToDo: NullPointer Cannot invoke "dk.sdu.mmmi.cbse.common.events.IEvent.getClass()" because "event" is null
     void shouldHandleNullEventsGracefully() {
         eventService.subscribe(TestEvent.class, mockListener1);
 
@@ -143,7 +144,8 @@ class EventServiceTest {
         verify(mockListener1, times(1)).onEvent(event);
     }
 
-    // Test event classes
+    // === Test event classes ===
+
     private static class TestEvent implements IEvent {
         private final String message;
 

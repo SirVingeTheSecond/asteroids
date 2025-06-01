@@ -85,6 +85,7 @@ class WeaponSystemTest {
 
     @Test
     @DisplayName("Should handle burst weapon automatic continuation")
+    // ToDo: expected: <true> but was: <false>
     void shouldHandleBurstWeaponAutomaticContinuation() {
         try (MockedStatic<Time> timeMock = mockStatic(Time.class)) {
             timeMock.when(Time::getDeltaTimeF).thenReturn(0.1f);

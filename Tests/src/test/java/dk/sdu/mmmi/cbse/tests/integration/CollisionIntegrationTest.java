@@ -33,6 +33,7 @@ import static org.mockito.Mockito.*;
 class CollisionIntegrationTest {
 
     @Mock
+    // Shouldn't this be used?
     private IEventService mockEventService;
 
     private CollisionDetector collisionDetector;
