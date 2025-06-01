@@ -20,7 +20,7 @@ public class FlickerComponent implements IComponent {
     private Color flickerFillColor;
 
     /**
-     * Create a flicker component with default settings
+     * Create a flicker components with default settings
      */
     public FlickerComponent() {
 

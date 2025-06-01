@@ -20,7 +20,7 @@ public class MovementComponent implements IComponent {
     }
 
     /**
-     * Create a movement component with default values
+     * Create a movement components with default values
      */
     public MovementComponent() {
 

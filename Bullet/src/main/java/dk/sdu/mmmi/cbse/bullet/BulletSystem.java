@@ -58,7 +58,9 @@ public class BulletSystem implements IUpdate {
         float y = transform.getY();
         float margin = 50.0f;
 
-        return x < -margin || x > gameData.getDisplayWidth() + margin ||
-                y < -margin || y > gameData.getDisplayHeight() + margin;
+        return x < -margin // Left of display
+                || x > gameData.getDisplayWidth() + margin // Right of display
+                || y < -margin // Top of display
+                || y > gameData.getDisplayHeight() + margin; // Bottom of display
     }
 }

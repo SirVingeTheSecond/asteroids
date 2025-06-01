@@ -13,8 +13,7 @@ import dk.sdu.mmmi.cbse.commonui.UIType;
 import javafx.scene.paint.Color;
 
 /**
- * Factory for creating UI entities with proper positioning and styling.
- * Includes score display using microservice integration.
+ * Factory for creating UI entities.
  */
 public class UIEntityFactory {
 
@@ -59,16 +58,22 @@ public class UIEntityFactory {
     }
 
     public Entity createWeaponDisplay(GameData gameData) {
-        Vector2D position = calculateAnchoredPosition(UIAnchor.TOP_RIGHT,
-                new Vector2D(-150, 30), gameData);
+        // Estimate text width for centering (approximate character width * expected text length)
+        String defaultText = "Weapon: AUTOMATIC";
+        int fontSize = 18;
+        float estimatedTextWidth = estimateTextWidth(defaultText, fontSize);
+        float centeringOffset = -estimatedTextWidth / 2.0f;
+
+        Vector2D position = calculateAnchoredPosition(UIAnchor.BOTTOM_CENTER,
+                new Vector2D(centeringOffset, -30), gameData);
 
         UIComponent uiComponent = new UIComponent(UIType.WEAPON_DISPLAY);
-        uiComponent.setAnchor(UIAnchor.TOP_RIGHT);
-        uiComponent.setOffset(new Vector2D(-150, 30));
-        uiComponent.setFontSize(18);
-        uiComponent.setDisplayText("Weapon: STANDARD");
+        uiComponent.setAnchor(UIAnchor.BOTTOM_CENTER);
+        uiComponent.setOffset(new Vector2D(centeringOffset, -30));
+        uiComponent.setFontSize(fontSize);
+        uiComponent.setDisplayText(defaultText);
 
-        RendererComponent renderer = createUIRenderer(Color.WHITE);
+        RendererComponent renderer = createUIRenderer(Color.LIGHTBLUE);
 
         return EntityBuilder.create()
                 .withType(EntityType.OBSTACLE)
@@ -83,11 +88,11 @@ public class UIEntityFactory {
      */
     public Entity createScoreDisplay(GameData gameData) {
         Vector2D position = calculateAnchoredPosition(UIAnchor.TOP_RIGHT,
-                new Vector2D(-150, 60), gameData);
+                new Vector2D(-150, 30), gameData);
 
         UIComponent uiComponent = new UIComponent(UIType.SCORE_DISPLAY);
         uiComponent.setAnchor(UIAnchor.TOP_RIGHT);
-        uiComponent.setOffset(new Vector2D(-150, 60));
+        uiComponent.setOffset(new Vector2D(-150, 30));
         uiComponent.setFontSize(20);
         uiComponent.setDisplayText("Score: 0 ★"); // ★ = microservice, ⚠ = fallback
 
@@ -111,14 +116,34 @@ public class UIEntityFactory {
         return renderer;
     }
 
+    /**
+     * Estimate text width for UI centering purposes.
+     * Uses approximate character width based on font size.
+     *
+     * @param text The text to measure
+     * @param fontSize Font size in pixels
+     * @return Estimated width in pixels
+     */
+    private float estimateTextWidth(String text, int fontSize) {
+        if (text == null || text.isEmpty()) {
+            return 0.0f;
+        }
+
+        // Approximate character width as 60% of font size (typical for proportional fonts)
+        float avgCharWidth = fontSize * 0.6f;
+        return text.length() * avgCharWidth;
+    }
+
     private Vector2D calculateAnchoredPosition(UIAnchor anchor, Vector2D offset, GameData gameData) {
         float screenWidth = gameData.getDisplayWidth();
         float screenHeight = gameData.getDisplayHeight();
 
         return switch (anchor) {
             case TOP_LEFT -> new Vector2D(offset.x(), offset.y());
+            case TOP_CENTER -> new Vector2D((screenWidth / 2) + offset.x(), offset.y());
             case TOP_RIGHT -> new Vector2D(screenWidth + offset.x(), offset.y());
             case BOTTOM_LEFT -> new Vector2D(offset.x(), screenHeight + offset.y());
+            case BOTTOM_CENTER -> new Vector2D((screenWidth / 2) + offset.x(), screenHeight + offset.y());
             case BOTTOM_RIGHT -> new Vector2D(screenWidth + offset.x(), screenHeight + offset.y());
         };
     }

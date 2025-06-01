@@ -36,6 +36,7 @@
         <module>ScoreClient</module>
         <module>UI</module>
         <module>Weapon</module>
+        <module>Tests</module>
     </modules>
 
     <properties>
