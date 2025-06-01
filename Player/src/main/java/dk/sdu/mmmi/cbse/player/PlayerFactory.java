@@ -16,6 +16,7 @@ import dk.sdu.mmmi.cbse.commoncollision.CollisionLayer;
 import dk.sdu.mmmi.cbse.commoncollision.CollisionResponseComponent;
 import dk.sdu.mmmi.cbse.commonphysics.PhysicsComponent;
 import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
+import dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI;
 import dk.sdu.mmmi.cbse.commonweapon.Weapon;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
 import javafx.scene.paint.Color;
@@ -106,7 +107,7 @@ public class PlayerFactory {
      */
     private WeaponComponent createAutomaticWeapon() {
         try {
-            var weaponSPIOptional = ServiceLoader.load(dk.sdu.mmmi.cbse.commonweapon.IWeaponSPI.class).findFirst();
+            var weaponSPIOptional = ServiceLoader.load(IWeaponSPI.class).findFirst();
             if (weaponSPIOptional.isPresent()) {
                 Weapon automaticWeapon = weaponSPIOptional.get().getWeapon("automatic");
                 if (automaticWeapon != null) {
@@ -119,7 +120,10 @@ public class PlayerFactory {
             LOGGER.log(Level.WARNING, "Could not load automatic weapon from registry", e);
         }
 
-        return null;
+        LOGGER.log(Level.INFO, "Player configured with fallback automatic weapon");
+
+        // Create an empty weapon
+        return new WeaponComponent();
     }
 
     /**
