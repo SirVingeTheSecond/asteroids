@@ -116,19 +116,10 @@ public class PlayerFactory {
                 }
             }
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Could not load automatic weapon from registry, using fallback", e);
+            LOGGER.log(Level.WARNING, "Could not load automatic weapon from registry", e);
         }
 
-        // Fallback: Create automatic weapon manually
-        WeaponComponent weapon = new WeaponComponent();
-        weapon.setFiringPattern(Weapon.FiringPattern.AUTOMATIC);
-        weapon.setBulletType("tiny");
-        weapon.setDamage(1.0f);
-        weapon.setProjectileSpeed(400.0f);
-        weapon.setCooldownTime(0.15f);
-
-        LOGGER.log(Level.INFO, "Player configured with fallback automatic weapon");
-        return weapon;
+        return null;
     }
 
     /**
