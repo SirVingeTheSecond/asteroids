@@ -1,5 +1,6 @@
 package dk.sdu.mmmi.cbse.ui;
 
+import dk.sdu.mmmi.cbse.common.Vector2D;
 import dk.sdu.mmmi.cbse.common.components.TagComponent;
 import dk.sdu.mmmi.cbse.common.data.Entity;
 import dk.sdu.mmmi.cbse.common.data.EntityType;
@@ -11,13 +12,14 @@ import dk.sdu.mmmi.cbse.commonplayer.PlayerComponent;
 import dk.sdu.mmmi.cbse.commonui.IUIService;
 import dk.sdu.mmmi.cbse.commonui.UIComponent;
 import dk.sdu.mmmi.cbse.commonweapon.WeaponComponent;
+import dk.sdu.mmmi.cbse.commonweapon.Weapon;
 
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * System for updating UI elements based on game state.
+ * System for updating UI elements.
  */
 public class UISystem implements IUpdate {
     private static final Logger LOGGER = Logger.getLogger(UISystem.class.getName());
@@ -29,7 +31,7 @@ public class UISystem implements IUpdate {
     public UISystem() {
         this.uiService = ServiceLoader.load(IUIService.class).findFirst().orElse(null);
         this.scoreSPI = ServiceLoader.load(IScoreSPI.class).findFirst().orElse(null);
-        LOGGER.log(Level.INFO, "UISystem initialized with score service integration");
+        LOGGER.log(Level.INFO, "UISystem initialized");
     }
 
     @Override
@@ -124,17 +126,78 @@ public class UISystem implements IUpdate {
         uiComponent.setDisplayText("Lives: " + playerComponent.getLives());
     }
 
+    /**
+     * Update weapon display to show the current firing pattern (weapon type)
+     */
     private void updateWeaponDisplay(UIComponent uiComponent, WeaponComponent weaponComponent) {
         if (weaponComponent != null) {
-            String weaponText = "Weapon: " + weaponComponent.getBulletType().toUpperCase();
+            // Get the firing pattern and format it nicely
+            Weapon.FiringPattern firingPattern = weaponComponent.getFiringPattern();
+            String weaponName = formatWeaponName(firingPattern);
+            String weaponText = "Weapon: " + weaponName;
             uiComponent.setDisplayText(weaponText);
+
+            // Update centering offset for the new text length
+            if (uiComponent.getAnchor() == dk.sdu.mmmi.cbse.commonui.UIAnchor.BOTTOM_CENTER) {
+                updateCenteringOffset(uiComponent, weaponText);
+            }
         } else {
-            uiComponent.setDisplayText("Weapon: NONE");
+            String weaponText = "Weapon: NONE";
+            uiComponent.setDisplayText(weaponText);
+
+            // Update centering offset for "NONE" text
+            if (uiComponent.getAnchor() == dk.sdu.mmmi.cbse.commonui.UIAnchor.BOTTOM_CENTER) {
+                updateCenteringOffset(uiComponent, weaponText);
+            }
         }
     }
 
     /**
-     * Update score display using the authoritative microservice score
+     * Update the centering offset for center-anchored UI elements based on text width
+     */
+    private void updateCenteringOffset(UIComponent uiComponent, String text) {
+        float estimatedTextWidth = estimateTextWidth(text, uiComponent.getFontSize());
+        float centeringOffset = -estimatedTextWidth / 2.0f;
+
+        // Update the offset while preserving the Y component
+        Vector2D currentOffset = uiComponent.getOffset();
+        uiComponent.setOffset(new Vector2D(centeringOffset, currentOffset.y()));
+    }
+
+    /**
+     * Estimate text width for UI centering.
+     * Uses approximate character width based on font size.
+     *
+     * @param text The text to measure
+     * @param fontSize Font size in pixels
+     * @return Estimated width in pixels
+     */
+    private float estimateTextWidth(String text, int fontSize) {
+        if (text == null || text.isEmpty()) {
+            return 0.0f;
+        }
+
+        // This is just an estimate!
+        // Approximate character width as 60% of font size
+        float avgCharWidth = fontSize * 0.6f;
+        return text.length() * avgCharWidth;
+    }
+
+    private String formatWeaponName(Weapon.FiringPattern firingPattern) {
+        if (firingPattern == null) {
+            return "UNKNOWN";
+        }
+
+        return switch (firingPattern) {
+            case AUTOMATIC -> "AUTOMATIC";
+            case BURST -> "BURST";
+            case HEAVY -> "HEAVY";
+            case SHOTGUN -> "SHOTGUN";
+        };
+    }
+
+    /**
+     * Update score display using the microservice score
      */
     private void updateScoreDisplay(UIComponent uiComponent) {
         if (scoreSPI != null) {
