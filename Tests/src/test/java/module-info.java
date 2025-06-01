@@ -34,7 +34,8 @@ module Tests {
 
     opens dk.sdu.mmmi.cbse.tests.components to org.junit.platform.commons;
     opens dk.sdu.mmmi.cbse.tests.contracts to org.junit.platform.commons;
+    opens dk.sdu.mmmi.cbse.tests.integration to org.junit.platform.commons, org.mockito;
+    opens dk.sdu.mmmi.cbse.tests.performance to org.junit.platform.commons;
     opens dk.sdu.mmmi.cbse.tests.services to org.junit.platform.commons;
     opens dk.sdu.mmmi.cbse.tests.systems to org.junit.platform.commons, org.mockito;
-    opens dk.sdu.mmmi.cbse.tests.integration to org.junit.platform.commons, org.mockito;
 }
