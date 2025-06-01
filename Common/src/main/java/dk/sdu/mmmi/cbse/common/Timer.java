@@ -1,5 +1,0 @@
-package dk.sdu.mmmi.cbse.common;
-
-public class Timer {
-    // ToDo
-}
